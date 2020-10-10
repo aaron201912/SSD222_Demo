@@ -54,11 +54,7 @@ typedef struct {
   char StrData[256];
 } IPCEvent;
 
-
 char gsd20xipaddr[32] = {1};
-
-static MI_DISP_PubAttr_t stDispPubAttr;
-
 
 static int running = 0;
 static int delay = 1;
@@ -234,12 +230,12 @@ void handler(int signo)
         while((id=waitpid(child_pid,NULL,WNOHANG))>0)
         {
             syslog(LOG_INFO, "wait child success:%d", id);
-            
+
         }
         syslog(LOG_INFO, "child quit!%d", getpid());
         child_pid = 0;
     }
-    
+
 }
 
 
@@ -343,7 +339,7 @@ void print_help(void)
 int createEasyui(void)
 {
 
-    int pid; 
+    int pid;
 
     pid = fork();
 
@@ -373,7 +369,7 @@ int createEasyui(void)
         }
     #endif
         prctl(PR_SET_NAME, "zkgui_ui", NULL, NULL, NULL);
-        if (EASYUICONTEXT->initEasyUI()) 
+        if (EASYUICONTEXT->initEasyUI())
         {
             EASYUICONTEXT->runEasyUI();
             EASYUICONTEXT->deinitEasyUI();
@@ -399,18 +395,14 @@ int main(int argc, const char *argv[])
     /* This global variable can be changed in function handling signal */
     running = 1;
 
-    stDispPubAttr.eIntfType = E_MI_DISP_INTF_LCD;
-    stDispPubAttr.eIntfSync = E_MI_DISP_OUTPUT_USER;
-    stDispPubAttr.u32BgColor = YUYV_BLACK;
-
-    sstar_disp_init(&stDispPubAttr);
+    sstar_disp_init();
     //signal(SIGCHLD,handler);
 
     child_pid = createEasyui();
-    
+
     signal(SIGCHLD,handler);
 
-    
+
     IPCEvent getevt;
 
     IPCInput ssdinput(SSD_IPC);
@@ -422,7 +414,7 @@ int main(int argc, const char *argv[])
 
     //syslog(LOG_INFO, "ssdinput end");
     /* Never ending loop of server */
-    while (running == 1) 
+    while (running == 1)
     {
 
         /* TODO: dome something useful here */
@@ -439,7 +431,7 @@ int main(int argc, const char *argv[])
             {
                 //syslog(LOG_ERR,"Browser Stop done!!!!");
                 child_pid = createEasyui();
-            
+
             }
 
         }
@@ -450,7 +442,7 @@ int main(int argc, const char *argv[])
          * signal is received. */
         sleep(delay);
     }
-    
+
     /* Write system log and close it. */
     //syslog(LOG_INFO, "Stopped %s", app_name);
     //closelog();
