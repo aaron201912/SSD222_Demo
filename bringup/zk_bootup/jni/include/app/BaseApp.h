@@ -72,8 +72,7 @@ protected:
 	 */
 	void resetTimer(int id, int time);
 
-//protected:
-public:
+protected:
 	ZKMainWindow *mMainWndPtr;
 };
 
