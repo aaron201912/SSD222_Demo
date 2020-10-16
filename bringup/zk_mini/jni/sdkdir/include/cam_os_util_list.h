@@ -1,15 +1,18 @@
-/* Copyright (c) 2018-2019 Sigmastar Technology Corp.
- All rights reserved.
-
- Unless otherwise stipulated in writing, any and all information contained
-herein regardless in any format shall remain the sole proprietary of
-Sigmastar Technology Corp. and be kept in strict confidence
-(Sigmastar Confidential Information) by the recipient.
-Any unauthorized act including without limitation unauthorized disclosure,
-copying, use, reproduction, sale, distribution, modification, disassembling,
-reverse engineering and compiling of the contents of Sigmastar Confidential
-Information is unlawful and strictly prohibited. Sigmastar hereby reserves the
-rights to any and all damages, losses, costs and expenses resulting therefrom.
+/*
+* cam_os_util_list.h- Sigmastar
+*
+* Copyright (c) [2019~2020] SigmaStar Technology.
+*
+*
+* This software is licensed under the terms of the GNU General Public
+* License version 2, as published by the Free Software Foundation, and
+* may be copied, distributed, and modified under those terms.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License version 2 for more details.
+*
 */
 
 
@@ -28,8 +31,8 @@ struct CamOsListHead_t
 
 
 #define CAM_OS_POISON_POINTER_DELTA 0
-#define CAM_OS_LIST_POISON1  ((void *) 0x00100100 + CAM_OS_POISON_POINTER_DELTA)
-#define CAM_OS_LIST_POISON2  ((void *) 0x00200200 + CAM_OS_POISON_POINTER_DELTA)
+#define CAM_OS_LIST_POISON1  (void *)(0x00100100 + CAM_OS_POISON_POINTER_DELTA)
+#define CAM_OS_LIST_POISON2  (void *)(0x00200200 + CAM_OS_POISON_POINTER_DELTA)
 
 #define CAM_OS_LIST_HEAD_INIT(name) { &(name), &(name) }
 
@@ -141,6 +144,8 @@ void CamOsListSort(void *priv, struct CamOsListHead_t *head,
 	       int (*cmp)(void *priv, struct CamOsListHead_t *a,
 			  struct CamOsListHead_t *b));
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 // HList API
 static FORCE_INLINE
 void _CAM_OS_READ_ONCE_SIZE(const volatile void *p, void *res, int size)
@@ -156,14 +161,17 @@ void _CAM_OS_READ_ONCE_SIZE(const volatile void *p, void *res, int size)
 		asm volatile("": : :"memory"); // barrier()
 	}
 }
+#pragma GCC diagnostic pop
 
 #define CAM_OS_READ_ONCE(x)						\
 ({									\
-	union { __typeof__(x) __val; char __c[1]; } __u={0};			\
+	union { __typeof__(x) __val; char __c[1]; } __u = {0};			\
     _CAM_OS_READ_ONCE_SIZE(&(x), __u.__c, sizeof(x));		\
     __u.__val;							\
 })
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 static FORCE_INLINE void _CAM_OS_WRITE_ONCE_SIZE(volatile void *p, void *res, int size)
 {
 	switch (size) {
@@ -177,6 +185,7 @@ static FORCE_INLINE void _CAM_OS_WRITE_ONCE_SIZE(volatile void *p, void *res, in
 		asm volatile("": : :"memory"); // barrier()
 	}
 }
+#pragma GCC diagnostic pop
 
 #define CAM_OS_WRITE_ONCE(x, val) \
 ({							\

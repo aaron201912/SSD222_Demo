@@ -86,6 +86,8 @@ typedef struct MI_AI_AecConfig_s
     MI_S16 s16DelaySample;
     MI_U32 u32AecSupfreq[_AEC_BAND_NUM-1];
     MI_U32 u32AecSupIntensity[_AEC_BAND_NUM];
+    MI_U32 u32AecRatioThreshold;
+    MI_U32 u32AecDistortionTestFreq[2];
     MI_S32 s32Reserved;
 } MI_AI_AecConfig_t;
 

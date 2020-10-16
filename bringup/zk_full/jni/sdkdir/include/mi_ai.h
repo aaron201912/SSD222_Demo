@@ -20,7 +20,7 @@ rights to any and all damages, losses, costs and expenses resulting therefrom.
 
 
 #define AI_MAJOR_VERSION 2
-#define AI_SUB_VERSION 16
+#define AI_SUB_VERSION 19
 #define MACRO_TO_STR(macro) #macro
 #define AI_VERSION_STR(major_version,sub_version) ({char *tmp = sub_version/100 ? \
                                     "mi_ai_version_" MACRO_TO_STR(major_version)"." MACRO_TO_STR(sub_version) : sub_version/10 ? \

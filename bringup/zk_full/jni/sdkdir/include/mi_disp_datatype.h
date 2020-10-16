@@ -75,6 +75,7 @@ typedef enum
     E_MI_DISP_INTF_TTL,
     E_MI_DISP_INTF_MIPIDSI,
     E_MI_DISP_INTF_TTL_SPI_IF,
+    E_MI_DISP_INTF_SRGB,
     E_MI_DISP_INTF_MAX,
 }MI_DISP_Interface_e;
 

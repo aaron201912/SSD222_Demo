@@ -33,8 +33,6 @@ extern "C" {
 //=============================================================================
 // Macro definition
 //=============================================================================
-#define MI_AO_DEV_NUM_MAX   4
-#define MI_AO_CHAN_NUM_MAX  1
 
 #define MI_AO_ERR_INVALID_DEVID     (MI_DEF_ERR( E_MI_MODULE_ID_AO, E_MI_ERR_LEVEL_ERROR, E_MI_ERR_INVALID_DEVID))
 #define MI_AO_ERR_ILLEGAL_PARAM     (MI_DEF_ERR( E_MI_MODULE_ID_AO, E_MI_ERR_LEVEL_ERROR, E_MI_ERR_ILLEGAL_PARAM))

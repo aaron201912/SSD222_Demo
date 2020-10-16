@@ -62,8 +62,9 @@ typedef enum
 
 typedef enum
 {
-    E_MI_AUDIO_BIT_WIDTH_16 =0,                 /* 16bit width */
-    E_MI_AUDIO_BIT_WIDTH_24 =1,                 /* 24bit width */
+    E_MI_AUDIO_BIT_WIDTH_16 = 0,                 /* 16bit width */
+    E_MI_AUDIO_BIT_WIDTH_24 = 1,                 /* 24bit width */
+    E_MI_AUDIO_BIT_WIDTH_32 = 2,                 /* 32bit width */
     E_MI_AUDIO_BIT_WIDTH_MAX,
 }MI_AUDIO_BitWidth_e;
 
@@ -120,6 +121,7 @@ typedef struct MI_AUDIO_I2sConfig_s
     MI_AUDIO_I2sMclk_e eMclk;
     MI_BOOL bSyncClock;                                 //I2s Tx BCLK, Rx BCLK use the same clock source
     MI_U32 u32TdmSlots;
+    MI_AUDIO_BitWidth_e eI2sBitWidth;
 }MI_AUDIO_I2sConfig_t;
 
 typedef struct MI_AUDIO_Attr_s

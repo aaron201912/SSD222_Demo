@@ -19,7 +19,7 @@ rights to any and all damages, losses, costs and expenses resulting therefrom.
 #include "mi_ao_datatype.h"
 
 #define AO_MAJOR_VERSION 2
-#define AO_SUB_VERSION 14
+#define AO_SUB_VERSION 17
 #define MACRO_TO_STR(macro) #macro
 #define AO_VERSION_STR(major_version,sub_version) ({char *tmp = sub_version/100 ? \
                                     "mi_ao_version_" MACRO_TO_STR(major_version)"." MACRO_TO_STR(sub_version) : sub_version/10 ? \
@@ -63,6 +63,7 @@ MI_S32 MI_AO_GetPubAttr(MI_AUDIO_DEV AoDevId, MI_AUDIO_Attr_t *pstAttr);
 MI_S32 MI_AO_Enable(MI_AUDIO_DEV AoDevId);
 MI_S32 MI_AO_Disable(MI_AUDIO_DEV AoDevId);
 MI_S32 MI_AO_EnableChn(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn);
+MI_S32 MI_AO_DupChn(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn);
 MI_S32 MI_AO_DisableChn(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn);
 MI_S32 MI_AO_SendFrame(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_AUDIO_Frame_t *pstData, MI_S32 s32MilliSec);
 MI_S32 MI_AO_EnableReSmp(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_AUDIO_SampleRate_e eInSampleRate);
@@ -71,10 +72,10 @@ MI_S32 MI_AO_PauseChn(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn);
 MI_S32 MI_AO_ResumeChn(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn);
 MI_S32 MI_AO_ClearChnBuf(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn);
 MI_S32 MI_AO_QueryChnStat(MI_AUDIO_DEV AoDevId , MI_AO_CHN AoChn, MI_AO_ChnState_t *pstStatus);
-MI_S32 MI_AO_SetVolume(MI_AUDIO_DEV AoDevId, MI_S32 s32VolumeDb, MI_AO_GainFading_e eFading);
-MI_S32 MI_AO_GetVolume(MI_AUDIO_DEV AoDevId, MI_S32 *ps32VolumeDb);
-MI_S32 MI_AO_SetMute(MI_AUDIO_DEV AoDevId, MI_BOOL bEnable);
-MI_S32 MI_AO_GetMute(MI_AUDIO_DEV AoDevId, MI_BOOL *pbEnable);
+MI_S32 MI_AO_SetVolume(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_S32 s32VolumeDb, MI_AO_GainFading_e eFading);
+MI_S32 MI_AO_GetVolume(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_S32 *ps32VolumeDb);
+MI_S32 MI_AO_SetMute(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_BOOL bEnable);
+MI_S32 MI_AO_GetMute(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_BOOL *pbEnable);
 MI_S32 MI_AO_ClrPubAttr(MI_AUDIO_DEV AoDevId);
 MI_S32 MI_AO_SetVqeAttr(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_AO_VqeConfig_t *pstVqeConfig);
 MI_S32 MI_AO_GetVqeAttr(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_AO_VqeConfig_t *pstVqeConfig);
