@@ -1,8 +1,8 @@
 /***********************************************
 /gen auto by zuitools
 ***********************************************/
-#ifndef __VIDEO2ACTIVITY_H__
-#define __VIDEO2ACTIVITY_H__
+#ifndef __PLAYPCMFILEACTIVITY_H__
+#define __PLAYPCMFILEACTIVITY_H__
 
 
 #include "app/Activity.h"
@@ -40,23 +40,9 @@
 #define ID_PLAYPCMFILE_PlayButton    20001
 #define ID_PLAYPCMFILE_PlayProgressSeekbar    91001
 #define ID_PLAYPCMFILE_VideoviewTT    95001
-#define ID_VIDEO2_TitleTextview    50001
-#define ID_VIDEO2_SoundSeekbar    91002
-#define ID_VIDEO2_SoundWindow    110001
-#define ID_VIDEO2_DurationTextView    50007
-#define ID_VIDEO2_CurPosTextView    50002
-#define ID_VIDEO2_VoiceButton    20009
-#define ID_VIDEO2_PrevButton    20005
-#define ID_VIDEO2_NextButton    20003
-#define ID_VIDEO2_PlayButton    20001
-#define ID_VIDEO2_PlayProgressSeekbar    91001
-#define ID_VIDEO2_VideoviewTT    95001
-#define ID_VIDEO2_Button4    20002
-#define ID_VIDEO2_sys_back   100
-#define ID_VIDEO2_ButtonZoom    20007
 /*TAG:Macro宏ID END*/
 
-class video2Activity : public Activity, 
+class playPcmFileActivity : public Activity, 
                      public ZKSeekBar::ISeekBarChangeListener, 
                      public ZKListView::IItemClickListener,
                      public ZKListView::AbsListAdapter,
@@ -66,8 +52,8 @@ class video2Activity : public Activity,
                      public ZKVideoView::IVideoPlayerMessageListener
 {
 public:
-    video2Activity();
-    virtual ~video2Activity();
+    playPcmFileActivity();
+    virtual ~playPcmFileActivity();
 
     /**
      * 注册定时器
@@ -107,7 +93,7 @@ protected:
     void rigesterActivityTimer();
 
     virtual void onVideoPlayerMessage(ZKVideoView *pVideoView, int msg);
-    void videoLoopPlayback(ZKVideoView *pVideoView, int msg, int callbackTabIndex);
+    void videoLoopPlayback(ZKVideoView *pVideoView, int msg, size_t callbackTabIndex);
     void startVideoLoopPlayback();
     void stopVideoLoopPlayback();
     bool parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList);

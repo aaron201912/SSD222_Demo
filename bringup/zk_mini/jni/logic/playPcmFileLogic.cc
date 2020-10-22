@@ -1,35 +1,107 @@
-#pragma once
-#include "uart/ProtocolSender.h"
-/*
-*此文件由GUI工具生成
-*文件功能：用于处理用户的逻辑相应代码
-*功能说明：
-*========================onButtonClick_XXXX
-当页面中的按键按下后系统会调用对应的函数，XXX代表GUI工具里面的[ID值]名称，
-如Button1,当返回值为false的时候系统将不再处理这个按键，返回true的时候系统将会继续处理此按键。比如SYS_BACK.
-*========================onSlideWindowItemClick_XXXX(int index) 
-当页面中存在滑动窗口并且用户点击了滑动窗口的图标后系统会调用此函数,XXX代表GUI工具里面的[ID值]名称，
-如slideWindow1;index 代表按下图标的偏移值
-*========================onSeekBarChange_XXXX(int progress) 
-当页面中存在滑动条并且用户改变了进度后系统会调用此函数,XXX代表GUI工具里面的[ID值]名称，
-如SeekBar1;progress 代表当前的进度值
-*========================ogetListItemCount_XXXX() 
-当页面中存在滑动列表的时候，更新的时候系统会调用此接口获取列表的总数目,XXX代表GUI工具里面的[ID值]名称，
-如List1;返回值为当前列表的总条数
-*========================oobtainListItemData_XXXX(ZKListView::ZKListItem *pListItem, int index)
- 当页面中存在滑动列表的时候，更新的时候系统会调用此接口获取列表当前条目下的内容信息,XXX代表GUI工具里面的[ID值]名称，
-如List1;pListItem 是贴图中的单条目对象，index是列表总目的偏移量。具体见函数说明
-*========================常用接口===============
-*LOGD(...)  打印调试信息的接口
-*mTextXXXPtr->setText("****") 在控件TextXXX上显示文字****
-*mButton1Ptr->setSelected(true); 将控件mButton1设置为选中模式，图片会切换成选中图片，按钮文字会切换为选中后的颜色
-*mSeekBarPtr->setProgress(12) 在控件mSeekBar上将进度调整到12
-*mListView1Ptr->refreshListView() 让mListView1 重新刷新，当列表数据变化后调用
-*mDashbroadView1Ptr->setTargetAngle(120) 在控件mDashbroadView1上指针显示角度调整到120度
-*
-* 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
-*/
+#include "media/ZKMediaPlayer.h"
+#include "statusbarconfig.h"
 
+static ZKMediaPlayer *sAudioPlayerPtr = NULL;
+static std::vector<string> sMediaFileList;
+static int sPlayIndex;
+
+
+static bool sIsTracking = false;
+static int sTrackProgress = -1;
+
+extern "C" void SSTAR_PlayAudio();
+extern "C" void SSTAR_StopAudio();
+extern "C" void SSTAR_SetVolume(int vol);
+
+class SeekbarChangeListener : public ZKSeekBar::ISeekBarChangeListener {
+public:
+    virtual void onProgressChanged(ZKSeekBar *pSeekBar, int progress) {
+        sTrackProgress = progress;
+    }
+    virtual void onStartTrackingTouch(ZKSeekBar *pSeekBar) {
+        sIsTracking = true;
+    }
+    virtual void onStopTrackingTouch(ZKSeekBar *pSeekBar) {
+        sIsTracking = false;
+        if (sTrackProgress >= 0) {
+            if (sAudioPlayerPtr) {
+                sAudioPlayerPtr->seekTo(sTrackProgress * 1000);
+            } else {
+                mVideoviewTTPtr->seekTo(sTrackProgress * 1000);
+            }
+            sTrackProgress = -1;
+        }
+    }
+};
+static SeekbarChangeListener progressbar;
+
+static int removeCharFromString(string& nString, char c) {
+    string::size_type pos;
+    while (1) {
+        pos = nString.find(c);
+        if (pos != string::npos) {
+            nString.erase(pos, 1);
+        } else {
+            break;
+        }
+    }
+    return (int) nString.size();
+}
+
+static bool parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
+    mediaFileList.clear();
+    if (NULL == pFileListPath || 0 == strlen(pFileListPath)) {
+        LOGD("video file list is null!");
+        return false;
+    }
+
+    ifstream is(pFileListPath, ios_base::in);
+    if (!is.is_open()) {
+        LOGD("cann't open file %s \n", pFileListPath);
+        return false;
+    }
+    char tmp[1024] = {0};
+    while (is.getline(tmp, sizeof(tmp))) {
+        string str = tmp;
+        removeCharFromString(str, '\"');
+        removeCharFromString(str, '\r');
+        removeCharFromString(str, '\n');
+        if (str.size() > 1) {
+            mediaFileList.push_back(str.c_str());
+        }
+    }
+    LOGD("(f:%s, l:%d) parse fileList[%s], get [%d]files\n", __FUNCTION__,
+            __LINE__, pFileListPath, mediaFileList.size());
+    for (size_t i = 0; i < mediaFileList.size(); i++) {
+        LOGD("file[%d]:[%s]\n", i, mediaFileList[i].c_str());
+    }
+    is.close();
+
+    return true;
+}
+
+static void next() {
+    if (!sMediaFileList.empty()) {
+        LOGD("! empty");
+        sPlayIndex = (sPlayIndex + 1) % sMediaFileList.size();
+        if (sAudioPlayerPtr) {
+            sAudioPlayerPtr->play(sMediaFileList[sPlayIndex].c_str());
+        } else {
+            mVideoviewTTPtr->play(sMediaFileList[sPlayIndex].c_str());
+        }
+    }
+}
+
+static void prev() {
+    if (!sMediaFileList.empty()) {
+        sPlayIndex = (sPlayIndex - 1 + sMediaFileList.size()) % sMediaFileList.size();
+        if (sAudioPlayerPtr) {
+            sAudioPlayerPtr->play(sMediaFileList[sPlayIndex].c_str());
+        } else {
+            mVideoviewTTPtr->play(sMediaFileList[sPlayIndex].c_str());
+        }
+    }
+}
 
 /**
  * 注册定时器
@@ -37,25 +109,24 @@
  * 注意：id不能重复
  */
 static S_ACTIVITY_TIMEER REGISTER_ACTIVITY_TIMER_TAB[] = {
-	//{0,  6000}, //定时器id=0, 时间间隔6秒
-	//{1,  1000},
+    //{0,  6000}, //定时器id=0, 时间间隔6秒
+    { 1, 1000 },
 };
 
 /**
  * 当界面构造时触发
  */
-static void onUI_init(){
+static void onUI_init() {
     //Tips :添加 UI初始化的显示代码到这里,如:mText1Ptr->setText("123");
 
+    SSTAR_PlayAudio();
 }
 
 /**
  * 当切换到该界面时触发
  */
 static void onUI_intent(const Intent *intentPtr) {
-    if (intentPtr != NULL) {
-        //TODO
-    }
+    mSoundSeekbarPtr->setProgress(55);
 }
 
 /*
@@ -69,14 +140,16 @@ static void onUI_show() {
  * 当界面隐藏时触发
  */
 static void onUI_hide() {
-
 }
 
 /*
  * 当界面完全退出时触发
  */
 static void onUI_quit() {
+    system("echo 3 > /proc/sys/vm/drop_caches");
 
+    SSTAR_StopAudio();
+    ShowStatusBar(1, 0, 0);
 }
 
 /**
@@ -115,70 +188,66 @@ static bool onUI_Timer(int id){
  *            触摸事件将继续传递到控件上
  */
 static bool onplayPcmFileActivityTouchEvent(const MotionEvent &ev) {
-    switch (ev.mActionStatus) {
-		case MotionEvent::E_ACTION_DOWN://触摸按下
-			//LOGD("时刻 = %ld 坐标  x = %d, y = %d", ev.mEventTime, ev.mX, ev.mY);
-			break;
-		case MotionEvent::E_ACTION_MOVE://触摸滑动
-			break;
-		case MotionEvent::E_ACTION_UP:  //触摸抬起
-			break;
-		default:
-			break;
-	}
-	return false;
+    return false;
+}
+
+static void onProgressChanged_SoundSeekbar(ZKSeekBar *pSeekBar, int progress) {
+	SSTAR_SetVolume(progress);
+}
+
+static bool onButtonClick_PlayButton(ZKButton *pButton) {
+    return false;
+}
+
+static bool onButtonClick_PrevButton(ZKButton *pButton) {
+    prev();
+    return false;
+}
+
+static bool onButtonClick_NextButton(ZKButton *pButton) {
+    next();
+    return false;
+}
+
+static void onProgressChanged_PlayProgressSeekbar(ZKSeekBar *pSeekBar, int progress) {
+
+}
+
+static bool onButtonClick_VoiceButton(ZKButton *pButton) {
+    //LOGD(" ButtonClick VoiceButton !!!\n");
+    mSoundWindowPtr->showWnd();
+    return false;
+}
+
+static bool onButtonClick_sys_back(ZKButton *pButton) {
+    return false;
 }
 
 static void onVideoViewPlayerMessageListener_VideoviewTT(ZKVideoView *pVideoView, int msg) {
 	switch (msg) {
 	case ZKVideoView::E_MSGTYPE_VIDEO_PLAY_STARTED:
+	    {
+            int max = pVideoView->getDuration() / 1000;
+            char timeStr[12] = {0};
+            snprintf(timeStr, sizeof(timeStr), "%02d:%02d", max / 60, max % 60);
+            mDurationTextViewPtr->setText(timeStr);
+            mPlayProgressSeekbarPtr->setMax(max);
+            mPlayButtonPtr->setSelected(true);
+	    }
 		break;
 	case ZKVideoView::E_MSGTYPE_VIDEO_PLAY_COMPLETED:
+	    next();
 		break;
 	case ZKVideoView::E_MSGTYPE_VIDEO_PLAY_ERROR:
 		break;
 	}
 }
 
-static void onProgressChanged_PlayProgressSeekbar(ZKSeekBar *pSeekBar, int progress) {
-    //LOGD(" ProgressChanged PlayProgressSeekbar %d !!!\n", progress);
-}
-
-static bool onButtonClick_PlayButton(ZKButton *pButton) {
-    //LOGD(" ButtonClick PlayButton !!!\n");
-    return false;
-}
-
-static bool onButtonClick_NextButton(ZKButton *pButton) {
-    //LOGD(" ButtonClick NextButton !!!\n");
-    return false;
-}
-
-static bool onButtonClick_PrevButton(ZKButton *pButton) {
-    //LOGD(" ButtonClick PrevButton !!!\n");
-    return false;
-}
-
 static bool onButtonClick_ButtonZoom(ZKButton *pButton) {
-    //LOGD(" ButtonClick ButtonZoom !!!\n");
     return false;
-}
-
-static bool onButtonClick_VoiceButton(ZKButton *pButton) {
-    //LOGD(" ButtonClick VoiceButton !!!\n");
-    return false;
-}
-
-static bool onButtonClick_sys_back(ZKButton *pButton) {
-    //LOGD(" ButtonClick sys_back !!!\n");
-    return false;
-}
-
-static void onProgressChanged_SoundSeekbar(ZKSeekBar *pSeekBar, int progress) {
-    //LOGD(" ProgressChanged SoundSeekbar %d !!!\n", progress);
 }
 
 static bool onButtonClick_Button4(ZKButton *pButton) {
-    //LOGD(" ButtonClick Button4 !!!\n");
+    EASYUICONTEXT->openActivity("helpVideoActivity");
     return false;
 }

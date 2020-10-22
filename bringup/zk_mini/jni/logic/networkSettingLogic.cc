@@ -342,6 +342,7 @@ static void obtainListItemData_ListviewNetwork(ZKListView *pListView,ZKListView:
 	if (!g_vecScanResult.size())
 	{
 		printf("no scan result\n");
+		g_scanResLock.unlock();
 		return;
 	}
 

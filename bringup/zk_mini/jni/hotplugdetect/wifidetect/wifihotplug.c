@@ -83,6 +83,13 @@ static WifiScanResultListHead_t g_stScanResListHead;
 static ScanResult_t *g_pstScanRes = NULL;
 static int  g_staInit = 0;
 
+unsigned long GetTickCount()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+}
+
 static void ClearScanResult()
 {
 	WifiScanResultListData_t *pstScanResData = NULL;
@@ -178,15 +185,18 @@ static int WifiInit()
 	}
 
 	// init wlan dev
+	printf("start to init wlan, system time: %ul\n", GetTickCount());
 	if (MI_WLAN_Init(&g_stParm) || MI_WLAN_Open(&g_stStaOpenParam))
 	{
 		//setWifiSupportStatus(false);
 		g_wifiSupported = 0;
 		printf("open wifi failed\n");
+		printf("wlan init failed, system time: %ul\n", GetTickCount());
 		return -1;
 	}
 
 	g_staInit = 1;
+	printf("wlan init success, system time: %ul\n", GetTickCount());
 	return 0;
 }
 
@@ -457,7 +467,7 @@ static void *WlanWorkProc(void *pdata)
     {
     	if (!access("/sys/bus/usb", F_OK) && !access("/config/wifi", F_OK) && !access("/appconfigs", F_OK))
 		{
-			printf("wifi ko mount ok\n");
+			printf("wifi ko mount ok, currnet tryCnt is %d\n", checkCnt);
 			isWlanInsmode = 1;
 			break;
 		}
@@ -604,7 +614,7 @@ int Wifi_RegisterConnectCallback(WifiConnCallback pfnCallback)
 	pthread_mutex_unlock(&g_connCallbackListMutex);
 
 	// debug2
-	printf("Wifi_RegisterConnectCallback  debug1...\n");
+	printf("Wifi_RegisterConnectCallback  debug2...\n");
 
 	pthread_mutex_lock(&g_connParamMutex);
 	g_registerConnChanged = 1;

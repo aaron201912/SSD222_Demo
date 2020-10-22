@@ -4,31 +4,31 @@
 #include "playPcmFileActivity.h"
 
 /*TAG:GlobalVariable全局变量*/
+static ZKButton* mButton4Ptr;
 static ZKTextView* mTitleTextviewPtr;
 static ZKSeekBar* mSoundSeekbarPtr;
 static ZKWindow* mSoundWindowPtr;
 static ZKTextView* mDurationTextViewPtr;
 static ZKTextView* mCurPosTextViewPtr;
+static ZKButton* msys_backPtr;
 static ZKButton* mVoiceButtonPtr;
+static ZKButton* mButtonZoomPtr;
 static ZKButton* mPrevButtonPtr;
 static ZKButton* mNextButtonPtr;
 static ZKButton* mPlayButtonPtr;
 static ZKSeekBar* mPlayProgressSeekbarPtr;
 static ZKVideoView* mVideoviewTTPtr;
-static ZKButton* mButton4Ptr;
-static ZKButton* msys_backPtr;
-static ZKButton* mButtonZoomPtr;
-static video2Activity* mActivityPtr;
+static playPcmFileActivity* mActivityPtr;
 
 /*register activity*/
-REGISTER_ACTIVITY(video2Activity);
+REGISTER_ACTIVITY(playPcmFileActivity);
 
 typedef struct {
 	int id; // 定时器ID ， 不能重复
 	int time; // 定时器  时间间隔  单位 毫秒
 }S_ACTIVITY_TIMEER;
 
-#include "../logic/playPcmFile.cc"
+#include "logic/playPcmFileLogic.cc"
 
 /***********/
 typedef struct {
@@ -62,13 +62,6 @@ static S_ButtonCallback sButtonCallbackTab[] = {
     ID_PLAYPCMFILE_PrevButton, onButtonClick_PrevButton,
     ID_PLAYPCMFILE_NextButton, onButtonClick_NextButton,
     ID_PLAYPCMFILE_PlayButton, onButtonClick_PlayButton,
-    ID_VIDEO2_VoiceButton, onButtonClick_VoiceButton,
-    ID_VIDEO2_PrevButton, onButtonClick_PrevButton,
-    ID_VIDEO2_NextButton, onButtonClick_NextButton,
-    ID_VIDEO2_PlayButton, onButtonClick_PlayButton,
-    ID_VIDEO2_Button4, onButtonClick_Button4,
-    ID_VIDEO2_sys_back, onButtonClick_sys_back,
-    ID_VIDEO2_ButtonZoom, onButtonClick_ButtonZoom,
 };
 /***************/
 
@@ -82,8 +75,6 @@ typedef struct {
 static S_ZKSeekBarCallback SZKSeekBarCallbackTab[] = {
     ID_PLAYPCMFILE_SoundSeekbar, onProgressChanged_SoundSeekbar,
     ID_PLAYPCMFILE_PlayProgressSeekbar, onProgressChanged_PlayProgressSeekbar,
-    ID_VIDEO2_SoundSeekbar, onProgressChanged_SoundSeekbar,
-    ID_VIDEO2_PlayProgressSeekbar, onProgressChanged_PlayProgressSeekbar,
 };
 
 
@@ -130,30 +121,29 @@ typedef struct {
 /*TAG:VideoViewCallback*/
 static S_VideoViewCallback SVideoViewCallbackTab[] = {
     ID_PLAYPCMFILE_VideoviewTT, false, 5, onVideoViewPlayerMessageListener_VideoviewTT,
-    ID_VIDEO2_VideoviewTT, false, 5, onVideoViewPlayerMessageListener_VideoviewTT,
 };
 
 
-video2Activity::video2Activity() {
+playPcmFileActivity::playPcmFileActivity() {
 	//todo add init code here
-	mVideoLoopIndex = 0;
+	mVideoLoopIndex = -1;
 	mVideoLoopErrorCount = 0;
 }
 
-video2Activity::~video2Activity() {
-	//todo add init file here
-    // 退出应用时需要反注册
+playPcmFileActivity::~playPcmFileActivity() {
+  //todo add init file here
+  // 退出应用时需要反注册
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
 }
 
-const char* video2Activity::getAppName() const{
-	return "video2.ftu";
+const char* playPcmFileActivity::getAppName() const{
+	return "playPcmFile.ftu";
 }
 
 //TAG:onCreate
-void video2Activity::onCreate() {
+void playPcmFileActivity::onCreate() {
 	Activity::onCreate();
     mButton4Ptr = (ZKButton*)findControlByID(ID_PLAYPCMFILE_Button4);
     mTitleTextviewPtr = (ZKTextView*)findControlByID(ID_PLAYPCMFILE_TitleTextview);
@@ -169,27 +159,13 @@ void video2Activity::onCreate() {
     mPlayButtonPtr = (ZKButton*)findControlByID(ID_PLAYPCMFILE_PlayButton);
     mPlayProgressSeekbarPtr = (ZKSeekBar*)findControlByID(ID_PLAYPCMFILE_PlayProgressSeekbar);if(mPlayProgressSeekbarPtr!= NULL){mPlayProgressSeekbarPtr->setSeekBarChangeListener(this);}
     mVideoviewTTPtr = (ZKVideoView*)findControlByID(ID_PLAYPCMFILE_VideoviewTT);if(mVideoviewTTPtr!= NULL){mVideoviewTTPtr->setVideoPlayerMessageListener(this);}
-    mTitleTextviewPtr = (ZKTextView*)findControlByID(ID_VIDEO2_TitleTextview);
-    mSoundSeekbarPtr = (ZKSeekBar*)findControlByID(ID_VIDEO2_SoundSeekbar);if(mSoundSeekbarPtr!= NULL){mSoundSeekbarPtr->setSeekBarChangeListener(this);}
-    mSoundWindowPtr = (ZKWindow*)findControlByID(ID_VIDEO2_SoundWindow);
-    mDurationTextViewPtr = (ZKTextView*)findControlByID(ID_VIDEO2_DurationTextView);
-    mCurPosTextViewPtr = (ZKTextView*)findControlByID(ID_VIDEO2_CurPosTextView);
-    mVoiceButtonPtr = (ZKButton*)findControlByID(ID_VIDEO2_VoiceButton);
-    mPrevButtonPtr = (ZKButton*)findControlByID(ID_VIDEO2_PrevButton);
-    mNextButtonPtr = (ZKButton*)findControlByID(ID_VIDEO2_NextButton);
-    mPlayButtonPtr = (ZKButton*)findControlByID(ID_VIDEO2_PlayButton);
-    mPlayProgressSeekbarPtr = (ZKSeekBar*)findControlByID(ID_VIDEO2_PlayProgressSeekbar);if(mPlayProgressSeekbarPtr!= NULL){mPlayProgressSeekbarPtr->setSeekBarChangeListener(this);}
-    mVideoviewTTPtr = (ZKVideoView*)findControlByID(ID_VIDEO2_VideoviewTT);if(mVideoviewTTPtr!= NULL){mVideoviewTTPtr->setVideoPlayerMessageListener(this);}
-    mButton4Ptr = (ZKButton*)findControlByID(ID_VIDEO2_Button4);
-    msys_backPtr = (ZKButton*)findControlByID(ID_VIDEO2_sys_back);
-    mButtonZoomPtr = (ZKButton*)findControlByID(ID_VIDEO2_ButtonZoom);
 	mActivityPtr = this;
 	onUI_init();
     registerProtocolDataUpdateListener(onProtocolDataUpdate); 
     rigesterActivityTimer();
 }
 
-void video2Activity::onClick(ZKBase *pBase) {
+void playPcmFileActivity::onClick(ZKBase *pBase) {
 	//TODO: add widget onClik code 
     int buttonTablen = sizeof(sButtonCallbackTab) / sizeof(S_ButtonCallback);
     for (int i = 0; i < buttonTablen; ++i) {
@@ -213,30 +189,30 @@ void video2Activity::onClick(ZKBase *pBase) {
 	Activity::onClick(pBase);
 }
 
-void video2Activity::onResume() {
+void playPcmFileActivity::onResume() {
 	Activity::onResume();
 	EASYUICONTEXT->registerGlobalTouchListener(this);
 	startVideoLoopPlayback();
 	onUI_show();
 }
 
-void video2Activity::onPause() {
+void playPcmFileActivity::onPause() {
 	Activity::onPause();
 	EASYUICONTEXT->unregisterGlobalTouchListener(this);
 	stopVideoLoopPlayback();
 	onUI_hide();
 }
 
-void video2Activity::onIntent(const Intent *intentPtr) {
+void playPcmFileActivity::onIntent(const Intent *intentPtr) {
 	Activity::onIntent(intentPtr);
 	onUI_intent(intentPtr);
 }
 
-bool video2Activity::onTimer(int id) {
+bool playPcmFileActivity::onTimer(int id) {
 	return onUI_Timer(id);
 }
 
-void video2Activity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
+void playPcmFileActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
 
     int seekBarTablen = sizeof(SZKSeekBarCallbackTab) / sizeof(S_ZKSeekBarCallback);
     for (int i = 0; i < seekBarTablen; ++i) {
@@ -247,7 +223,7 @@ void video2Activity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
     }
 }
 
-int video2Activity::getListItemCount(const ZKListView *pListView) const{
+int playPcmFileActivity::getListItemCount(const ZKListView *pListView) const{
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -258,7 +234,7 @@ int video2Activity::getListItemCount(const ZKListView *pListView) const{
     return 0;
 }
 
-void video2Activity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
+void playPcmFileActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -268,7 +244,7 @@ void video2Activity::obtainListItemData(ZKListView *pListView,ZKListView::ZKList
     }
 }
 
-void video2Activity::onItemClick(ZKListView *pListView, int index, int id){
+void playPcmFileActivity::onItemClick(ZKListView *pListView, int index, int id){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -278,7 +254,7 @@ void video2Activity::onItemClick(ZKListView *pListView, int index, int id){
     }
 }
 
-void video2Activity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
+void playPcmFileActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
     int tablen = sizeof(SSlideWindowItemClickCallbackTab) / sizeof(S_SlideWindowItemClickCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SSlideWindowItemClickCallbackTab[i].id == pSlideWindow->getID()) {
@@ -288,11 +264,11 @@ void video2Activity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
     }
 }
 
-bool video2Activity::onTouchEvent(const MotionEvent &ev) {
-    return onvideo2ActivityTouchEvent(ev);
+bool playPcmFileActivity::onTouchEvent(const MotionEvent &ev) {
+    return onplayPcmFileActivityTouchEvent(ev);
 }
 
-void video2Activity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
+void playPcmFileActivity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
     int tablen = sizeof(SEditTextInputCallbackTab) / sizeof(S_EditTextInputCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SEditTextInputCallbackTab[i].id == pTextView->getID()) {
@@ -302,7 +278,7 @@ void video2Activity::onTextChanged(ZKTextView *pTextView, const std::string &tex
     }
 }
 
-void video2Activity::rigesterActivityTimer() {
+void playPcmFileActivity::rigesterActivityTimer() {
     int tablen = sizeof(REGISTER_ACTIVITY_TIMER_TAB) / sizeof(S_ACTIVITY_TIMEER);
     for (int i = 0; i < tablen; ++i) {
         S_ACTIVITY_TIMEER temp = REGISTER_ACTIVITY_TIMER_TAB[i];
@@ -311,7 +287,7 @@ void video2Activity::rigesterActivityTimer() {
 }
 
 
-void video2Activity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
+void playPcmFileActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SVideoViewCallbackTab[i].id == pVideoView->getID()) {
@@ -326,11 +302,14 @@ void video2Activity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
     }
 }
 
-void video2Activity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, int callbackTabIndex) {
+void playPcmFileActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, size_t callbackTabIndex) {
 
 	switch (msg) {
 	case ZKVideoView::E_MSGTYPE_VIDEO_PLAY_STARTED:
 		LOGD("ZKVideoView::E_MSGTYPE_VIDEO_PLAY_STARTED\n");
+    if (callbackTabIndex >= (sizeof(SVideoViewCallbackTab)/sizeof(S_VideoViewCallback))) {
+      break;
+    }
 		pVideoView->setVolume(SVideoViewCallbackTab[callbackTabIndex].defaultvolume / 10.0);
 		mVideoLoopErrorCount = 0;
 		break;
@@ -363,7 +342,7 @@ void video2Activity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, int cal
 	}
 }
 
-void video2Activity::startVideoLoopPlayback() {
+void playPcmFileActivity::startVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -378,7 +357,7 @@ void video2Activity::startVideoLoopPlayback() {
     }
 }
 
-void video2Activity::stopVideoLoopPlayback() {
+void playPcmFileActivity::stopVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -394,7 +373,7 @@ void video2Activity::stopVideoLoopPlayback() {
     }
 }
 
-bool video2Activity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
+bool playPcmFileActivity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
 	mediaFileList.clear();
 	if (NULL == pFileListPath || 0 == strlen(pFileListPath)) {
         LOGD("video file list is null!");
@@ -426,7 +405,7 @@ bool video2Activity::parseVideoFileList(const char *pFileListPath, std::vector<s
 	return true;
 }
 
-int video2Activity::removeCharFromString(string& nString, char c) {
+int playPcmFileActivity::removeCharFromString(string& nString, char c) {
     string::size_type   pos;
     while(1) {
         pos = nString.find(c);
@@ -439,14 +418,14 @@ int video2Activity::removeCharFromString(string& nString, char c) {
     return (int)nString.size();
 }
 
-void video2Activity::registerUserTimer(int id, int time) {
+void playPcmFileActivity::registerUserTimer(int id, int time) {
 	registerTimer(id, time);
 }
 
-void video2Activity::unregisterUserTimer(int id) {
+void playPcmFileActivity::unregisterUserTimer(int id) {
 	unregisterTimer(id);
 }
 
-void video2Activity::resetUserTimer(int id, int time) {
+void playPcmFileActivity::resetUserTimer(int id, int time) {
 	resetTimer(id, time);
 }

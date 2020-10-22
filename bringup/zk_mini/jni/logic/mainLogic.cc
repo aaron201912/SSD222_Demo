@@ -106,10 +106,11 @@ const char* IconTab[]={
 		"voicedetectActivity",
 		"networkSettingActivity",
 		"airportActivity",
-		"playPcmFileActivity",
+		"playPcmFileActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
+	ShowStatusBar(0, 1 ,1);
 	EASYUICONTEXT->openActivity(IconTab[index]);
 }
 
