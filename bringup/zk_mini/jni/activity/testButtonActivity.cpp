@@ -7,7 +7,6 @@
 static ZKButton* msys_backPtr;
 static ZKButton* mButton4Ptr;
 static ZKTextView* mTextview5Ptr;
-static ZKButton* mButton3Ptr;
 static ZKButton* mButton_open_developerPtr;
 static ZKButton* mButton1Ptr;
 static ZKTextView* mTextview4Ptr;
@@ -58,7 +57,6 @@ typedef struct {
 static S_ButtonCallback sButtonCallbackTab[] = {
     ID_TESTBUTTON_sys_back, onButtonClick_sys_back,
     ID_TESTBUTTON_Button4, onButtonClick_Button4,
-    ID_TESTBUTTON_Button3, onButtonClick_Button3,
     ID_TESTBUTTON_Button_open_developer, onButtonClick_Button_open_developer,
     ID_TESTBUTTON_Button1, onButtonClick_Button1,
     ID_TESTBUTTON_Button2, onButtonClick_Button2,
@@ -149,7 +147,6 @@ void testButtonActivity::onCreate() {
     msys_backPtr = (ZKButton*)findControlByID(ID_TESTBUTTON_sys_back);
     mButton4Ptr = (ZKButton*)findControlByID(ID_TESTBUTTON_Button4);
     mTextview5Ptr = (ZKTextView*)findControlByID(ID_TESTBUTTON_Textview5);
-    mButton3Ptr = (ZKButton*)findControlByID(ID_TESTBUTTON_Button3);
     mButton_open_developerPtr = (ZKButton*)findControlByID(ID_TESTBUTTON_Button_open_developer);
     mButton1Ptr = (ZKButton*)findControlByID(ID_TESTBUTTON_Button1);
     mTextview4Ptr = (ZKTextView*)findControlByID(ID_TESTBUTTON_Textview4);

@@ -7,7 +7,6 @@
 static ZKButton* msys_backPtr;
 static ZKListView* mListview3Ptr;
 static ZKListView* mListview1Ptr;
-static ZKTextView* mTextview1Ptr;
 static tesListActivity* mActivityPtr;
 
 /*register activity*/
@@ -131,7 +130,6 @@ void tesListActivity::onCreate() {
     msys_backPtr = (ZKButton*)findControlByID(ID_TESLIST_sys_back);
     mListview3Ptr = (ZKListView*)findControlByID(ID_TESLIST_Listview3);if(mListview3Ptr!= NULL){mListview3Ptr->setListAdapter(this);mListview3Ptr->setItemClickListener(this);}
     mListview1Ptr = (ZKListView*)findControlByID(ID_TESLIST_Listview1);if(mListview1Ptr!= NULL){mListview1Ptr->setListAdapter(this);mListview1Ptr->setItemClickListener(this);}
-    mTextview1Ptr = (ZKTextView*)findControlByID(ID_TESLIST_Textview1);
 	mActivityPtr = this;
 	onUI_init();
     registerProtocolDataUpdateListener(onProtocolDataUpdate); 

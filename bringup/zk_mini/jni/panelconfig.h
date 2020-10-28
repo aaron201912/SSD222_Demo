@@ -14,11 +14,11 @@ extern MI_PANEL_ParamConfig_t stPanelParam;
 extern MI_PANEL_MipiDsiConfig_t stMipiDsiConfig;
 
 #if USE_PANEL_1024_600
-#define PANEL_MAX_WIDTH			1024
-#define PANEL_MAX_HEIGHT		600
+#define PANEL_WIDTH			1024
+#define PANEL_HEIGHT		600
 #else
-#define PANEL_MAX_WIDTH			800
-#define PANEL_MAX_HEIGHT		480
+#define PANEL_WIDTH			800
+#define PANEL_HEIGHT		480
 #endif
 
 #endif /* JNI_PANELCONFIG_H_ */

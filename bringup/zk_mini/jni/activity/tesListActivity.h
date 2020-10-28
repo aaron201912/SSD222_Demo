@@ -33,7 +33,6 @@
 #define ID_TESLIST_Listview3    80002
 #define ID_TESLIST_SubItemState    70001
 #define ID_TESLIST_Listview1    80000
-#define ID_TESLIST_Textview1    50001
 /*TAG:Macro宏ID END*/
 
 class tesListActivity : public Activity, 

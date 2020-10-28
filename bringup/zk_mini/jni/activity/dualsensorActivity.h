@@ -1,8 +1,8 @@
 /***********************************************
 /gen auto by zuitools
 ***********************************************/
-#ifndef __AIRPORTACTIVITY_H__
-#define __AIRPORTACTIVITY_H__
+#ifndef __DUALSENSORACTIVITY_H__
+#define __DUALSENSORACTIVITY_H__
 
 
 #include "app/Activity.h"
@@ -26,22 +26,11 @@
 #include "window/ZKSlideWindow.h"
 
 /*TAG:Macro宏ID*/
-#define ID_AIRPORT_Button_save    20004
-#define ID_AIRPORT_TextView_inputPasswd    50005
-#define ID_AIRPORT_TextView_passwd    50004
-#define ID_AIRPORT_TextView_inputName    50003
-#define ID_AIRPORT_SubItem_devName    20012
-#define ID_AIRPORT_SubItem_connectTime    20003
-#define ID_AIRPORT_SubItem_mac    20002
-#define ID_AIRPORT_SubItem_ip    20001
-#define ID_AIRPORT_Listview_devInfo    80000
-#define ID_AIRPORT_Textview_customerList    50001
-#define ID_AIRPORT_Button_airportsw    20005
-#define ID_AIRPORT_Textview_airport    50002
-#define ID_AIRPORT_sys_back   100
+#define ID_DUALSENSOR_Videoview1    95001
+#define ID_DUALSENSOR_sys_back   100
 /*TAG:Macro宏ID END*/
 
-class airportActivity : public Activity, 
+class dualsensorActivity : public Activity, 
                      public ZKSeekBar::ISeekBarChangeListener, 
                      public ZKListView::IItemClickListener,
                      public ZKListView::AbsListAdapter,
@@ -51,8 +40,8 @@ class airportActivity : public Activity,
                      public ZKVideoView::IVideoPlayerMessageListener
 {
 public:
-    airportActivity();
-    virtual ~airportActivity();
+    dualsensorActivity();
+    virtual ~dualsensorActivity();
 
     /**
      * 注册定时器

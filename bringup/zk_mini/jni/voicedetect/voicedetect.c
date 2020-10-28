@@ -433,10 +433,14 @@ static void *_SSTAR_AudioInGetDataProc_(void *pdata)
     MI_AUDIO_DEV AiDevId = AI_DEV_ID;
     MI_AI_CHN AiChn = 0;
     MI_AUDIO_Frame_t stAudioFrame;
+	MI_AUDIO_AecFrame_t stAecFrame;
     MI_S32 s32ToTalSize = 0;
     MI_S32 s32Ret = 0;
     FILE *pFile = NULL;
     char szFileName[64] = {0,};
+
+	memset(&stAudioFrame, 0, sizeof(MI_AUDIO_Frame_t));
+    memset(&stAecFrame, 0, sizeof(MI_AUDIO_AecFrame_t));
 
     InitVoiceFrameQueue();
     ST_DBG("pid=%ld\n", syscall(SYS_gettid));
@@ -483,7 +487,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pdata)
         {
             if(FD_ISSET(s32Fd, &read_fds))
             {
-                MI_AI_GetFrame(AiDevId, AiChn, &stAudioFrame, NULL, 128);//1024 / 8000 = 128ms
+                MI_AI_GetFrame(AiDevId, AiChn, &stAudioFrame, &stAecFrame, 128);//1024 / 8000 = 128ms
                 if (0 == stAudioFrame.u32Len)
                 {
                     usleep(10 * 1000);
@@ -492,7 +496,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pdata)
 
                 PutVoiceFrameToQueue(&stAudioFrame);		// save
 
-                MI_AI_ReleaseFrame(AiDevId,  AiChn, &stAudioFrame, NULL);
+                MI_AI_ReleaseFrame(AiDevId,  AiChn, &stAudioFrame, &stAecFrame);
             }
         }
     }
@@ -513,14 +517,7 @@ static MI_S32 SSTAR_AudioInStart()
     MI_AI_CHN AiChn = 0;
     MI_AUDIO_Attr_t stAiSetAttr;
     MI_SYS_ChnPort_t stAiChn0OutputPort0;
-    MI_AI_VqeConfig_t stAiVqeConfig;
-
-    //Ao
-    MI_AUDIO_DEV AoDevId = AO_DEV_ID;
-    MI_AO_CHN AoChn = 0;
-    MI_S16 s16CompressionRatioInput[5] = {-70, -60, -30, 0, 0};
-    MI_S16 s16CompressionRatioOutput[5] = {-70, -45, -18, 0, 0};
-
+    MI_AI_ChnParam_t stAiChnParam;
 
     //set ai attr
     memset(&stAiSetAttr, 0, sizeof(MI_AUDIO_Attr_t));
@@ -528,100 +525,36 @@ static MI_S32 SSTAR_AudioInStart()
     stAiSetAttr.eSamplerate = AUDIO_SAMPLE_RATE;
     stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
     stAiSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_MASTER;
-    //stAiSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_SLAVE;
-    stAiSetAttr.u32ChnCnt = 2;
-    //stAiSetAttr.u32ChnCnt = 4;
-    stAiSetAttr.u32FrmNum = 16;
+    stAiSetAttr.u32ChnCnt = 1;
     stAiSetAttr.u32PtNumPerFrm = AUDIO_PT_NUMBER_FRAME;
-
+	stAiSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
+	stAiSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
+	stAiSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = 1;
+	stAiSetAttr.WorkModeSetting.stI2sConfig.u32TdmSlots = 0;
+	stAiSetAttr.WorkModeSetting.stI2sConfig.eI2sBitWidth = E_MI_AUDIO_BIT_WIDTH_32;
+	ExecFunc(MI_AI_SetPubAttr(AiDevId, &stAiSetAttr), MI_SUCCESS);
+    ExecFunc(MI_AI_Enable(AiDevId), MI_SUCCESS);
+	
     //set ai output port depth
     memset(&stAiChn0OutputPort0, 0, sizeof(MI_SYS_ChnPort_t));
     stAiChn0OutputPort0.eModId = E_MI_MODULE_ID_AI;
     stAiChn0OutputPort0.u32DevId = AiDevId;
     stAiChn0OutputPort0.u32ChnId = AiChn;
     stAiChn0OutputPort0.u32PortId = 0;
+//	for (i = 0; i < stAiSetAttr.u32ChnCnt; i++)
+//    {
+//        stAiChn0OutputPort0.u32ChnId = i;
+//        ExecFunc(MI_SYS_SetChnOutputPortDepth(&stAiChn0OutputPort0, 4, 8), MI_SUCCESS);
+//    }
 
-    //ai vqe
-    memset(&stAiVqeConfig, 0, sizeof(MI_AI_VqeConfig_t));
-    stAiVqeConfig.bHpfOpen = FALSE;
-    stAiVqeConfig.bAnrOpen = FALSE;
-    stAiVqeConfig.bAgcOpen = TRUE;
-    stAiVqeConfig.bEqOpen = FALSE;
-    //stAiVqeConfig.bAecOpen = FALSE;
-    stAiVqeConfig.bAecOpen = TRUE;
-
-    stAiVqeConfig.s32FrameSample = 128;
-    stAiVqeConfig.s32WorkSampleRate = AUDIO_SAMPLE_RATE;
-
-    //Hpf
-    stAiVqeConfig.stHpfCfg.eMode = E_MI_AUDIO_ALGORITHM_MODE_USER;
-    stAiVqeConfig.stHpfCfg.eHpfFreq = E_MI_AUDIO_HPF_FREQ_120;
-
-    //Anr
-    stAiVqeConfig.stAnrCfg.eMode= E_MI_AUDIO_ALGORITHM_MODE_USER;
-    stAiVqeConfig.stAnrCfg.eNrSpeed = E_MI_AUDIO_NR_SPEED_LOW;
-    stAiVqeConfig.stAnrCfg.u32NrIntensity[0] = 5;            //[0, 30]
-    stAiVqeConfig.stAnrCfg.u32NrSmoothLevel = 10;          //[0, 10]
-
-    //Agc
-    stAiVqeConfig.stAgcCfg.eMode = E_MI_AUDIO_ALGORITHM_MODE_USER;
-    stAiVqeConfig.stAgcCfg.s32NoiseGateDb = -30;           //[-80, 0], NoiseGateDb disable when value = -80
-    stAiVqeConfig.stAgcCfg.s32DropGainThreshold =   0;       //[-80, 0]
-    stAiVqeConfig.stAgcCfg.stAgcGainInfo.s32GainInit = 1;  //[-20, 30]
-    stAiVqeConfig.stAgcCfg.stAgcGainInfo.s32GainMax =  15; //[0, 30]
-    stAiVqeConfig.stAgcCfg.stAgcGainInfo.s32GainMin = -5; //[-20, 30]
-    stAiVqeConfig.stAgcCfg.u32AttackTime = 1;              //[1, 20]
-    memcpy(stAiVqeConfig.stAgcCfg.s16Compression_ratio_input, s16CompressionRatioInput, sizeof(s16CompressionRatioInput));
-    memcpy(stAiVqeConfig.stAgcCfg.s16Compression_ratio_output, s16CompressionRatioOutput, sizeof(s16CompressionRatioOutput));
-    stAiVqeConfig.stAgcCfg.u32DropGainMax = 60;            //[0, 60]
-    stAiVqeConfig.stAgcCfg.u32NoiseGateAttenuationDb = 10;  //[0, 100]
-    stAiVqeConfig.stAgcCfg.u32ReleaseTime = 10;             //[1, 20]
-    stAiVqeConfig.u32ChnNum = 1;
-    //Eq
-    stAiVqeConfig.stEqCfg.eMode = E_MI_AUDIO_ALGORITHM_MODE_USER;
-    for (i = 0; i < sizeof(stAiVqeConfig.stEqCfg.s16EqGainDb) / sizeof(stAiVqeConfig.stEqCfg.s16EqGainDb[0]); i++)
-    {
-       stAiVqeConfig.stEqCfg.s16EqGainDb[i] = 5;
-    }
-
-    // aec
-    memset(&stAiVqeConfig.stAecCfg, 0, sizeof(MI_AI_AecConfig_t));
-    stAiVqeConfig.stAecCfg.u32AecSupfreq[0] = 20;
-    stAiVqeConfig.stAecCfg.u32AecSupfreq[1] = 40;
-    stAiVqeConfig.stAecCfg.u32AecSupfreq[2] = 60;
-    stAiVqeConfig.stAecCfg.u32AecSupfreq[3] = 80;
-    stAiVqeConfig.stAecCfg.u32AecSupfreq[4] = 100;
-    stAiVqeConfig.stAecCfg.u32AecSupfreq[5] = 120;
-    for (i = 0; i < sizeof(stAiVqeConfig.stAecCfg.u32AecSupIntensity) / sizeof(stAiVqeConfig.stAecCfg.u32AecSupIntensity[0]); i++)
-	{
-    	stAiVqeConfig.stAecCfg.u32AecSupIntensity[i] = 4;
-	}
-
-    ExecFunc(MI_AI_SetPubAttr(AiDevId, &stAiSetAttr), MI_SUCCESS);
-    ExecFunc(MI_AI_Enable(AiDevId), MI_SUCCESS);
+	ExecFunc(MI_SYS_SetChnOutputPortDepth(&stAiChn0OutputPort0, 4, 8), MI_SUCCESS);
+	
+    memset(&stAiChnParam, 0x0, sizeof(MI_AI_ChnParam_t));
+	stAiChnParam.stChnGain.bEnableGainSet = TRUE;
+	stAiChnParam.stChnGain.s16FrontGain = 15;
+	stAiChnParam.stChnGain.s16RearGain = 0;
+	ExecFunc(MI_AI_SetChnParam(AiDevId, AiChn, &stAiChnParam), MI_SUCCESS);
     ExecFunc(MI_AI_EnableChn(AiDevId, AiChn), MI_SUCCESS);
-
-#if 1
-#if USE_AMIC
-    ExecFunc(MI_AI_SetVqeVolume(AiDevId, 0, 9), MI_SUCCESS);
-#else
-    ExecFunc(MI_AI_SetVqeVolume(AiDevId, 0, 4), MI_SUCCESS);
-#endif
-
-    s32Ret = MI_AI_SetVqeAttr(AiDevId, AiChn, AoDevId, AoChn, &stAiVqeConfig);
-    if (s32Ret != MI_SUCCESS)
-    {
-        ST_ERR("%#x\n", s32Ret);
-    }
-    ExecFunc(MI_AI_EnableVqe(AiDevId, AiChn), MI_SUCCESS);
-
-#endif
-
-    for (i = 0; i < stAiSetAttr.u32ChnCnt; i++)
-    {
-        stAiChn0OutputPort0.u32ChnId = i;
-        ExecFunc(MI_SYS_SetChnOutputPortDepth(&stAiChn0OutputPort0, 4, 8), MI_SUCCESS);
-    }
 
     g_stAudioInThreadData.bExit = false;
     s32Ret = pthread_create(&g_stAudioInThreadData.pt, NULL, _SSTAR_AudioInGetDataProc_, NULL);
@@ -642,7 +575,6 @@ static MI_S32 SSTAR_AudioInStop()
     g_stAudioInThreadData.bExit = true;
     pthread_join(g_stAudioInThreadData.pt, NULL);
 
-    ExecFunc(MI_AI_DisableVqe(AiDevId, AiChn), MI_SUCCESS);
     ExecFunc(MI_AI_DisableChn(AiDevId, AiChn), MI_SUCCESS);
     ExecFunc(MI_AI_Disable(AiDevId), MI_SUCCESS);
 

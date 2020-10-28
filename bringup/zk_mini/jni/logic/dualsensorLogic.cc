@@ -1,6 +1,5 @@
 #pragma once
 #include "uart/ProtocolSender.h"
-#include "hotplugdetect.h"
 /*
 *此文件由GUI工具生成
 *文件功能：用于处理用户的逻辑相应代码
@@ -30,20 +29,8 @@
 *
 * 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
 */
-
-static AirportInfo_t g_curApInfo;
-static int g_isApSupport = 1;
-static int g_isApEnable = 0;
-static MI_WLAN_Status_t g_curApStatus;
-static Mutex g_apStatusLock;
-
-void ShowConnectedDevList(MI_WLAN_Status_t *pstApStatus)
-{
-	g_apStatusLock.lock();
-	memcpy(&g_curApStatus, pstApStatus, sizeof(MI_WLAN_Status_t));
-	g_apStatusLock.unlock();
-}
-
+#include "statusbarconfig.h"
+#include "dualsensor.h"
 /**
  * 注册定时器
  * 填充数组用于注册定时器
@@ -59,11 +46,7 @@ static S_ACTIVITY_TIMEER REGISTER_ACTIVITY_TIMER_TAB[] = {
  */
 static void onUI_init(){
     //Tips :添加 UI初始化的显示代码到这里,如:mText1Ptr->setText("123");
-	if (SSTAR_InitWifiApMode())
-	{
-		printf("WLAN not support Ap mode\n");
-		g_isApSupport = 0;
-	}
+	SSTAR_DualSensorInit();
 }
 
 /**
@@ -72,13 +55,6 @@ static void onUI_init(){
 static void onUI_intent(const Intent *intentPtr) {
     if (intentPtr != NULL) {
         //TODO
-    }
-
-    if (g_isApSupport)
-    {
-    	memset(&g_curApInfo, 0, sizeof(AirportInfo_t));
-    	strcpy(g_curApInfo.name, SSTAR_GetAirportName());
-    	strcpy(g_curApInfo.passwd, SSTAR_GetAirportPasswd());
     }
 }
 
@@ -100,8 +76,8 @@ static void onUI_hide() {
  * 当界面完全退出时触发
  */
 static void onUI_quit() {
-	if (g_isApSupport)
-		SSTAR_DeinitWifiApMode();
+	SSTAR_DualSensorDeinit();
+	ShowStatusBar(1, 0, 0);
 }
 
 /**
@@ -139,7 +115,7 @@ static bool onUI_Timer(int id){
  *         false
  *            触摸事件将继续传递到控件上
  */
-static bool onairportActivityTouchEvent(const MotionEvent &ev) {
+static bool ondualsensorActivityTouchEvent(const MotionEvent &ev) {
     switch (ev.mActionStatus) {
 		case MotionEvent::E_ACTION_DOWN://触摸按下
 			//LOGD("时刻 = %ld 坐标  x = %d, y = %d", ev.mEventTime, ev.mX, ev.mY);
@@ -154,99 +130,6 @@ static bool onairportActivityTouchEvent(const MotionEvent &ev) {
 	return false;
 }
 static bool onButtonClick_sys_back(ZKButton *pButton) {
-    LOGD(" ButtonClick sys_back !!!\n");
-    return false;
-}
-
-static bool onButtonClick_Button_airportsw(ZKButton *pButton) {
-    LOGD(" ButtonClick Button_airportsw !!!\n");
-    if (g_isApSupport)
-    {
-    	int enableStatus = !g_isApEnable;
-
-    	if (enableStatus)
-    	{
-    		if (!SSTAR_EnableWifiApMode(&g_curApInfo, ShowConnectedDevList))
-    			g_isApEnable = enableStatus;
-    	}
-    	else
-    	{
-    		SSTAR_DisableWifiApMode();
-    		g_isApEnable = enableStatus;
-    	}
-    }
-    return false;
-}
-
-static int getListItemCount_Listview_devInfo(const ZKListView *pListView) {
-    //LOGD("getListItemCount_Listview_devInfo !\n");
-	int itemCnt = 0;
-
-	g_apStatusLock.lock();
-	itemCnt = g_curApStatus.stApStatus.u16HostNum;
-	g_apStatusLock.unlock();
-
-    return itemCnt;
-}
-
-static void obtainListItemData_Listview_devInfo(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index) {
-    //LOGD(" obtainListItemData_ Listview_devInfo  !!!\n");
-	ZKListView::ZKListSubItem *pDevNameItem = pListItem->findSubItemByID(ID_AIRPORT_SubItem_devName);
-	ZKListView::ZKListSubItem *pIpItem = pListItem->findSubItemByID(ID_AIRPORT_SubItem_ip);
-	ZKListView::ZKListSubItem *pMacItem = pListItem->findSubItemByID(ID_AIRPORT_SubItem_mac);
-	ZKListView::ZKListSubItem *pConnectTimeItem = pListItem->findSubItemByID(ID_AIRPORT_SubItem_connectTime);
-	char connectTime[32] = {0};
-
-	g_apStatusLock.lock();
-	if (!g_curApStatus.stApStatus.u16HostNum)
-	{
-		printf("no connected device\n");
-		g_apStatusLock.unlock();
-	}
-
-	pDevNameItem->setText((char*)g_curApStatus.stApStatus.astHosts[index].hostname);
-	pIpItem->setText((char*)g_curApStatus.stApStatus.astHosts[index].ipaddr);
-	pMacItem->setText((char*)g_curApStatus.stApStatus.astHosts[index].macaddr);
-	sprintf(connectTime, "%lld ms", g_curApStatus.stApStatus.astHosts[index].connectedtime);
-	pConnectTimeItem->setText(connectTime);
-
-	g_apStatusLock.unlock();
-}
-
-static void onListItemClick_Listview_devInfo(ZKListView *pListView, int index, int id) {
-    //LOGD(" onListItemClick_ Listview_devInfo  !!!\n");
-}
-
-static bool onButtonClick_Button_save(ZKButton *pButton) {
-    LOGD(" ButtonClick Button_save !!!\n");
-    int updateApInfo = 0;
-
-    if (!g_isApSupport)
-    	return false;
-
-    if (strcmp(mTextView_inputNamePtr->getText().c_str(), g_curApInfo.name))
-	{
-    	memset(g_curApInfo.name, 0, sizeof(g_curApInfo.name));
-    	strcpy(g_curApInfo.name, mTextView_inputNamePtr->getText().c_str());
-    	updateApInfo = 1;
-	}
-
-    if (strcmp(mTextView_inputPasswdPtr->getText().c_str(), g_curApInfo.passwd))
-    {
-    	memset(g_curApInfo.passwd, 0, sizeof(g_curApInfo.passwd));
-		strcpy(g_curApInfo.passwd, mTextView_inputPasswdPtr->getText().c_str());
-		updateApInfo = 1;
-    }
-
-    if (updateApInfo && g_isApEnable)
-    {
-    	SSTAR_DisableWifiApMode();
-    	if (SSTAR_EnableWifiApMode(&g_curApInfo, ShowConnectedDevList))
-    	{
-    		g_isApEnable = 0;
-    		mButton_airportswPtr->setSelected(g_isApEnable);
-    	}
-    }
-
+    //LOGD(" ButtonClick sys_back !!!\n");
     return false;
 }

@@ -29,7 +29,6 @@
 #define ID_TESTBUTTON_sys_back   100
 #define ID_TESTBUTTON_Button4    20009
 #define ID_TESTBUTTON_Textview5    50005
-#define ID_TESTBUTTON_Button3    20008
 #define ID_TESTBUTTON_Button_open_developer    20007
 #define ID_TESTBUTTON_Button1    20001
 #define ID_TESTBUTTON_Textview4    50004

@@ -103,6 +103,8 @@ static void onUI_hide() {
 static void onUI_quit() {
 	if (g_isApSupport)
 		SSTAR_DeinitWifiApMode();
+		
+	ShowStatusBar(1, 0, 0);
 }
 
 /**
