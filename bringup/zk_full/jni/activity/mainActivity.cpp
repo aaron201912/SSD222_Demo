@@ -5,8 +5,6 @@
 
 /*TAG:GlobalVariable全局变量*/
 static ZKListView* mListview_indicatorPtr;
-static ZKDigitalClock* mDigitalclock2Ptr;
-static ZKWindow* mWindow2Ptr;
 static ZKSlideWindow* mSlidewindow1Ptr;
 static mainActivity* mActivityPtr;
 
@@ -142,8 +140,6 @@ void mainActivity::onCreate() {
 	Activity::onCreate();
     mSlidewindow1Ptr = (ZKSlideWindow*)findControlByID(ID_MAIN_Slidewindow1);if(mSlidewindow1Ptr!= NULL){mSlidewindow1Ptr->setSlideItemClickListener(this);}
     mListview_indicatorPtr = (ZKListView*)findControlByID(ID_MAIN_Listview_indicator);if(mListview_indicatorPtr!= NULL){mListview_indicatorPtr->setListAdapter(this);mListview_indicatorPtr->setItemClickListener(this);}
-    mDigitalclock2Ptr = (ZKDigitalClock*)findControlByID(ID_MAIN_Digitalclock2);
-    mWindow2Ptr = (ZKWindow*)findControlByID(ID_MAIN_Window2);
     mSlidewindow1Ptr = (ZKSlideWindow*)findControlByID(ID_MAIN_Slidewindow1);if(mSlidewindow1Ptr!= NULL){mSlidewindow1Ptr->setSlideItemClickListener(this);mSlidewindow1Ptr->setSlidePageChangeListener(this);}
 	mActivityPtr = this;
 	onUI_init();

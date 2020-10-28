@@ -27,8 +27,6 @@
 
 /*TAG:Macro宏ID*/
 #define ID_MAIN_Listview_indicator    80001
-#define ID_MAIN_Digitalclock2    93002
-#define ID_MAIN_Window2    110002
 #define ID_MAIN_Slidewindow1    30001
 /*TAG:Macro宏ID END*/
 

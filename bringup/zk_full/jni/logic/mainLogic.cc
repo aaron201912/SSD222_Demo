@@ -29,6 +29,9 @@
 * 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
 */
 
+#include "statusbarconfig.h"
+#include "hotplugdetect.h"
+
 static int g_curPageIdx = 0;
 /**
  * 注册定时器
@@ -41,24 +44,15 @@ static S_ACTIVITY_TIMEER REGISTER_ACTIVITY_TIMER_TAB[] = {
 
 static void onUI_init(){
     //Tips :添加 UI初始化的显示代码到这里,如:mText1->setText("123");
-	EASYUICONTEXT->hideStatusBar();
+	ShowStatusBar(1, 0, 0);
 }
 
-/**
- * 当切换到该界面时触发
- */
-static void onUI_intent(const Intent *intentPtr) {
-    if (intentPtr != NULL) {
-        //TODO
-
-    }
+static void onUI_quit() {
 }
 
-/*
- * 当界面显示时触发
- */
 static void onUI_show() {
-
+	ShowStatusBar(1, 0, 0);
+	printf("%s: enter show\n", __FILE__);
 }
 
 /*
@@ -67,10 +61,6 @@ static void onUI_show() {
 static void onUI_hide() {
 
 }
-static void onUI_quit() {
-
-}
-
 
 static void onProtocolDataUpdate(const SProtocolData &data) {
     // 串口数据回调接口
@@ -105,22 +95,24 @@ static bool onmainActivityTouchEvent(const MotionEvent &ev) {
     return false;
 }
 const char* IconTab[]={
-		"testTextActivity",
-		"testSliderActivity",
-		"testButtonActivity",
-		"inputtextActivity",
-		"waveViewActivity",
-		"testpointerActivity",
-		"windowActivity",
-		"tesListActivity",
-		"qrcodeActivity",
-		"animationActivity",
-		"sliderwindowActivity",
-		"uartActivity",
-		"painterActivity",
+	"testTextActivity",
+	"testSliderActivity",
+	"testButtonActivity",
+	"inputtextActivity",
+	"tesListActivity",
+	"qrcodeActivity",
+	"animationActivity",
+	"waveViewActivity",
+	"voicedetectActivity",
+	"networkSettingActivity",
+	"airportActivity",
+	"playPcmFileActivity",
+	"facedetectActivity",
+	"dulsensorActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
+	ShowStatusBar(0, 1 ,1);
 	EASYUICONTEXT->openActivity(IconTab[index]);
 }
 

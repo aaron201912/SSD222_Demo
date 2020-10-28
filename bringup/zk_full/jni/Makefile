@@ -32,8 +32,8 @@ OBJS_2 = $(patsubst %.c,%.o,$(OBJS_1))
 OBJS   = $(addprefix $(OBJS_ROOT_DIR),$(OBJS_2))
 OBJS_DIR_TREE=$(addprefix $(OBJS_ROOT_DIR),$(PROJ_DIR_TREE))
 
-CFLAGS=-Os -pipe  -fno-caller-saves -Wno-unused-result -mfloat-abi=hard -mfpu=vfp -Wformat -Werror=format-security -fstack-protector -D_FORTIFY_SOURCE=1 -Wl,-z,now -Wl,-z,relro -Wl,--warn-common -Wl,--warn-once -Wl,-z,combreloc -Wl,-z,defs 
-CXXFLAGS=-Os -pipe  -fno-caller-saves -Wno-unused-result -mfloat-abi=hard -mfpu=vfp -Wformat -Werror=format-security -fstack-protector -D_FORTIFY_SOURCE=1 -Wl,-z,now -Wl,-z,relro -Wl,-z,defs 
+CFLAGS=-Os -pipe  -fno-caller-saves -Wno-unused-result -Wno-format-truncation -Wno-write-strings -mfloat-abi=hard -mfpu=vfp -Wformat -Werror=return-type -Werror=format-security -fstack-protector -D_FORTIFY_SOURCE=1 -Wl,-z,now -Wl,-z,relro -Wl,--warn-common -Wl,--warn-once -Wl,-z,combreloc -Wl,-z,defs 
+CXXFLAGS=-Os -pipe  -fno-caller-saves -Wno-unused-result -Wno-format-truncation -Wno-write-strings -mfloat-abi=hard -mfpu=vfp -Wformat -Werror=return-type -Werror=format-security -fstack-protector -D_FORTIFY_SOURCE=1 -Wl,-z,now -Wl,-z,relro -Wl,-z,defs 
 CXXFLAGS+= -fexceptions -fpermissive -Wall -O2
 
 INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
@@ -41,9 +41,14 @@ INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
 					-I. \
 					-I$(ZKSW_PREBUILT_INCLUDE_PATH)/mgeff \
 					-I ../jni/sdkdir/include \
+					-I ../jni/voicedetect	\
+					-I ../jni/facedetect
 
-LDFLAGS =  -leasyui -pthread -lstdc++
-LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. 
+LDFLAGS =  -leasyui -pthread -lmi_sys -lmi_disp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
+		-lmi_vif -lmi_vpe -lmi_venc -lmi_isp -lcus3a -lispalgo -lmi_sensor -lmi_ive -lmi_divp -lmi_rgn -lcam_os_wrapper  -lFD_ARM -ldl -lrt -fPIC -shared
+LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib
+INCLUDE_DIR += -I ../jni/hotplugdetect -I ../jni/hotplugdetect/common -I ../jni/hotplugdetect/usbdetect -I ../jni/hotplugdetect/wifidetect \
+			   -I ../jni/hotplugdetect/wirednetworkdetect
 
 TARGET=../libs/armeabi/libzkgui.so
 
