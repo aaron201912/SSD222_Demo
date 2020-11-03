@@ -1,5 +1,3 @@
-#include "../dualsensor/dualsensor.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,44 +11,22 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
-#define DISP_INPUT_WIDTH    1024
-#define DISP_INPUT_HEIGHT   600
-
-#define DISP_OUTPUT_WIDTH    1024
-#define DISP_OUTPUT_HEIGHT   600
-
-#define MAKE_YUYV_VALUE(y,u,v)  ((y) << 24) | ((u) << 16) | ((y) << 8) | (v)
-#define YUYV_BLACK              MAKE_YUYV_VALUE(0,128,128)
-#define YUYV_WHITE              MAKE_YUYV_VALUE(255,128,128)
-#define YUYV_RED                MAKE_YUYV_VALUE(76,84,255)
-#define YUYV_GREEN              MAKE_YUYV_VALUE(149,43,21)
-#define YUYV_BLUE               MAKE_YUYV_VALUE(29,225,107)
-
-#define STCHECKRESULT(result)\
-    if (result != MI_SUCCESS)\
-    {\
-        printf("[%s %d]exec function failed\n", __FUNCTION__, __LINE__);\
-        return 1;\
-    }\
-    else\
-    {\
-        printf("(%s %d)exec function pass\n", __FUNCTION__,__LINE__);\
-    }
-
+#include "panelconfig.h"
+#include "Sensor2Panel.h"
 
 ST_Config_S g_stConfig =
 {
-    .s32UseOnvif = 0,//not use
-    .s32UseVdf = 0,//not use
-    .s32UseAudio = 0,//not use
-    .s32LoadIQ = 0,//not use
-    .s32UsePanel = 0,//not use
-    .u8SensorNum = 2,
-    .enPixelFormat = E_MI_SYS_PIXEL_FRAME_FORMAT_MAX,//not use
+    .s32UseOnvif = 0,
+    .s32UseVdf = 0,
+    .s32UseAudio = 0,
+    .s32LoadIQ = 0,
+    .s32UsePanel = 0,
+    .u8SensorNum = 1,
+    .u8FaceDetect = 0,
+    .enPixelFormat = E_MI_SYS_PIXEL_FRAME_FORMAT_MAX,
     .s32HDRtype = 0,
-    .enSensorType = ST_Sensor_Type_GC1054,//not use
-    .enRotation = E_MI_SYS_ROTATE_NONE,//not use
+    .enSensorType = ST_Sensor_Type_GC1054,
+    .enRotation = E_MI_SYS_ROTATE_NONE,
     .en3dNrLevel = E_MI_VPE_3DNR_LEVEL2,
     .u8SNRChocieRes = 0,
     .stVPEPortCrop =
@@ -67,255 +43,10 @@ ST_Config_S g_stConfig =
     },
 };
 
-ST_DBG_LEVEL_e g_eSTDbgLevel = ST_DBG_ALL;
-MI_BOOL g_bSTFuncTrace = 0;
 MI_U32 g_u32CapWidth = 0;
 MI_U32 g_u32CapHeight = 0;
 static MI_BOOL g_bExit = FALSE;
 
-void ST_Flush(void)
-{
-    char c;
-
-    while((c = getchar()) != '\n' && c != EOF);
-}
-
-MI_S32 ST_Sys_Init(void)
-{
-    MI_SYS_Version_t stVersion;
-    MI_U64 u64Pts = 0;
-
-    memset(&stVersion, 0x0, sizeof(MI_SYS_Version_t));
-    STCHECKRESULT(MI_SYS_GetVersion(&stVersion));
-    DBG_INFO("u8Version:%s\n", stVersion.u8Version);
-
-    STCHECKRESULT(MI_SYS_GetCurPts(&u64Pts));
-    DBG_INFO("u64Pts:0x%llx\n", u64Pts);
-
-    u64Pts = 0xF1237890F1237890;
-    STCHECKRESULT(MI_SYS_InitPtsBase(u64Pts));
-
-    u64Pts = 0xE1237890E1237890;
-    STCHECKRESULT(MI_SYS_SyncPts(u64Pts));
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Sys_Exit(void)
-{
-    STCHECKRESULT(MI_SYS_Exit());
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Sys_Bind(ST_Sys_BindInfo_T *pstBindInfo)
-{
-    /*
-    ExecFunc(MI_SYS_BindChnPort(&pstBindInfo->stSrcChnPort, &pstBindInfo->stDstChnPort, \
-        pstBindInfo->u32SrcFrmrate, pstBindInfo->u32DstFrmrate), MI_SUCCESS);
-    */
-    STCHECKRESULT(MI_SYS_BindChnPort2(&pstBindInfo->stSrcChnPort, &pstBindInfo->stDstChnPort,
-        pstBindInfo->u32SrcFrmrate, pstBindInfo->u32DstFrmrate, pstBindInfo->eBindType, pstBindInfo->u32BindParam));
-    DBG_INFO("\n");
-    DBG_INFO("src(%d-%d-%d-%d)  dst(%d-%d-%d-%d)  %d...\n", pstBindInfo->stSrcChnPort.eModId, pstBindInfo->stSrcChnPort.u32DevId,
-        pstBindInfo->stSrcChnPort.u32ChnId, pstBindInfo->stSrcChnPort.u32PortId,
-        pstBindInfo->stDstChnPort.eModId, pstBindInfo->stDstChnPort.u32DevId, pstBindInfo->stDstChnPort.u32ChnId,
-        pstBindInfo->stDstChnPort.u32PortId, pstBindInfo->eBindType);
-    DBG_INFO("\n");
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Sys_UnBind(ST_Sys_BindInfo_T *pstBindInfo)
-{
-    STCHECKRESULT(MI_SYS_UnBindChnPort(&pstBindInfo->stSrcChnPort, &pstBindInfo->stDstChnPort));
-
-    return MI_SUCCESS;
-}
-
-MI_U64 ST_Sys_GetPts(MI_U32 u32FrameRate)
-{
-    if (0 == u32FrameRate)
-    {
-        return (MI_U64)(-1);
-    }
-
-    return (MI_U64)(1000 / u32FrameRate);
-}
-
-MI_S32 ST_Vif_EnableDev(MI_VIF_DEV VifDev, MI_VIF_WorkMode_e eWorkMode, MI_VIF_HDRType_e eHdrType, MI_SNR_PADInfo_t *pstSnrPadInfo)
-{
-    MI_VIF_DevAttr_t stDevAttr;
-
-    memset(&stDevAttr, 0x0, sizeof(MI_VIF_DevAttr_t));
-
-    stDevAttr.eIntfMode = pstSnrPadInfo->eIntfMode;
-    stDevAttr.eWorkMode = eWorkMode;
-    stDevAttr.eHDRType = eHdrType;
-    if(stDevAttr.eIntfMode == E_MI_VIF_MODE_BT656)
-        stDevAttr.eClkEdge = pstSnrPadInfo->unIntfAttr.stBt656Attr.eClkEdge;
-    else
-        stDevAttr.eClkEdge = E_MI_VIF_CLK_EDGE_DOUBLE;
-
-    if(stDevAttr.eIntfMode == E_MI_VIF_MODE_MIPI)
-        stDevAttr.eDataSeq =pstSnrPadInfo->unIntfAttr.stMipiAttr.eDataYUVOrder;
-    else
-        stDevAttr.eDataSeq = E_MI_VIF_INPUT_DATA_YUYV;
-
-    if(stDevAttr.eIntfMode == E_MI_VIF_MODE_BT656)
-        memcpy(&stDevAttr.stSyncAttr, &pstSnrPadInfo->unIntfAttr.stBt656Attr.stSyncAttr, sizeof(MI_VIF_SyncAttr_t));
-
-    stDevAttr.eBitOrder = E_MI_VIF_BITORDER_NORMAL;
-
-    STCHECKRESULT(MI_VIF_SetDevAttr(VifDev, &stDevAttr));
-    STCHECKRESULT(MI_VIF_EnableDev(VifDev));
-
-    return MI_SUCCESS;
-}
-MI_S32 ST_Vif_DisableDev(MI_VIF_DEV VifDev)
-{
-    STCHECKRESULT(MI_VIF_DisableDev(VifDev));
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Vif_CreatePort(MI_VIF_CHN VifChn, MI_VIF_PORT VifPort, ST_VIF_PortInfo_T *pstPortInfoInfo)
-{
-    MI_VIF_ChnPortAttr_t stChnPortAttr;
-
-    memset(&stChnPortAttr, 0, sizeof(MI_VIF_ChnPortAttr_t));
-    stChnPortAttr.stCapRect.u16X = pstPortInfoInfo->u32RectX;
-    stChnPortAttr.stCapRect.u16Y = pstPortInfoInfo->u32RectY;
-    stChnPortAttr.stCapRect.u16Width = pstPortInfoInfo->u32RectWidth;
-    stChnPortAttr.stCapRect.u16Height = pstPortInfoInfo->u32RectHeight;
-    stChnPortAttr.stDestSize.u16Width = pstPortInfoInfo->u32DestWidth;
-    stChnPortAttr.stDestSize.u16Height = pstPortInfoInfo->u32DestHeight;
-    stChnPortAttr.eCapSel = E_MI_SYS_FIELDTYPE_BOTH;
-    if (pstPortInfoInfo->u32IsInterlace)
-    {
-        stChnPortAttr.eScanMode = E_MI_SYS_FRAME_SCAN_MODE_INTERLACE;
-    }
-    else
-    {
-        stChnPortAttr.eScanMode = E_MI_SYS_FRAME_SCAN_MODE_PROGRESSIVE;
-    }
-    stChnPortAttr.ePixFormat = pstPortInfoInfo->ePixFormat;//E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
-    stChnPortAttr.eFrameRate = pstPortInfoInfo->eFrameRate;
-    STCHECKRESULT(MI_VIF_SetChnPortAttr(VifChn, VifPort, &stChnPortAttr));
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Vif_StartPort(MI_VIF_DEV VifDev, MI_VIF_CHN VifChn, MI_VIF_PORT VifPort)
-{
-    MI_SYS_ChnPort_t stChnPort;
-
-    memset(&stChnPort, 0x0, sizeof(MI_SYS_ChnPort_t));
-    stChnPort.eModId = E_MI_MODULE_ID_VIF;
-    stChnPort.u32DevId = VifDev;
-    stChnPort.u32ChnId = VifChn;
-    stChnPort.u32PortId = VifPort;
-
-    //MI_SYS_SetChnOutputPortDepth(&stChnPort, 0, 6);
-
-    STCHECKRESULT(MI_VIF_EnableChnPort(VifChn, VifPort));
-    return MI_SUCCESS;
-}
-MI_S32 ST_Vif_StopPort(MI_VIF_CHN VifChn, MI_VIF_PORT VifPort)
-{
-    STCHECKRESULT(MI_VIF_DisableChnPort(VifChn, VifPort));
-
-    return MI_SUCCESS;
-}
-MI_S32 ST_Vpe_CreateChannel(MI_VPE_CHANNEL VpeChannel, ST_VPE_ChannelInfo_T *pstChannelInfo)
-{
-    MI_VPE_ChannelAttr_t stChannelVpeAttr;
-    MI_SYS_WindowRect_t stCropWin;
-    MI_VPE_ChannelPara_t stChannelVpeParam;
-
-    memset(&stChannelVpeAttr, 0, sizeof(MI_VPE_ChannelAttr_t));
-    memset(&stCropWin, 0, sizeof(MI_SYS_WindowRect_t));
-    memset(&stChannelVpeParam, 0x00, sizeof(MI_VPE_ChannelPara_t));
-
-    stChannelVpeParam.eHDRType = pstChannelInfo->eHDRtype;
-    stChannelVpeParam.e3DNRLevel = pstChannelInfo->e3DNRLevel;
-    MI_VPE_SetChannelParam(VpeChannel, &stChannelVpeParam);
-
-    stChannelVpeAttr.u16MaxW = pstChannelInfo->u16VpeMaxW;
-    stChannelVpeAttr.u16MaxH = pstChannelInfo->u16VpeMaxH;
-    stChannelVpeAttr.bNrEn= FALSE;
-    stChannelVpeAttr.bEdgeEn= FALSE;
-    stChannelVpeAttr.bEsEn= FALSE;
-    stChannelVpeAttr.bContrastEn= FALSE;
-    stChannelVpeAttr.bUvInvert= FALSE;
-    stChannelVpeAttr.ePixFmt = pstChannelInfo->eFormat;
-    stChannelVpeAttr.eRunningMode = pstChannelInfo->eRunningMode;
-    stChannelVpeAttr.bRotation = pstChannelInfo->bRotation;
-    stChannelVpeAttr.eHDRType  = pstChannelInfo->eHDRtype;
-    stChannelVpeAttr.eSensorBindId = pstChannelInfo->eBindSensorId;
-    //DBG_INFO("beal.......mode %d %d  .....\n", E_MI_VPE_RUN_REALTIME_MODE, pstChannelInfo->eRunningMode);
-    STCHECKRESULT(MI_VPE_CreateChannel(VpeChannel, &stChannelVpeAttr));
-
-    return MI_SUCCESS;
-}
-
-MI_VPE_RunningMode_e ST_Vpe_GetRunModeByVIFMode(VIF_WORK_MODE_E enWorkMode)
-{
-    return E_MI_VPE_RUN_REALTIME_MODE;
-}
-
-MI_S32 ST_Vpe_StartChannel(MI_VPE_CHANNEL VpeChannel)
-{
-    STCHECKRESULT(MI_VPE_StartChannel (VpeChannel));
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Vpe_StopChannel(MI_VPE_CHANNEL VpeChannel)
-{
-    STCHECKRESULT(MI_VPE_StopChannel(VpeChannel));
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Vpe_DestroyChannel(MI_VPE_CHANNEL VpeChannel)
-{
-    STCHECKRESULT(MI_VPE_DestroyChannel(VpeChannel));
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Vpe_StartPort(MI_VPE_PORT VpePort, ST_VPE_PortInfo_T *pstPortInfo)
-{
-    MI_VPE_PortMode_t stVpeMode;
-    MI_SYS_ChnPort_t stChnPort;
-    DBG_INFO("ST_Vpe_StartPort ch:%d port %d,w %d h %d\n", pstPortInfo->DepVpeChannel, VpePort,pstPortInfo->u16OutputWidth, pstPortInfo->u16OutputHeight);
-
-    memset(&stVpeMode, 0, sizeof(stVpeMode));
-    STCHECKRESULT(MI_VPE_GetPortMode(pstPortInfo->DepVpeChannel, VpePort, &stVpeMode));
-    stVpeMode.eCompressMode = E_MI_SYS_COMPRESS_MODE_NONE;
-    stVpeMode.ePixelFormat = pstPortInfo->ePixelFormat;
-    stVpeMode.u16Width = pstPortInfo->u16OutputWidth;
-    stVpeMode.u16Height= pstPortInfo->u16OutputHeight;
-    STCHECKRESULT(MI_VPE_SetPortMode(pstPortInfo->DepVpeChannel, VpePort, &stVpeMode));
-
-    memset(&stChnPort, 0, sizeof(MI_SYS_ChnPort_t));
-    stChnPort.eModId = E_MI_MODULE_ID_VPE;
-    stChnPort.u32DevId = 0;
-    stChnPort.u32ChnId = pstPortInfo->DepVpeChannel;
-    stChnPort.u32PortId = VpePort;
-    //ExecFunc(MI_SYS_SetChnOutputPortDepth(&stChnPort, 0, 5), 0);
-
-    STCHECKRESULT(MI_VPE_EnablePort(pstPortInfo->DepVpeChannel, VpePort));
-
-    return MI_SUCCESS;
-}
-
-MI_S32 ST_Vpe_StopPort(MI_VPE_CHANNEL VpeChannel, MI_VPE_PORT VpePort)
-{
-    STCHECKRESULT(MI_VPE_DisablePort(VpeChannel, VpePort));
-
-    return MI_SUCCESS;
-}
 /*
 * 初始化vdisp模块
 *      v        
@@ -354,8 +85,8 @@ MI_S32 ST_Vdisp_Init(void)
     memset(&stInputChnAttr, 0x0, sizeof(MI_VDISP_InputChnAttr_t));
     stRect.u32X = ALIGN_DOWN(0, 16);
     stRect.u32Y = 0;
-    stRect.u16PicW = DISP_INPUT_WIDTH/2;
-    stRect.u16PicH = DISP_INPUT_HEIGHT;
+    stRect.u16PicW = PANEL_WIDTH/2;
+    stRect.u16PicH = PANEL_HEIGHT;
     stInputChnAttr.s32IsFreeRun = TRUE;
     stInputChnAttr.u32OutHeight = stRect.u16PicH;
     stInputChnAttr.u32OutWidth = stRect.u16PicW;
@@ -373,10 +104,10 @@ MI_S32 ST_Vdisp_Init(void)
     ChnId = 1;
     memset(&stRect, 0x0, sizeof(ST_Rect_T));
     memset(&stInputChnAttr, 0x0, sizeof(MI_VDISP_InputChnAttr_t));
-    stRect.u32X = ALIGN_DOWN(DISP_INPUT_WIDTH/2, 16);
+    stRect.u32X = ALIGN_DOWN(PANEL_WIDTH/2, 16);
     stRect.u32Y = 0;
-    stRect.u16PicW = DISP_INPUT_WIDTH/2;
-    stRect.u16PicH = DISP_INPUT_HEIGHT;
+    stRect.u16PicW = PANEL_WIDTH/2;
+    stRect.u16PicH = PANEL_HEIGHT;
     stInputChnAttr.s32IsFreeRun = TRUE;
     stInputChnAttr.u32OutHeight = stRect.u16PicH;
     stInputChnAttr.u32OutWidth = stRect.u16PicW;
@@ -395,9 +126,9 @@ MI_S32 ST_Vdisp_Init(void)
     //设置vdisp输出帧率
     stOutputPortAttr.u32FrmRate = 30;
     //设置vdisp输出帧的高
-    stOutputPortAttr.u32Height = DISP_OUTPUT_HEIGHT;
+    stOutputPortAttr.u32Height = PANEL_HEIGHT;
     //设置vdisp输出帧的宽
-    stOutputPortAttr.u32Width = DISP_OUTPUT_WIDTH;
+    stOutputPortAttr.u32Width = PANEL_WIDTH;
     //设置vdisp输出帧的最低PTS
     stOutputPortAttr.u64pts = 0;
     /*
@@ -521,6 +252,7 @@ MI_S32 ST_Vdisp_Bind(void)
     stBindInfo.u32SrcFrmrate = 30;
     stBindInfo.u32DstFrmrate = 30;
     STCHECKRESULT(ST_Sys_Bind(&stBindInfo));
+
     return MI_SUCCESS;
 }
 
@@ -573,7 +305,7 @@ MI_S32 ST_Vdisp_UnBind(void)
     return MI_SUCCESS;
 }
 
-MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
+MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
 {
     MI_U32 u32CapWidth = 0, u32CapHeight = 0;
     MI_VIF_FrameRate_e eFrameRate = E_MI_VIF_FRAMERATE_FULL;
@@ -590,8 +322,9 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     MI_U32 u32ChocieRes =0;
     ST_VPE_PortInfo_T stVpePortInfo;
     MI_SYS_WindowRect_t stRect;
-    MI_U32 u32SensorNum = 1;
-    MI_U32 i = 0;
+    MI_U8 u8SensorNum = 1;
+    MI_U8 u8FaceDetect = 0;
+    MI_U8 i = 0;
     MI_SNR_PAD_ID_e eSNRPad = E_MI_SNR_PAD_ID_0;
     ST_VIF_PortInfo_T stVifPortInfoInfo;
     MI_U32 u32VifDevId = 0;
@@ -608,6 +341,9 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     MI_DISP_VidWinRect_t stWinRect;
     MI_PANEL_IntfType_e eIntfType;
     MI_PANEL_ParamConfig_t pstParamCfg;
+    MI_DIVP_ChnAttr_t stAttr;
+    MI_DIVP_OutputPortAttr_t stOutputPortAttr;
+    MI_SYS_ChnPort_t stChnPort;
     MI_U32 u32DispDevId = 0;
     //MI_U32 u32DispChnId = 0;
     MI_U32 u32DispPortId = 0;
@@ -624,8 +360,9 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     *************************************************/
     STCHECKRESULT(ST_Sys_Init());
     
-    u32SensorNum = pstConfig->u8SensorNum;
-    for(i = 0; i < u32SensorNum; i++)
+    u8SensorNum = pstConfig->u8SensorNum;
+    u8FaceDetect = pstConfig->u8FaceDetect;
+    for(i = 0; i < u8SensorNum; i++)
     {
         DBG_INFO("i[%d]\n", i);
         eSNRPad = (MI_SNR_PAD_ID_e)i;
@@ -652,7 +389,9 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         }
 
         DBG_INFO("eSNRPad[%d], cnt[%d]resolutions, choice[%d] \n", eSNRPad, u32ResCount, pstConfig->u8SNRChocieRes);
+
         u32ChocieRes = pstConfig->u8SNRChocieRes;
+
         //gc1054 default set mirror/flip = 1
         if(ST_Sensor_Type_GC1054 == pstConfig->enSensorType)
         {
@@ -678,7 +417,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         u32VifChnId = i * 4;
         u32VifPortId = 0;
         eVifHdrType = (MI_VIF_HDRType_e)pstConfig->s32HDRtype;
-        eVifWorkMode = u32SensorNum > 1 ? E_MI_VIF_WORK_MODE_RGB_FRAMEMODE : E_MI_VIF_WORK_MODE_RGB_REALTIME;
+        eVifWorkMode = u8SensorNum > 1 ? E_MI_VIF_WORK_MODE_RGB_FRAMEMODE : E_MI_VIF_WORK_MODE_RGB_REALTIME;
         DBG_INFO("VIF:DevId[%d] ChnId[%d] PortId[%d], eVifWorkMode[%d]\n", u32VifDevId, u32VifChnId, u32VifPortId, eVifWorkMode);
         STCHECKRESULT(ST_Vif_EnableDev(u32VifDevId, eVifWorkMode, eVifHdrType, &stPadInfo));
 
@@ -708,23 +447,26 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         stVpeChannelInfo.u32Y = 0;
         stVpeChannelInfo.u16VpeCropW = 0;
         stVpeChannelInfo.u16VpeCropH = 0;
-        stVpeChannelInfo.eRunningMode = u32SensorNum > 1 ? E_MI_VPE_RUN_CAM_MODE : E_MI_VPE_RUN_REALTIME_MODE;
+        stVpeChannelInfo.eRunningMode = u8SensorNum > 1 ? E_MI_VPE_RUN_CAM_MODE : E_MI_VPE_RUN_REALTIME_MODE;
         stVpeChannelInfo.eFormat = ePixFormat;
         stVpeChannelInfo.e3DNRLevel = pstConfig->en3dNrLevel;
         stVpeChannelInfo.eHDRtype = eVpeHdrType;
         stVpeChannelInfo.bRotation = FALSE;
-        if(stVpeChannelInfo.eRunningMode == E_MI_VPE_RUN_DVR_MODE)
+
+        if (stVpeChannelInfo.eRunningMode == E_MI_VPE_RUN_DVR_MODE)
         {
-            stVpeChannelInfo.eBindSensorId = E_MI_VPE_SENSOR_INVALID;
+        	stVpeChannelInfo.eBindSensorId = E_MI_VPE_SENSOR_INVALID;
         }
         else
         {
-            stVpeChannelInfo.eBindSensorId = (MI_VPE_SensorChannel_e)(eSNRPad+1);
+        	stVpeChannelInfo.eBindSensorId = (MI_VPE_SensorChannel_e)(eSNRPad+1);
         }
+
         DBG_INFO("VPE:DevId[%d] ChnId[%d] PortId[%d],eRunningMode[%d]\n", u32VpeDevId, u32VpeChnId, u32VpePortId, stVpeChannelInfo.eRunningMode);
         STCHECKRESULT(ST_Vpe_CreateChannel(u32VpeChnId, &stVpeChannelInfo));
         STCHECKRESULT(ST_Vpe_StartChannel(u32VpeChnId));
         
+
         // bind VIF to VPE
         memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
         stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VIF;
@@ -735,15 +477,15 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         stBindInfo.stDstChnPort.u32DevId = u32VpeDevId;
         stBindInfo.stDstChnPort.u32ChnId = u32VpeChnId;
         stBindInfo.stDstChnPort.u32PortId = u32VpePortId;
-        stBindInfo.eBindType = u32SensorNum > 1 ? E_MI_SYS_BIND_TYPE_FRAME_BASE : E_MI_SYS_BIND_TYPE_REALTIME;
+        stBindInfo.eBindType = u8SensorNum > 1 ? E_MI_SYS_BIND_TYPE_FRAME_BASE : E_MI_SYS_BIND_TYPE_REALTIME;
         stBindInfo.u32SrcFrmrate = 30;
         stBindInfo.u32DstFrmrate = 30;
         STCHECKRESULT(ST_Sys_Bind(&stBindInfo));
         
         memset(&stVpePortInfo, 0, sizeof(ST_VPE_PortInfo_T));
         stVpePortInfo.DepVpeChannel = u32VpeChnId;
-        stVpePortInfo.u16OutputWidth = u32SensorNum > 1 ? DISP_INPUT_WIDTH/2 : DISP_INPUT_WIDTH;
-        stVpePortInfo.u16OutputHeight = u32SensorNum > 1 ? DISP_INPUT_HEIGHT : DISP_INPUT_HEIGHT;
+        stVpePortInfo.u16OutputWidth = u8SensorNum > 1 ? PANEL_WIDTH/2 : PANEL_WIDTH;
+        stVpePortInfo.u16OutputHeight = PANEL_HEIGHT;
         stVpePortInfo.ePixelFormat = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
         stVpePortInfo.eCompressMode = E_MI_SYS_COMPRESS_MODE_NONE;
         if (pstConfig->stVPEPortCrop.u16Width != 0 && pstConfig->stVPEPortCrop.u16Height != 0)
@@ -756,21 +498,89 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         }
         STCHECKRESULT(ST_Vpe_StartPort(u32VpePortId, &stVpePortInfo));
     }
-    /************************************************
-    Step4:  destory DISP and PANEL
-    *************************************************/
 
-    
-    memset(&stWinRect, 0, sizeof(MI_DISP_VidWinRect_t));
-    
-    if(u32SensorNum > 1)
+    // set disp inputport attr
+	MI_DISP_InputPortAttr_t stDispInputAttr;
+	MI_DISP_GetInputPortAttr(0, 0, &stDispInputAttr);
+	stDispInputAttr.stDispWin.u16X = 0;
+	stDispInputAttr.stDispWin.u16Y = 0;
+	stDispInputAttr.stDispWin.u16Width = PANEL_WIDTH;
+	stDispInputAttr.stDispWin.u16Height = PANEL_HEIGHT;
+	stDispInputAttr.u16SrcWidth = stDispInputAttr.stDispWin.u16Width;
+	stDispInputAttr.u16SrcHeight = stDispInputAttr.stDispWin.u16Height;
+	MI_DISP_DisableInputPort(0, 0);
+	MI_DISP_SetInputPortAttr(0, 0, &stDispInputAttr);
+	MI_DISP_EnableInputPort(0, 0);
+	MI_DISP_SetInputPortSyncMode(0, 0, E_MI_DISP_SYNC_MODE_FREE_RUN);
+
+    if(u8SensorNum > 1)
     {
         ST_Vdisp_Init();
         ST_Vdisp_Bind();
     }
     else
     {
-        // bind VPE to divp
+        if(E_MI_SYS_ROTATE_180 == pstConfig->enRotation)
+        {
+            /************************************************
+             init DIVP
+            *************************************************/
+            memset(&stAttr, 0, sizeof(stAttr));
+            memset(&stOutputPortAttr, 0, sizeof(stOutputPortAttr));
+            stAttr.bHorMirror = FALSE;
+            stAttr.bVerMirror = FALSE;
+            stAttr.eDiType = E_MI_DIVP_DI_TYPE_OFF;
+            stAttr.eRotateType = pstConfig->enRotation;
+            stAttr.eTnrLevel = E_MI_DIVP_TNR_LEVEL_OFF;
+            stAttr.stCropRect.u16X = 0;
+            stAttr.stCropRect.u16Y = 0;
+            stAttr.stCropRect.u16Width = pstParamCfg.u16Width;;
+            stAttr.stCropRect.u16Height = pstParamCfg.u16Height;;
+            stAttr.u32MaxWidth = pstParamCfg.u16Width;;
+            stAttr.u32MaxHeight = pstParamCfg.u16Height;;
+            STCHECKRESULT(MI_DIVP_CreateChn(0, &stAttr));
+            
+
+            stOutputPortAttr.eCompMode = E_MI_SYS_COMPRESS_MODE_NONE;
+            stOutputPortAttr.u32Width = HCFD_RAW_W;
+            stOutputPortAttr.u32Height = HCFD_RAW_H;
+            stOutputPortAttr.ePixelFormat = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
+            STCHECKRESULT(MI_DIVP_SetOutputPortAttr(0, &stOutputPortAttr));
+            STCHECKRESULT(MI_DIVP_StartChn(0));
+
+            // bind VPE to divp
+            memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
+            stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
+            stBindInfo.stSrcChnPort.u32DevId = 0;
+            stBindInfo.stSrcChnPort.u32ChnId = 0;
+            stBindInfo.stSrcChnPort.u32PortId = 0;
+            stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DIVP;
+            stBindInfo.stDstChnPort.u32DevId = 0;
+            stBindInfo.stDstChnPort.u32ChnId = 0;
+            stBindInfo.stDstChnPort.u32PortId = 0;
+            stBindInfo.u32SrcFrmrate = 30;
+            stBindInfo.u32DstFrmrate = 30;
+            stBindInfo.eBindType = E_MI_SYS_BIND_TYPE_FRAME_BASE;
+            STCHECKRESULT(ST_Sys_Bind(&stBindInfo));
+
+            // bind divp to disp
+            memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
+            stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_DIVP;
+            stBindInfo.stSrcChnPort.u32DevId = 0;
+            stBindInfo.stSrcChnPort.u32ChnId = 0;
+            stBindInfo.stSrcChnPort.u32PortId = 0;
+            stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DISP;
+            stBindInfo.stDstChnPort.u32DevId = 0;
+            stBindInfo.stDstChnPort.u32ChnId = 0;
+            stBindInfo.stDstChnPort.u32PortId = 0;
+            stBindInfo.u32SrcFrmrate = 30;
+            stBindInfo.u32DstFrmrate = 30;
+            stBindInfo.eBindType = E_MI_SYS_BIND_TYPE_FRAME_BASE;
+            STCHECKRESULT(ST_Sys_Bind(&stBindInfo));
+        }
+        else
+        {
+        // bind VPE to disp
         memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
         stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
         stBindInfo.stSrcChnPort.u32DevId = 0;
@@ -784,14 +594,68 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         stBindInfo.u32DstFrmrate = 30;
         stBindInfo.eBindType = E_MI_SYS_BIND_TYPE_FRAME_BASE;
         STCHECKRESULT(ST_Sys_Bind(&stBindInfo));
+        }
+        if(1 == u8FaceDetect)
+        {
+            /************************************************
+            Step7:  //hc fd stream 
+            *************************************************/
+            memset(&stAttr, 0, sizeof(stAttr));
+            memset(&stOutputPortAttr, 0, sizeof(stOutputPortAttr));
+            stAttr.bHorMirror = FALSE;
+            stAttr.bVerMirror = FALSE;
+            stAttr.eDiType = E_MI_DIVP_DI_TYPE_OFF;
+            stAttr.eRotateType = E_MI_SYS_ROTATE_NONE;
+            stAttr.eTnrLevel = E_MI_DIVP_TNR_LEVEL_OFF;
+            stAttr.stCropRect.u16X = 0;
+            stAttr.stCropRect.u16Y = 0;
+            stAttr.stCropRect.u16Width = PANEL_WIDTH;
+            stAttr.stCropRect.u16Height = PANEL_HEIGHT;
+            stAttr.u32MaxWidth = PANEL_WIDTH;
+            stAttr.u32MaxHeight = PANEL_HEIGHT;
+            STCHECKRESULT(MI_DIVP_CreateChn(0, &stAttr));
+            
+
+            stOutputPortAttr.eCompMode = E_MI_SYS_COMPRESS_MODE_NONE;
+            stOutputPortAttr.u32Width = HCFD_RAW_W;
+            stOutputPortAttr.u32Height = HCFD_RAW_H;
+            stOutputPortAttr.ePixelFormat = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
+            STCHECKRESULT(MI_DIVP_SetOutputPortAttr(0, &stOutputPortAttr));
+            STCHECKRESULT(MI_DIVP_StartChn(0));
+            stChnPort.eModId = E_MI_MODULE_ID_DIVP;
+            stChnPort.u32ChnId =  0;
+            stChnPort.u32DevId = 0;
+            stChnPort.u32PortId = 0;
+            STCHECKRESULT(MI_SYS_SetChnOutputPortDepth(&stChnPort, 3, 5));
+
+            // bind VPE to divp
+            memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
+            stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
+            stBindInfo.stSrcChnPort.u32DevId = 0;
+            stBindInfo.stSrcChnPort.u32ChnId = 0;
+            stBindInfo.stSrcChnPort.u32PortId = 0;
+            stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DIVP;
+            stBindInfo.stDstChnPort.u32DevId = 0;
+            stBindInfo.stDstChnPort.u32ChnId = 0;
+            stBindInfo.stDstChnPort.u32PortId = 0;
+            stBindInfo.u32SrcFrmrate = 30;
+            stBindInfo.u32DstFrmrate = HCFD_FRMRATE * 4; //每次HC or FD运行取2帧,相同一秒做5次算法运行
+            stBindInfo.eBindType = E_MI_SYS_BIND_TYPE_FRAME_BASE;
+            STCHECKRESULT(ST_Sys_Bind(&stBindInfo));
+            
+            ST_RGN_Init(0);
+
+            mid_hchdfd_Initial();
+        }
     }
     return MI_SUCCESS;
 }
-MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
+MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
 {
     ST_Sys_BindInfo_T stBindInfo;
     MI_SNR_PAD_ID_e eSNRPad = E_MI_SNR_PAD_ID_0;
-    MI_U32 u32SensorNum = 1;
+    MI_U8 u8SensorNum = 1;
+    MI_U8 u8FaceDetect = 0;
     MI_U32 i = 0;
     MI_U32 u32VifDevId = 0;
     MI_U32 u32VifChnId = 0;
@@ -804,36 +668,96 @@ MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
     MI_U32 u32DispPortId = 0;
     MI_U32 u32DispLayer = 0;
 
-    u32SensorNum = pstConfig->u8SensorNum;
-
+    u8SensorNum = pstConfig->u8SensorNum;
+    u8FaceDetect = pstConfig->u8FaceDetect;
+    
     /************************************************
     Step1:  destory vdisp
     *************************************************/
-    if(u32SensorNum > 1)
+    if(u8SensorNum > 1)
     {
         ST_Vdisp_UnBind();
         ST_Vdisp_Deinit();
     }
     else
     {
-        memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
-        stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
-        stBindInfo.stSrcChnPort.u32DevId = u32VpeDevId;
-        stBindInfo.stSrcChnPort.u32ChnId = u32VpeChnId;
-        stBindInfo.stSrcChnPort.u32PortId = u32VpePortId;
-        stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DISP;
-        stBindInfo.stDstChnPort.u32DevId = u32DispDevId;
-        stBindInfo.stDstChnPort.u32ChnId = u32DispChnId;
-        stBindInfo.stDstChnPort.u32PortId = u32DispPortId;
-        stBindInfo.u32SrcFrmrate = 30;
-        stBindInfo.u32DstFrmrate = 30;
-        STCHECKRESULT(ST_Sys_UnBind(&stBindInfo));
+        if(E_MI_SYS_ROTATE_180 == pstConfig->enRotation)
+        {
+            memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
+            stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_DIVP;
+            stBindInfo.stSrcChnPort.u32DevId = 0;
+            stBindInfo.stSrcChnPort.u32ChnId = 0;
+            stBindInfo.stSrcChnPort.u32PortId = 0;
+            stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DISP;
+            stBindInfo.stDstChnPort.u32DevId = 0;
+            stBindInfo.stDstChnPort.u32ChnId = 0;
+            stBindInfo.stDstChnPort.u32PortId = 0;
+            stBindInfo.u32SrcFrmrate = 30;
+            stBindInfo.u32DstFrmrate = 30;
+            STCHECKRESULT(ST_Sys_UnBind(&stBindInfo));
+            
+            memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
+            stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
+            stBindInfo.stSrcChnPort.u32DevId = 0;
+            stBindInfo.stSrcChnPort.u32ChnId = 0;
+            stBindInfo.stSrcChnPort.u32PortId = 0;
+            stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DIVP;
+            stBindInfo.stDstChnPort.u32DevId = 0;
+            stBindInfo.stDstChnPort.u32ChnId = 0;
+            stBindInfo.stDstChnPort.u32PortId = 0;
+            stBindInfo.u32SrcFrmrate = 30;
+            stBindInfo.u32DstFrmrate = 30;
+            STCHECKRESULT(ST_Sys_UnBind(&stBindInfo));
+            
+            STCHECKRESULT(MI_DIVP_StopChn(0));
+            STCHECKRESULT(MI_DIVP_DestroyChn(0));
+		}
+		else
+		{
+			memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
+			stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
+			stBindInfo.stSrcChnPort.u32DevId = u32VpeDevId;
+			stBindInfo.stSrcChnPort.u32ChnId = u32VpeChnId;
+			stBindInfo.stSrcChnPort.u32PortId = u32VpePortId;
+			stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DISP;
+			stBindInfo.stDstChnPort.u32DevId = u32DispDevId;
+			stBindInfo.stDstChnPort.u32ChnId = u32DispChnId;
+			stBindInfo.stDstChnPort.u32PortId = u32DispPortId;
+			stBindInfo.u32SrcFrmrate = 30;
+			stBindInfo.u32DstFrmrate = 30;
+			STCHECKRESULT(ST_Sys_UnBind(&stBindInfo));
+        }
+
+		/************************************************
+		Step2:  destory DIVP & RGN
+		*************************************************/
+		if(1 == u8FaceDetect)
+		{
+			memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
+			stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
+			stBindInfo.stSrcChnPort.u32DevId = 0;
+			stBindInfo.stSrcChnPort.u32ChnId = 0;
+			stBindInfo.stSrcChnPort.u32PortId = 0;
+			stBindInfo.stDstChnPort.eModId = E_MI_MODULE_ID_DIVP;
+			stBindInfo.stDstChnPort.u32DevId = 0;
+			stBindInfo.stDstChnPort.u32ChnId = 0;
+			stBindInfo.stDstChnPort.u32PortId = 0;
+			stBindInfo.u32SrcFrmrate = 30;
+			stBindInfo.u32DstFrmrate = HCFD_FRMRATE * 4;
+			STCHECKRESULT(ST_Sys_UnBind(&stBindInfo));
+
+			STCHECKRESULT(MI_DIVP_StopChn(0));
+			STCHECKRESULT(MI_DIVP_DestroyChn(0));
+
+			mid_hchdfd_Uninitial();
+			STCHECKRESULT(ST_RGN_Deinit(0));
+		}
     }
 
     /************************************************
-    Step3:  destory VPE
+    Step4:  destory VPE
     *************************************************/
-    for(i = 0; i < u32SensorNum; i++)
+    for(i = 0; i < u8SensorNum; i++)
     {
         eSNRPad = (MI_SNR_PAD_ID_e)i;
         u32VifDevId = i;
@@ -860,53 +784,21 @@ MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
         STCHECKRESULT(ST_Vpe_DestroyChannel(u32VpeChnId));
 
         /************************************************
-        Step4:  destory VIF
+        Step5:  destory VIF
         *************************************************/
         STCHECKRESULT(ST_Vif_StopPort(u32VifChnId, u32VifPortId));
         STCHECKRESULT(ST_Vif_DisableDev(u32VifDevId));
         
         /************************************************
-        Step5:  destory SENSOR
+        Step6:  destory SENSOR
         *************************************************/
         STCHECKRESULT(MI_SNR_Disable(eSNRPad));
     }
+    /************************************************
+    Step7:  destory SYS
+    *************************************************/
+    STCHECKRESULT(ST_Sys_Exit());
 
     return MI_SUCCESS;
 }
 
-#if 0
-int main (int argc, char **argv)
-{
-
-    STCHECKRESULT(ST_BaseModuleInit(&g_stConfig));
-
-    while(!g_bExit)
-    {
-        MI_U8 u8Cmd = 0xFF;
-        printf("input 'q' exit\n");
-        scanf("%c", &u8Cmd);
-        ST_Flush();
-        if('q' == u8Cmd)
-        {
-            g_bExit = 1;
-        }
-        usleep(100*1000);
-    }
-    
-    DBG_INFO("deinit senor/vif/vfp/disp/panel and exit app\n");
-    STCHECKRESULT(ST_BaseModuleUnInit(&g_stConfig));
-    
-    return 0;
-}
-#endif
-
-int SSTAR_DualSensorInit()
-{
-	STCHECKRESULT(ST_BaseModuleInit(&g_stConfig));
-	return 0;
-}
-
-void SSTAR_DualSensorDeinit()
-{
-	ST_BaseModuleUnInit(&g_stConfig);
-}

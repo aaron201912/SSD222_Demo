@@ -105,10 +105,10 @@ const char* IconTab[]={
 	"waveViewActivity",
 	"voicedetectActivity",
 	"networkSettingActivity",
-	"airportActivity",
+//	"airportActivity",
 	"playPcmFileActivity",
 	"facedetectActivity",
-	"dulsensorActivity"
+	"dualsensorActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {

@@ -29,7 +29,8 @@
 *
 * 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
 */
-
+#include "dualsensor.h"
+#include "statusbarconfig.h"
 
 /**
  * 注册定时器
@@ -56,6 +57,8 @@ static void onUI_intent(const Intent *intentPtr) {
     if (intentPtr != NULL) {
         //TODO
     }
+
+    SSTAR_DualSensorInit();
 }
 
 /*
@@ -76,7 +79,8 @@ static void onUI_hide() {
  * 当界面完全退出时触发
  */
 static void onUI_quit() {
-
+	SSTAR_DualSensorDeinit();
+	ShowStatusBar(1, 0, 0);
 }
 
 /**
@@ -114,7 +118,7 @@ static bool onUI_Timer(int id){
  *         false
  *            触摸事件将继续传递到控件上
  */
-static bool ondulsensorActivityTouchEvent(const MotionEvent &ev) {
+static bool ondualsensorActivityTouchEvent(const MotionEvent &ev) {
     switch (ev.mActionStatus) {
 		case MotionEvent::E_ACTION_DOWN://触摸按下
 			//LOGD("时刻 = %ld 坐标  x = %d, y = %d", ev.mEventTime, ev.mX, ev.mY);

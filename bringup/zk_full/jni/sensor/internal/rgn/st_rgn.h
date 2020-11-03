@@ -8,6 +8,7 @@ extern "C"{
 #include "mi_sys_datatype.h"
 #include "mi_rgn_datatype.h"
 #include "mi_rgn.h"
+#include "st_common.h"
 
 typedef struct
 {

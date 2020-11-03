@@ -1,8 +1,8 @@
 /***********************************************
 /gen auto by zuitools
 ***********************************************/
-#ifndef __DULSENSORACTIVITY_H__
-#define __DULSENSORACTIVITY_H__
+#ifndef __DUALSENSORACTIVITY_H__
+#define __DUALSENSORACTIVITY_H__
 
 
 #include "app/Activity.h"
@@ -26,10 +26,11 @@
 #include "window/ZKSlideWindow.h"
 
 /*TAG:Macro宏ID*/
-#define ID_DULSENSOR_sys_back   100
+#define ID_DUALSENSOR_sys_back   100
+#define ID_DUALSENSOR_Videoview1    95001
 /*TAG:Macro宏ID END*/
 
-class dulsensorActivity : public Activity, 
+class dualsensorActivity : public Activity, 
                      public ZKSeekBar::ISeekBarChangeListener, 
                      public ZKListView::IItemClickListener,
                      public ZKListView::AbsListAdapter,
@@ -39,8 +40,8 @@ class dulsensorActivity : public Activity,
                      public ZKVideoView::IVideoPlayerMessageListener
 {
 public:
-    dulsensorActivity();
-    virtual ~dulsensorActivity();
+    dualsensorActivity();
+    virtual ~dualsensorActivity();
 
     /**
      * 注册定时器

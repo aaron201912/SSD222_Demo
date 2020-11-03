@@ -14,7 +14,6 @@
 
 #include "st_rgn.h"
 
-#define ENABLE_RGN
 
 #define ARGB1555_RED    (0x7c00 | 0x8000)
 #define ARGB1555_GREEN  (0x03e0 | 0x8000)
@@ -54,7 +53,7 @@ void DrawPoint(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stPt, DrawRgnColor
             }
             break;
         default:
-            printf("format not support\n");
+            DBG_ERR("format not support\n");
     }
 }
 
@@ -68,7 +67,7 @@ void DrawLine(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stStartPt, DrawPoin
 
     if ( (u8BorderWidth > u32Width/2) || (u8BorderWidth > u32Height/2) )
     {
-        printf("invalid border width\n");
+        DBG_ERR("invalid border width\n");
         return;
     }
 
@@ -104,7 +103,7 @@ void DrawRect(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stLetfTopPt, DrawPo
 
                 if (stLetfTopPt.u16X%2 || u32Width%2)
                 {
-                    printf("invalid rect position\n");
+                    DBG_ERR("invalid rect position\n");
                     return;
                 }
 
@@ -157,7 +156,7 @@ void DrawRect(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stLetfTopPt, DrawPo
             }
             break;
         default:
-            printf("format not support\n");
+            DBG_ERR("format not support\n");
     }
 }
 
@@ -178,7 +177,7 @@ void FillRect(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stLetfTopPt, DrawPo
 
                     if (stLetfTopPt.u16X%2 || u32Width%2)
                     {
-                        printf("invalid rect position\n");
+                        DBG_ERR("invalid rect position\n");
                         return;
                     }
 
@@ -204,7 +203,7 @@ void FillRect(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stLetfTopPt, DrawPo
                 }
                 break;
             default:
-                printf("format not support\n");
+                DBG_ERR("format not support\n");
         }
     }
 }
@@ -227,14 +226,14 @@ MI_S32 ClearRgnRect(MI_RGN_CanvasInfo_t *pstRgnCanvasInfo)
             memset((void*)pstRgnCanvasInfo->virtAddr, 0x23, pstRgnCanvasInfo->stSize.u32Height*pstRgnCanvasInfo->u32Stride);
             break;
         default:
-            printf("only support argb1555 & I4 now\n");
+            DBG_WRN("only support argb1555 & I4 now\n");
             return -1;
     }
 
     return 0;
 }
 
-#ifdef ENABLE_RGN
+
 int ST_RGN_Init(MI_RGN_HANDLE hHandle)
 {
     MI_RGN_ChnPort_t stRgnChnPort;
@@ -269,13 +268,13 @@ int ST_RGN_Init(MI_RGN_HANDLE hHandle)
 
     if (MI_RGN_OK != MI_RGN_Create(hHandle, &stRgnAttr))
     {
-        printf("MI_RGN_Create fail\n");
+        DBG_ERR("MI_RGN_Create fail\n");
         return -1;
     }
 
     if (MI_RGN_OK != MI_RGN_AttachToChn(hHandle, &stRgnChnPort, &stChnAttr))
     {
-        printf("MI_RGN_AttachToChn fail\n");
+        DBG_ERR("MI_RGN_AttachToChn fail\n");
         return -1;
     }
 
@@ -302,7 +301,7 @@ int ST_RGN_DrawRect(MI_RGN_HANDLE hHandle,ST_RGN_Rect_t *pstDrawRect,MI_S32 s32R
     s32Ret = MI_RGN_GetCanvasInfo(hHandle, &stRgnCanvasInfo);
     if (s32Ret != MI_RGN_OK)
     {
-        printf("%s; MI_RGN_GetCanvasInfo error, handle=%d\n", __FUNCTION__, hHandle);
+        DBG_ERR("%s; MI_RGN_GetCanvasInfo error, handle=%d\n", __FUNCTION__, hHandle);
         MI_RGN_UpdateCanvas(hHandle);
         pthread_mutex_unlock(&g_rgnOsd_mutex);
         return -1;
@@ -346,7 +345,7 @@ int ST_RGN_ClearRect(MI_RGN_HANDLE hHandle)
     s32Ret = MI_RGN_GetCanvasInfo(hHandle, &stRgnCanvasInfo);
     if (s32Ret != MI_RGN_OK)
     {
-        printf("%s; MI_RGN_GetCanvasInfo error, handle=%d\n", __FUNCTION__, hHandle);
+        DBG_ERR("%s; MI_RGN_GetCanvasInfo error, handle=%d\n", __FUNCTION__, hHandle);
         MI_RGN_UpdateCanvas(hHandle);
         pthread_mutex_unlock(&g_rgnOsd_mutex);
         return -1;
@@ -359,13 +358,7 @@ int ST_RGN_ClearRect(MI_RGN_HANDLE hHandle)
 
     return 0;
 }
-#else
-int ST_RGN_Init(MI_RGN_HANDLE hHandle) {return 0;}
-int ST_RGN_Deinit(MI_RGN_HANDLE hHandle) {return 0;}
-int ST_RGN_DrawRect(MI_RGN_HANDLE hHandle,ST_RGN_Rect_t *pstDrawRect,MI_S32 s32RectCnt)
-{return 0;}
-int ST_RGN_ClearRect(MI_RGN_HANDLE hHandle) {return 0;}
-#endif
+
 
 
 

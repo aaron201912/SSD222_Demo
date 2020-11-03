@@ -42,10 +42,17 @@ INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
 					-I$(ZKSW_PREBUILT_INCLUDE_PATH)/mgeff \
 					-I ../jni/sdkdir/include \
 					-I ../jni/voicedetect	\
-					-I ../jni/facedetect
+					-I ../jni/sensor	\
+					-I ../jni/sensor/internal/common	\
+					-I ../jni/sensor/internal/vif	\
+					-I ../jni/sensor/internal/vpe	\
+					-I ../jni/sensor/internal/rgn	\
+					-I ../jni/sensor/internal/ive	\
+					-I ../jni/facedetect	\
+					-I ../jni/dualsensor
 
 LDFLAGS =  -leasyui -pthread -lmi_sys -lmi_disp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
-		-lmi_vif -lmi_vpe -lmi_venc -lmi_isp -lcus3a -lispalgo -lmi_sensor -lmi_ive -lmi_divp -lmi_rgn -lcam_os_wrapper  -lFD_ARM -ldl -lrt -fPIC -shared
+		-lmi_vif -lmi_vpe -lmi_isp -lcus3a -lispalgo -lmi_sensor -lmi_ive -lmi_divp -lmi_rgn -lcam_os_wrapper -lmi_vdisp -lFD_ARM -ldl -lrt -fPIC -shared
 LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib
 INCLUDE_DIR += -I ../jni/hotplugdetect -I ../jni/hotplugdetect/common -I ../jni/hotplugdetect/usbdetect -I ../jni/hotplugdetect/wifidetect \
 			   -I ../jni/hotplugdetect/wirednetworkdetect

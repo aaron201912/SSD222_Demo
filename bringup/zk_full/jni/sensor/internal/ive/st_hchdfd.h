@@ -19,6 +19,7 @@ extern "C"{
 #endif // __cplusplus
 
 #include "mi_ive.h"
+#include "st_common.h"
 
 #define HCFD_DIVP_CHN	0
 #define HCFD_FRMRATE	5

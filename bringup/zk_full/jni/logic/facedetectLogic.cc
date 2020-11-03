@@ -29,7 +29,7 @@
 *
 * 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
 */
-#include "Sensor2Panel.h"
+#include "facedetect.h"
 #include "statusbarconfig.h"
 /**
  * 注册定时器
