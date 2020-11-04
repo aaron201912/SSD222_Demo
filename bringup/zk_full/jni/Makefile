@@ -49,7 +49,8 @@ INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
 					-I ../jni/sensor/internal/rgn	\
 					-I ../jni/sensor/internal/ive	\
 					-I ../jni/facedetect	\
-					-I ../jni/dualsensor
+					-I ../jni/dualsensor	\
+					-I ../jni/audio
 
 LDFLAGS =  -leasyui -pthread -lmi_sys -lmi_disp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
 		-lmi_vif -lmi_vpe -lmi_isp -lcus3a -lispalgo -lmi_sensor -lmi_ive -lmi_divp -lmi_rgn -lcam_os_wrapper -lmi_vdisp -lFD_ARM -ldl -lrt -fPIC -shared

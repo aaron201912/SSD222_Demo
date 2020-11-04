@@ -391,9 +391,7 @@ static void *WifiScanProc(void *pdata)
 		
 		if (wifiEnabled && registModuleCnt > 0)
 		{
-			printf("start do scanning ...\n");
 			MI_WLAN_Scan(NULL, &scanResult);
-			printf("scanning complete. apNum=%d\n", scanResult.u8APNumber);
 
 			if (scanResult.u8APNumber > 0)
 			{

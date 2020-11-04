@@ -103,6 +103,7 @@ const char* IconTab[]={
 	"qrcodeActivity",
 	"animationActivity",
 	"waveViewActivity",
+	"testmoduleActivity",
 	"voicedetectActivity",
 	"networkSettingActivity",
 //	"airportActivity",

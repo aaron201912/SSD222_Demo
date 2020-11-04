@@ -112,8 +112,6 @@ void WifiSignalSTRStatusCallback(ScanResult_t *pstScanResult, int resCnt)
 
 	g_scanResLock.unlock();
 
-	printf("get signalSTR callback\n");
-
 	if (!resCnt)
 	{
 		registerPrivTimer(&isRegistered, TIMER_LOADING, 50);
