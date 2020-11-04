@@ -124,16 +124,21 @@ static void *CheckUsbHotPlugProc(void *pdata)
 			if (strstr(buf, "add"))
 			{
 				printf("usb add\n");
-				stUsbParam.action = 1;
-				sprintf(stUsbParam.udisk_path, "/vendor/udisk_%s", pstmsg);
 
-				pthread_mutex_lock(&g_callbackListMutex);
-				list_for_each(pListPos, &g_usbCallbackListHead)
+				// usb sda~sdh
+				if (strlen(pstmsg) > 2 && (pstmsg[2] >= 'a' && pstmsg[2] <= 'h'))
 				{
-					pstUsbCallbackData = list_entry(pListPos, UsbCallbackListData_t, callbackList);
-					pstUsbCallbackData->pfnCallback(&stUsbParam);
+					stUsbParam.action = 1;
+					sprintf(stUsbParam.udisk_path, "/vendor/udisk_%s", pstmsg);
+
+					pthread_mutex_lock(&g_callbackListMutex);
+					list_for_each(pListPos, &g_usbCallbackListHead)
+					{
+						pstUsbCallbackData = list_entry(pListPos, UsbCallbackListData_t, callbackList);
+						pstUsbCallbackData->pfnCallback(&stUsbParam);
+					}
+					pthread_mutex_unlock(&g_callbackListMutex);
 				}
-				pthread_mutex_unlock(&g_callbackListMutex);
 			}
 
 			if (strstr(buf, "remove"))
@@ -207,8 +212,11 @@ int USB_CheckCurrentStatus()
 			pSeek = strstr(pCurLine, "sd");
 			if (pSeek)
 			{
-				nRet = 1;
-				break;
+				if (strlen(pSeek) > 2 && (pSeek[2] >= 'a' && pSeek[2] <= 'h'))
+				{
+					nRet = 1;
+					break;
+				}
 			}
 		}
 

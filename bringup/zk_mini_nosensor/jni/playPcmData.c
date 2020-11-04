@@ -88,12 +88,9 @@ void* SSTAR_aoSendFrame(void* data)
         return NULL;
     }
     bAoExit = FALSE;
-//	system("echo 12 > /sys/class/gpio/export");
-//	system("echo out > /sys/class/gpio/gpio12/direction");
-//	system("echo 1 > /sys/class/gpio/gpio12/value");
+
     while(FALSE == bAoExit)
     {
-		///printf("go audio play\n");
         s32Ret = read(g_AoReadFd, &u8TempBuf, g_s32NeedSize);
         if(s32Ret != g_s32NeedSize)
         {
@@ -110,7 +107,7 @@ void* SSTAR_aoSendFrame(void* data)
         stAoSendFrame.u32Len[0] = s32Ret;
         stAoSendFrame.apVirAddr[0] = u8TempBuf;
         stAoSendFrame.apVirAddr[1] = NULL;
-		//printf("end audio play size = %d\n", s32Ret);
+
         do{
             s32Ret = MI_AO_SendFrame(g_AoDevId, g_AoChn, &stAoSendFrame, -1);
         }while(s32Ret == MI_AO_ERR_NOBUF);

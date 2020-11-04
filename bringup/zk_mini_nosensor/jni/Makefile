@@ -41,7 +41,8 @@ INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
 					-I. \
 					-I$(ZKSW_PREBUILT_INCLUDE_PATH)/mgeff \
 					-I ../jni/sdkdir/include \
-					-I ../jni/voicedetect
+					-I ../jni/voicedetect	\
+					-I ../jni/audio
 
 LDFLAGS =  -leasyui -pthread -lmi_sys -lmi_disp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
 		-lcam_os_wrapper -ldl -lrt -fPIC -shared
