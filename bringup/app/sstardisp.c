@@ -32,16 +32,7 @@ int sstar_disp_init()
     MI_PANEL_ParamConfig_t pstParamCfg;
 
     MI_SYS_Init();
-
-    //init panel
-    eIntfType = E_MI_PNL_INTF_TTL;
-    MI_PANEL_Init(eIntfType);
-
-    // while (1)
-    //     usleep(300000);
-
-    MI_PANEL_GetPanelParam(eIntfType, &pstParamCfg);
-
+	
     //config disp
     memset(&stPubAttr, 0, sizeof(MI_DISP_PubAttr_t));
     stPubAttr.u32BgColor = YUYV_BLACK;
@@ -50,12 +41,15 @@ int sstar_disp_init()
     MI_DISP_SetPubAttr(0, &stPubAttr);
     MI_DISP_Enable(0);
 
+    memset(&stPubAttr, 0, sizeof(MI_DISP_PubAttr_t));
+    stPubAttr.eIntfType = E_MI_DISP_INTF_TTL;
+    MI_DISP_GetPubAttr(0,&stPubAttr);
     memset(&stLayerAttr, 0, sizeof(MI_DISP_VideoLayerAttr_t));
     memset(&stRotateConfig, 0, sizeof(MI_DISP_RotateConfig_t));
     stLayerAttr.stVidLayerDispWin.u16X = 0;
     stLayerAttr.stVidLayerDispWin.u16Y = 0;
-    stLayerAttr.stVidLayerDispWin.u16Width = pstParamCfg.u16Width;
-    stLayerAttr.stVidLayerDispWin.u16Height = pstParamCfg.u16Height;
+    stLayerAttr.stVidLayerDispWin.u16Width = stPubAttr.stSyncInfo.u16Hact;
+    stLayerAttr.stVidLayerDispWin.u16Height = stPubAttr.stSyncInfo.u16Vact;
     MI_DISP_BindVideoLayer(0, 0);
     MI_DISP_SetVideoLayerAttr(0, &stLayerAttr);
     MI_DISP_EnableVideoLayer(0);
@@ -68,11 +62,16 @@ int sstar_disp_init()
     stInputPortAttr.u16SrcHeight = DISP_INPUT_HEIGHT;
     stInputPortAttr.stDispWin.u16X = 0;
     stInputPortAttr.stDispWin.u16Y = 0;
-    stInputPortAttr.stDispWin.u16Width = pstParamCfg.u16Width;
-    stInputPortAttr.stDispWin.u16Height = pstParamCfg.u16Height;
+    stInputPortAttr.stDispWin.u16Width = stPubAttr.stSyncInfo.u16Hact;
+    stInputPortAttr.stDispWin.u16Height = stPubAttr.stSyncInfo.u16Vact;
     MI_DISP_SetInputPortAttr(0, 0, &stInputPortAttr);
     MI_DISP_EnableInputPort(0, 0);
 
+    //init panel
+    eIntfType = E_MI_PNL_INTF_TTL;
+    MI_PANEL_Init(eIntfType);
+	MI_PANEL_GetPanelParam(eIntfType, &pstParamCfg);
+	
     return 0;
 }
 
