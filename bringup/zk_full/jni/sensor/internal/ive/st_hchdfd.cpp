@@ -694,6 +694,8 @@ void* mid_hchdfd_Task(void *argu)
     stDivpChnOutputPort.u32ChnId = HCFD_DIVP_CHN;
     stDivpChnOutputPort.u32DevId = 0;
     stDivpChnOutputPort.u32PortId = 0;
+    ST_RGN_Rect_t stSrcRGNDrawRect;
+    ST_RGN_Rect_t astRGNDrawRect[HCHD_DETECT_MAX];
     /****************************************************************/
     while(ret != MI_SUCCESS)
     {
@@ -912,6 +914,9 @@ void* mid_hchdfd_Task(void *argu)
             {
                 //if(USE_HC_HD_FD==2)printf("human_detect num %d !\n\n",human_cnt);
                 //else if(USE_HC_HD_FD==3)printf("face_cnt %d !\n\n",human_cnt);
+                memset(&drawRect, 0x0, sizeof(drawRect));
+                memset(&stSrcRGNDrawRect, 0x0, sizeof(ST_RGN_Rect_t));
+                memset(&astRGNDrawRect, 0x0, sizeof(astRGNDrawRect));
                 for (i=0; i<human_cnt; i++)
                 {
                     /*int rst_xl, rst_xr, rst_yt, rst_yb, rst_w, rst_h;
@@ -928,31 +933,30 @@ void* mid_hchdfd_Task(void *argu)
                     drawRect[i].u16Y = (ntwk_handle->boxes[i].y_min + sad_y_min);
                     drawRect[i].u16Width = (ntwk_handle->boxes[i].x_max - ntwk_handle->boxes[i].x_min) - 1;
                     drawRect[i].u16Height = (ntwk_handle->boxes[i].y_max - ntwk_handle->boxes[i].y_min) - 1;
+                    //DBG_INFO("number of face %d :%d %d %d %d\n",human_cnt,drawRect[i].u16X,drawRect[i].u16Y,drawRect[i].u16Width,drawRect[i].u16Height);
+                    stSrcRGNDrawRect.u16LeftTopX = drawRect[i].u16X;
+                    stSrcRGNDrawRect.u16LeftTopY = drawRect[i].u16Y;
+                    stSrcRGNDrawRect.u16RightBottomX = drawRect[i].u16X + drawRect[i].u16Width;
+                    stSrcRGNDrawRect.u16RightBottomY = drawRect[i].u16Y + drawRect[i].u16Height;
                     
-                    //printf("number of face %d :%d %d %d %d\n",human_cnt,drawRect[i].u16X,drawRect[i].u16Y,drawRect[i].u16Width,drawRect[i].u16Height);
-                    ST_RGN_Rect_t pstDrawRect,pstSrcRect;
-
-                    pstSrcRect.u16LeftTopX = drawRect[i].u16X;
-                    pstSrcRect.u16LeftTopY = drawRect[i].u16Y;
-                    pstSrcRect.u16RightBottomX = drawRect[i].u16X + drawRect[i].u16Width;
-                    pstSrcRect.u16RightBottomY = drawRect[i].u16Y + drawRect[i].u16Height;
+                    CalcShowRect(&stSrcRGNDrawRect, &astRGNDrawRect[i], HCFD_RAW_W, HCFD_RAW_H, 1024, 600);
                     
-                    CalcShowRect(&pstSrcRect, &pstDrawRect, HCFD_RAW_W, HCFD_RAW_H, 1024, 600);
-                    
-                    ST_RGN_DrawRect(0,&pstDrawRect,1);
-                    if(u32FdDetectCount < 50)
+                    if(u32FdDetectCount < 2)
+                    {
                         u32FdDetectCount++;
+                    }
+                    //DBG_INFO("human_cnt: %d,u32FdDetectCount: %d\n",human_cnt, u32FdDetectCount);
                 }
-                
+                ST_RGN_DrawRect(0, astRGNDrawRect, human_cnt);
             }
             else {
                 //if(USE_HC_HD_FD==2)printf("no human detected!\n");
                 //else if(USE_HC_HD_FD==3)printf("no face detected!\n");
-                drawRect[0].u16Width=0;
-                drawRect[0].u16Height=0;
-                drawRect[0].u16X=0;
-                drawRect[0].u16Y=0; 
-
+                //drawRect[0].u16Width=0;
+                //drawRect[0].u16Height=0;
+                //drawRect[0].u16X=0;
+                //drawRect[0].u16Y=0; 
+                memset(&drawRect, 0x0, sizeof(drawRect));
                 
                 if(u32FdDetectCount > 0)
                 {

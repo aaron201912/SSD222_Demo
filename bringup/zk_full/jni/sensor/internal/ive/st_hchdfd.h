@@ -30,7 +30,7 @@ extern "C"{
 #define SAD_BLOCK_SIZE          8
 #define MD_ROI_MAX              50
 #define MD_PIXEL_DIFF           15
-#define HCHD_DETECT_MAX           6
+#define HCHD_DETECT_MAX         3//6
 #define HCHD_PROBABILITY          0.7
 #define ALIGN_UP(x, align)      (((x) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_BACK(x, a)        (((x) / (a)) * (a))
