@@ -109,7 +109,8 @@ const char* IconTab[]={
 //	"airportActivity",
 	"playPcmFileActivity",
 	"facedetectActivity",
-	"dualsensorActivity"
+	"dualsensorActivity",
+	"usbCameraActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
