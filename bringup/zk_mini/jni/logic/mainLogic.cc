@@ -106,7 +106,8 @@ const char* IconTab[]={
 		"voicedetectActivity",
 		"networkSettingActivity",
 		"playPcmFileActivity",
-		"dualsensorActivity"
+		"dualsensorActivity",
+		"usbCameraActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
