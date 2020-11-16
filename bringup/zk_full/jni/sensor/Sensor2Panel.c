@@ -733,6 +733,9 @@ MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
 		*************************************************/
 		if(1 == u8FaceDetect)
 		{
+			STCHECKRESULT(ST_RGN_Deinit(0));
+			mid_hchdfd_Uninitial();
+			
 			memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
 			stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
 			stBindInfo.stSrcChnPort.u32DevId = 0;
@@ -747,10 +750,7 @@ MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
 			STCHECKRESULT(ST_Sys_UnBind(&stBindInfo));
 
 			STCHECKRESULT(MI_DIVP_StopChn(0));
-			STCHECKRESULT(MI_DIVP_DestroyChn(0));
-
-			mid_hchdfd_Uninitial();
-			STCHECKRESULT(ST_RGN_Deinit(0));
+			STCHECKRESULT(MI_DIVP_DestroyChn(0));	
 		}
     }
 
