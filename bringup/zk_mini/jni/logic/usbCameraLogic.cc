@@ -480,22 +480,14 @@ static void onUI_init(){
     if (0 != v4l2_read_header(ctx))
     {
         ST_ERR("Can't find usb camera\n");
-        goto fail;
+        return;
     }
 
     b_exit = false;
     if (0 != pthread_create(&jdec_tid, NULL, jpeg_decoding_thread, NULL))
     {
         ST_ERR("pthread_create failed\n");
-        goto fail;
-    }
-
-    return;
-fail:
-    if (ctx)
-    {
-        v4l2_read_close(ctx);
-        v4l2_dev_deinit(ctx);
+        return;
     }
 }
 
@@ -586,12 +578,14 @@ static bool onButtonClick_sys_back(ZKButton *pButton) {
     if (jdec_tid)
     {
         pthread_join(jdec_tid, NULL);
+        jdec_tid = 0;
     }
 
     if (ctx)
     {
         v4l2_read_close(ctx);
         v4l2_dev_deinit(ctx);
+        ctx = NULL;
     }
 
     STCHECKRESULT(MI_DISP_DisableInputPort(0, 0));
