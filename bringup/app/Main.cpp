@@ -10,11 +10,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <wait.h>
-
 #include <sys/prctl.h>
-
-
-
 #include "sstardisp.h"
 #include "entry/EasyUIContext.h"
 
@@ -22,7 +18,10 @@
 #define MAKE_YUYV_VALUE(y,u,v)  ((y) << 24) | ((u) << 16) | ((y) << 8) | (v)
 #define YUYV_BLACK              MAKE_YUYV_VALUE(0,128,128)
 
+#define FD_MAX	1024
 #define SSD_IPC "/tmp/ssd_apm_input"
+#define SVC_IPC "/tmp/brown_svc_input"
+#define UI_IPC	"/tmp/zkgui_msg_input"
 
 typedef enum
 {
@@ -45,6 +44,11 @@ typedef enum
   IPC_COMMAND_SETUP_WATERMARK,
   IPC_COMMAND_APP_START,
   IPC_COMMAND_APP_STOP,
+  IPC_COMMAND_UI_EXIT,
+  IPC_COMMAND_APP_SUSPEND,
+  IPC_COMMAND_APP_SUSPEND_DONE,
+  IPC_COMMAND_APP_RESUME,
+  IPC_COMMAND_APP_RESUME_DONE,
   IPC_COMMAND_MAX,
 } IPC_COMMAND_TYPE;
 
@@ -125,7 +129,39 @@ private:
   IPCNameFifo m_fifo;
 };
 
+class IPCOutput {
+    public:
+	  IPCOutput(const std::string& file):m_fd(-1), m_file(file) {
+	}
 
+	virtual ~IPCOutput() {
+		Term();
+	}
+
+	bool Init() {
+		if (m_fd < 0) {
+			m_fd = open(m_file.c_str(), O_WRONLY | O_NONBLOCK);
+		}
+		return m_fd >= 0;
+	}
+
+	void Term() {
+		if (m_fd >= 0) {
+			close(m_fd);
+			m_fd = -1;
+		}
+	}
+
+	void Send(const IPCEvent& evt) {
+		if (m_fd >= 0) {
+			write(m_fd, &evt, sizeof(IPCEvent));
+		}
+	}
+
+private:
+	int m_fd;
+	std::string m_file;
+};
 /**
  * \brief Read configuration from config file
  */
@@ -194,6 +230,12 @@ int test_conf_file(char *_conf_file_name)
         return EXIT_FAILURE;
 }
 
+void server_on_exit()
+{
+	printf("child process exit...\n");
+    EASYUICONTEXT->deinitEasyUI();
+}
+
 /**
  * \brief Callback function for handling signals.
  * \param   sig identifier of signal
@@ -229,13 +271,12 @@ void handler(int signo)
     {
         while((id=waitpid(child_pid,NULL,WNOHANG))>0)
         {
+			printf("handle signal....childPid=%d\n", child_pid);
             syslog(LOG_INFO, "wait child success:%d", id);
-
         }
         syslog(LOG_INFO, "child quit!%d", getpid());
         child_pid = 0;
     }
-
 }
 
 
@@ -318,7 +359,14 @@ static void daemonize()
         /* Write PID to lockfile */
         write(pid_fd, str, strlen(str));
     }
+}
 
+void clear_fd()
+{
+	for (int i = 3; i < FD_MAX - 1; i++)
+	{
+		close(i);
+	}
 }
 
 /**
@@ -338,7 +386,6 @@ void print_help(void)
 }
 int createEasyui(void)
 {
-
     int pid;
 
     pid = fork();
@@ -368,6 +415,10 @@ int createEasyui(void)
             exit(EXIT_SUCCESS);
         }
     #endif
+		clear_fd();
+
+		atexit(server_on_exit);
+
         prctl(PR_SET_NAME, "zkgui_ui", NULL, NULL, NULL);
         if (EASYUICONTEXT->initEasyUI())
         {
@@ -384,7 +435,7 @@ int createEasyui(void)
 /* Main function */
 int main(int argc, const char *argv[])
 {
-
+	int forkPid = -1;
     app_name = (char *)argv[0];
 
     //daemonize();
@@ -394,55 +445,125 @@ int main(int argc, const char *argv[])
 
     /* This global variable can be changed in function handling signal */
     running = 1;
+    forkPid = createEasyui();
+	signal(SIGCHLD, SIG_IGN);		// 子进程信息状态被丢弃，自动回收资源
 
-    sstar_disp_init();
-    //signal(SIGCHLD,handler);
+	if (forkPid > 0)
+	{
+		sstar_disp_init();
+		
+		child_pid = forkPid;
+		printf("create ui process, id is %d\n", child_pid);
 
-    child_pid = createEasyui();
+		IPCEvent getevt;
 
-    signal(SIGCHLD,handler);
+		IPCInput ssdinput(SSD_IPC);
+		if(!ssdinput.Init())
+		{
+			printf("ipc init fail\n");
+			return 0;
+		}
+
+		//syslog(LOG_INFO, "ssdinput end");
+		/* Never ending loop of server */
+		while (running == 1)
+		{
+
+			/* TODO: dome something useful here */
+			memset(&getevt,0,sizeof(IPCEvent));
+			if(ssdinput.Read(getevt) > 0)
+			{
+				printf("main process get msg %d\n", getevt.Data);
+				//syslog(LOG_ERR,"Get EventEventType[%d] Data[%d] StrData[%s]",getevt.EventType,getevt.Data,getevt.StrData);
+				if(getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_START_DONE)
+				{
+					//syslog(LOG_ERR,"Browser Star done!!!!");
+				}
+
+				if(getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_STOP_DONE)
+				{
+					//syslog(LOG_ERR,"Browser Stop done!!!!");
+					forkPid = createEasyui();
+					if (forkPid > 0)
+					{
+						child_pid = forkPid;
+						printf("create ui process, id is %d\n", child_pid);
+					}
+				}
+
+				if (getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_UI_EXIT)
+				{
+					printf("recv ui exit msg %d\n", IPC_COMMAND_UI_EXIT);
+
+					if (child_pid > 0)
+					{
+						IPCOutput sendToBrowser(SVC_IPC);
+						if(!sendToBrowser.Init())
+						{
+							printf("Brown process Not start!!!\n");
+							sendToBrowser.Term();
+						}
+						IPCEvent sendevt;
+						memset(&sendevt,0,sizeof(IPCEvent));
+						sendevt.EventType = IPC_COMMAND;
+						sendevt.Data = IPC_COMMAND_APP_START;  //IPC_COMMAND_APP_STOP to stop browser fg
+						sendToBrowser.Send(sendevt);
+					}
+				}
+				
+				if (getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_SUSPEND)
+				{
+					printf("recv ui suspend msg %d\n", IPC_COMMAND_APP_SUSPEND);
+
+					if (child_pid > 0)
+					{
+						sstar_disp_Deinit();
+						
+						IPCOutput sendToUI(UI_IPC);
+						if(!sendToUI.Init())
+						{
+							printf("UI process Not start!!!\n");
+							sendToUI.Term();
+						}
+						IPCEvent sendevt;
+						memset(&sendevt,0,sizeof(IPCEvent));
+						sendevt.EventType = IPC_COMMAND;
+						sendevt.Data = IPC_COMMAND_APP_SUSPEND_DONE;
+						sendToUI.Send(sendevt);
+					}
+				}
+				
+				if (getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_RESUME)
+				{
+					printf("recv ui suspend msg %d\n", IPC_COMMAND_APP_RESUME);
+
+					if (child_pid > 0)
+					{
+						sstar_disp_init();
+						
+						IPCOutput sendToUI(UI_IPC);
+						if(!sendToUI.Init())
+						{
+							printf("UI process Not start!!!\n");
+							sendToUI.Term();
+						}
+						IPCEvent sendevt;
+						memset(&sendevt,0,sizeof(IPCEvent));
+						sendevt.EventType = IPC_COMMAND;
+						sendevt.Data = IPC_COMMAND_APP_RESUME_DONE;
+						sendToUI.Send(sendevt);
+					}
+				}
+			}
 
 
-    IPCEvent getevt;
-
-    IPCInput ssdinput(SSD_IPC);
-    if(!ssdinput.Init())
-    {
-        printf("ipc init fail\n");
-        return 0;
-    }
-
-    //syslog(LOG_INFO, "ssdinput end");
-    /* Never ending loop of server */
-    while (running == 1)
-    {
-
-        /* TODO: dome something useful here */
-        memset(&getevt,0,sizeof(IPCEvent));
-        if(ssdinput.Read(getevt) > 0)
-        {
-            //syslog(LOG_ERR,"Get EventEventType[%d] Data[%d] StrData[%s]",getevt.EventType,getevt.Data,getevt.StrData);
-            if(getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_START_DONE)
-            {
-                //syslog(LOG_ERR,"Browser Star done!!!!");
-            }
-
-            if(getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_STOP_DONE)
-            {
-                //syslog(LOG_ERR,"Browser Stop done!!!!");
-                child_pid = createEasyui();
-
-            }
-
-        }
-
-
-        /* Real server should use select() or poll() for waiting at
-         * asynchronous event. Note: sleep() is interrupted, when
-         * signal is received. */
-        sleep(delay);
-    }
-
+			/* Real server should use select() or poll() for waiting at
+			 * asynchronous event. Note: sleep() is interrupted, when
+			 * signal is received. */
+			sleep(delay);
+		}
+	}
+    
     /* Write system log and close it. */
     //syslog(LOG_INFO, "Stopped %s", app_name);
     //closelog();
