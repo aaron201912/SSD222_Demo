@@ -28,7 +28,7 @@ UI demo on ssd222.
 ### zk_full_str
 <p style="text-indent:2em">zk_full的str版本。</p>
 
-### zk_mini_nosensor
+### zk_mini_nosensor_str
 <p style="text-indent:2em">zk_mini_nosensor的str版本。</p>
 
 ### 编译方法：
