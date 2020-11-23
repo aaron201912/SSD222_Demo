@@ -367,6 +367,26 @@ static void *WifiConnectProc(void *pdata)
 			else
 				freshConnStatusCnt++;
 		}
+#if 1
+		else if (!wifiEnabled && enableStatusChanged)
+		{
+			WifiConnCallbackListData_t *pstWifiCallbackData = NULL;
+			list_t *pListPos = NULL;
+
+			currentConnStatus = 0;
+			lastConnStatus = 0;
+
+			pthread_mutex_lock(&g_connCallbackListMutex);
+			list_for_each(pListPos, &g_connCallbackListHead)
+			{
+				pstWifiCallbackData = list_entry(pListPos, WifiConnCallbackListData_t, callbackList);
+
+				// 如果连上，将界面列表第一项设为连上状态；如果断开，将界面列表第一项连上状态清除
+				pstWifiCallbackData->pfnCallback(NULL, currentConnStatus, 0);
+			}
+			pthread_mutex_unlock(&g_connCallbackListMutex);
+		}
+#endif
 
 		usleep(50000);
 	}
@@ -762,6 +782,18 @@ int Wifi_GetSupportStatus()
 int Wifi_GetCurConnStatus(MI_WLAN_Status_t *status)
 {
 	return MI_WLAN_GetStatus(g_hWlan, status);
+}
+
+int Wifi_GetLastConnStatus()
+{
+	int lastConnStatus = 0;
+
+	pthread_mutex_lock(&g_connParamMutex);
+	if (g_wifiSupported && g_wifiEnabled && (g_hWlan != -1))
+		lastConnStatus = 1;
+	pthread_mutex_unlock(&g_connParamMutex);
+
+	return lastConnStatus;
 }
 
 static void *WifiGetApStatusProc(void *pdata)
