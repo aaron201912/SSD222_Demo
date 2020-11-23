@@ -455,7 +455,7 @@ MI_S32 ST_Vdisp_Deinit(void)
     /*
     *退出vdisp模块
     */
-    //STCHECKRESULT(MI_VDISP_Exit());
+    STCHECKRESULT(MI_VDISP_Exit());
 	STCHECKRESULT(MI_VDISP_DeInitDev());
 	    
     return MI_SUCCESS;
