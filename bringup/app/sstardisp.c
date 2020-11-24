@@ -82,6 +82,8 @@ int sstar_disp_Deinit()
     MI_DISP_UnBindVideoLayer(0, 0);
     MI_DISP_Disable(0);
     MI_PANEL_DeInit();
+	MI_DISP_DeInitDev();
+	MI_PANEL_DeInitDev();
     MI_SYS_Exit();
     printf("sstar_disp_Deinit...\n");
 

@@ -451,7 +451,7 @@ int main(int argc, const char *argv[])
 	if (forkPid > 0)
 	{
 		sstar_disp_init();
-		
+
 		child_pid = forkPid;
 		printf("create ui process, id is %d\n", child_pid);
 
@@ -510,7 +510,7 @@ int main(int argc, const char *argv[])
 						sendToBrowser.Send(sendevt);
 					}
 				}
-				
+
 				if (getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_SUSPEND)
 				{
 					printf("recv ui suspend msg %d\n", IPC_COMMAND_APP_SUSPEND);
@@ -518,7 +518,7 @@ int main(int argc, const char *argv[])
 					if (child_pid > 0)
 					{
 						sstar_disp_Deinit();
-						
+
 						IPCOutput sendToUI(UI_IPC);
 						if(!sendToUI.Init())
 						{
@@ -532,15 +532,15 @@ int main(int argc, const char *argv[])
 						sendToUI.Send(sendevt);
 					}
 				}
-				
+
 				if (getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_RESUME)
 				{
-					printf("recv ui suspend msg %d\n", IPC_COMMAND_APP_RESUME);
+					printf("recv ui resume msg %d\n", IPC_COMMAND_APP_RESUME);
 
 					if (child_pid > 0)
 					{
 						sstar_disp_init();
-						
+
 						IPCOutput sendToUI(UI_IPC);
 						if(!sendToUI.Init())
 						{
@@ -563,7 +563,7 @@ int main(int argc, const char *argv[])
 			sleep(delay);
 		}
 	}
-    
+
     /* Write system log and close it. */
     //syslog(LOG_INFO, "Stopped %s", app_name);
     //closelog();
