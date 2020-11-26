@@ -86,6 +86,8 @@ static void updateAnimation() {
 void WifiConnStatusCallback(char *pSsid, int status, int quality)
 {
 //	printf("conn ssid: %s, status: %d, quality: %d\n", pSsid, status, quality);
+	if (!pSsid)
+		return;
 
 	g_scanResLock.lock();
 	g_connStatus = status;

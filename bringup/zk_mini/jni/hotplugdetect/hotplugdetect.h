@@ -23,6 +23,7 @@ int SSTAR_GetWifiEnableStatus();
 void SSTAR_SetWifiEnableStatus(int enable);
 int SSTAR_GetWifiSupportStatus();
 int SSTAR_GetWifiCurConnStatus(MI_WLAN_Status_t *status);
+int SSTAR_GetWifiLastConnStatus();
 int SSTAR_InitWifiApMode();
 void SSTAR_DeinitWifiApMode();
 int SSTAR_EnableWifiApMode(AirportInfo_t *pApInfo, WifiGetApInfoCallback pfnCallback);

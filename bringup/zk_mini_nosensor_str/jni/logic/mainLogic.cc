@@ -340,7 +340,7 @@ static void Enter_STR_SuspendMode()
 
 static void Enter_STR_ResumeMode()
 {
-	system("echo 1 >/sys/class/gpio/gpio8/value");
+	system("echo 1 > /sys/class/gpio/gpio7/value");
 
 	IPCOutput o(SSD_IPC);
 	if(!o.Init())
@@ -380,7 +380,7 @@ static void Enter_STR_ResumeMode()
 	MI_GFX_Open();
 
 	usleep(30*1000);
-	system("echo 1 >/sys/class/gpio/gpio7/value");
+	system("echo 1 > /sys/class/gpio/gpio8/value");
 	printf("begin to insmod wifi ko\n");
 	system("insmod /config/wifi/ssw102b_wifi_sdio.ko");
 	printf("insmod wifi ko success\n");

@@ -29,7 +29,7 @@
 *
 * 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
 */
-
+#include "statusbarconfig.h"
 
 /**
  * 注册定时器
@@ -76,7 +76,7 @@ static void onUI_hide() {
  * 当界面完全退出时触发
  */
 static void onUI_quit() {
-
+	ShowStatusBar(1, 0, 0);
 }
 
 /**

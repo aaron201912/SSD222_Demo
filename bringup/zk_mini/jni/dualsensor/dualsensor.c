@@ -874,32 +874,6 @@ MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
     return MI_SUCCESS;
 }
 
-#if 0
-int main (int argc, char **argv)
-{
-
-    STCHECKRESULT(ST_BaseModuleInit(&g_stConfig));
-
-    while(!g_bExit)
-    {
-        MI_U8 u8Cmd = 0xFF;
-        printf("input 'q' exit\n");
-        scanf("%c", &u8Cmd);
-        ST_Flush();
-        if('q' == u8Cmd)
-        {
-            g_bExit = 1;
-        }
-        usleep(100*1000);
-    }
-    
-    DBG_INFO("deinit senor/vif/vfp/disp/panel and exit app\n");
-    STCHECKRESULT(ST_BaseModuleUnInit(&g_stConfig));
-    
-    return 0;
-}
-#endif
-
 int SSTAR_DualSensorInit()
 {
 	STCHECKRESULT(ST_BaseModuleInit(&g_stConfig));

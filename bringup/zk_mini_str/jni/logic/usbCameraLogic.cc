@@ -46,6 +46,7 @@
 #include "v4l2.h"
 #include "libyuv.h"
 #include "platform.h"
+#include "statusbarconfig.h"
 
 #define ENABLE_DIVP 1
 
@@ -521,6 +522,7 @@ static void onUI_hide() {
  */
 static void onUI_quit() {
     LOGD(" onUI_quit !!!\n");
+    ShowStatusBar(1, 0, 0);
 }
 
 /**

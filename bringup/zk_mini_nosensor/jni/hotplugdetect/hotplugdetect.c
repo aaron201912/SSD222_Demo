@@ -38,6 +38,11 @@ int SSTAR_GetWifiCurConnStatus(MI_WLAN_Status_t *status)
 	return Wifi_GetCurConnStatus(status);
 }
 
+int SSTAR_GetWifiLastConnStatus()
+{
+	return Wifi_GetLastConnStatus();
+}
+
 int SSTAR_InitWifiApMode()
 {
 	return Wifi_InitAp();

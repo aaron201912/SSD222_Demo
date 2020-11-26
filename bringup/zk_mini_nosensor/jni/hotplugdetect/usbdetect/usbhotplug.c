@@ -212,6 +212,7 @@ int USB_CheckCurrentStatus()
 			pSeek = strstr(pCurLine, "sd");
 			if (pSeek)
 			{
+				// usb: sda~sdh
 				if (strlen(pSeek) > 2 && (pSeek[2] >= 'a' && pSeek[2] <= 'h'))
 				{
 					nRet = 1;

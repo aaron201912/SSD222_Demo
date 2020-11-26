@@ -53,6 +53,7 @@ int Wifi_GetEnableStatus();
 void Wifi_SetEnableStatus(int enable);
 int Wifi_GetSupportStatus();
 int Wifi_GetCurConnStatus(MI_WLAN_Status_t *status);
+int Wifi_GetLastConnStatus();
 
 int Wifi_InitAp();
 void Wifi_DeinitAp();

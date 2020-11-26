@@ -83,6 +83,13 @@ static WifiScanResultListHead_t g_stScanResListHead;
 static ScanResult_t *g_pstScanRes = NULL;
 static int  g_staInit = 0;
 
+unsigned long GetTickCount()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+}
+
 static void ClearScanResult()
 {
 	WifiScanResultListData_t *pstScanResData = NULL;
@@ -357,6 +364,26 @@ static void *WifiConnectProc(void *pdata)
 			else
 				freshConnStatusCnt++;
 		}
+#if 1
+		else if (!wifiEnabled && enableStatusChanged)
+		{
+			WifiConnCallbackListData_t *pstWifiCallbackData = NULL;
+			list_t *pListPos = NULL;
+
+			currentConnStatus = 0;
+			lastConnStatus = 0;
+
+			pthread_mutex_lock(&g_connCallbackListMutex);
+			list_for_each(pListPos, &g_connCallbackListHead)
+			{
+				pstWifiCallbackData = list_entry(pListPos, WifiConnCallbackListData_t, callbackList);
+
+				// 如果连上，将界面列表第一项设为连上状态；如果断开，将界面列表第一项连上状态清除
+				pstWifiCallbackData->pfnCallback(NULL, currentConnStatus, 0);
+			}
+			pthread_mutex_unlock(&g_connCallbackListMutex);
+		}
+#endif
 
 		usleep(50000);
 	}
@@ -457,7 +484,7 @@ static void *WlanWorkProc(void *pdata)
     {
     	if (!access("/sys/bus/usb", F_OK) && !access("/config/wifi", F_OK) && !access("/appconfigs", F_OK))
 		{
-			printf("wifi ko mount ok\n");
+			printf("wifi ko mount ok, currnet tryCnt is %d\n", checkCnt);
 			isWlanInsmode = 1;
 			break;
 		}
@@ -604,7 +631,7 @@ int Wifi_RegisterConnectCallback(WifiConnCallback pfnCallback)
 	pthread_mutex_unlock(&g_connCallbackListMutex);
 
 	// debug2
-	printf("Wifi_RegisterConnectCallback  debug1...\n");
+	printf("Wifi_RegisterConnectCallback  debug2...\n");
 
 	pthread_mutex_lock(&g_connParamMutex);
 	g_registerConnChanged = 1;
@@ -752,6 +779,18 @@ int Wifi_GetSupportStatus()
 int Wifi_GetCurConnStatus(MI_WLAN_Status_t *status)
 {
 	return MI_WLAN_GetStatus(g_hWlan, status);
+}
+
+int Wifi_GetLastConnStatus()
+{
+	int lastConnStatus = 0;
+
+	pthread_mutex_lock(&g_connParamMutex);
+	if (g_wifiSupported && g_wifiEnabled && (g_hWlan != -1))
+		lastConnStatus = 1;
+	pthread_mutex_unlock(&g_connParamMutex);
+
+	return lastConnStatus;
 }
 
 static void *WifiGetApStatusProc(void *pdata)

@@ -133,7 +133,7 @@ static void onUI_intent(const Intent *intentPtr) {
  * 当界面显示时触发
  */
 static void onUI_show() {
-//    mVideoviewTTPtr->resume();
+
 }
 
 /*
@@ -169,14 +169,12 @@ static void onProtocolDataUpdate(const SProtocolData &data) {
  *         false
  *             停止运行当前定时器
  */
-static bool onUI_Timer(int id) {
-    switch (id) {
-    case 1: {
-        break;
-    }
-    default:
-        break;
-    }
+static bool onUI_Timer(int id){
+	switch (id) {
+
+		default:
+			break;
+	}
     return true;
 }
 
