@@ -47,7 +47,7 @@ MI_U32 g_u32CapWidth = 0;
 MI_U32 g_u32CapHeight = 0;
 static MI_BOOL g_bExit = FALSE;
 
-static MI_U8 g_u8RGNSkipFlag = 0;
+//static MI_U8 g_u8RGNSkipFlag = 0;
 
 /*
 * 初始化vdisp模块
@@ -362,8 +362,11 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
     
     u8SensorNum = pstConfig->u8SensorNum;
     u8FaceDetect = pstConfig->u8FaceDetect;
-#if 0
-    STCHECKRESULT(ST_RGN_Init());
+#if 1
+    if(1 == u8FaceDetect)
+    {
+        STCHECKRESULT(ST_RGN_Init());
+    }
 #else
     if(1 == u8FaceDetect)
     {
@@ -815,8 +818,10 @@ MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
     /************************************************
      deinit RGN
     *************************************************/
-    //STCHECKRESULT(ST_RGN_Deinit());
-
+    if(1 == u8FaceDetect)
+    {
+        STCHECKRESULT(ST_RGN_Deinit());
+    }
     /************************************************
      destory SYS
     *************************************************/
