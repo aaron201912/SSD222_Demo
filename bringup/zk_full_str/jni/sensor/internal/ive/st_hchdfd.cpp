@@ -457,7 +457,7 @@ MI_S32 Module_SAD()
     }
     memcpy(&RGB_image1_bak, &RGB_image1, sizeof(MI_IVE_Image_t));
     // Allocate output buffer 0
-    ret = ModuleTest_AllocateImage(&SadResult, E_MI_IVE_IMAGE_TYPE_U16C1, HCFD_RAW_W/SAD_BLOCK_SIZE, HCFD_RAW_W/SAD_BLOCK_SIZE, ALIGN_UP(HCFD_RAW_H, 32)/SAD_BLOCK_SIZE);
+    ret = ModuleTest_AllocateImage(&SadResult, E_MI_IVE_IMAGE_TYPE_U16C1, HCFD_RAW_W/SAD_BLOCK_SIZE, HCFD_RAW_W/SAD_BLOCK_SIZE, ALIGN_DOWN(HCFD_RAW_H, 32)/SAD_BLOCK_SIZE);
     if (ret != MI_SUCCESS)
     {
         DBG_ERR("Can't allocate output buffer 0\n");
@@ -465,7 +465,7 @@ MI_S32 Module_SAD()
     }
 
     // Allocate output buffer 1
-    ret = ModuleTest_AllocateImage(&ThdResult, E_MI_IVE_IMAGE_TYPE_U8C1, HCFD_RAW_W/SAD_BLOCK_SIZE, HCFD_RAW_W/SAD_BLOCK_SIZE, ALIGN_UP(HCFD_RAW_H, 32)/SAD_BLOCK_SIZE);
+    ret = ModuleTest_AllocateImage(&ThdResult, E_MI_IVE_IMAGE_TYPE_U8C1, HCFD_RAW_W/SAD_BLOCK_SIZE, HCFD_RAW_W/SAD_BLOCK_SIZE, ALIGN_DOWN(HCFD_RAW_H, 32)/SAD_BLOCK_SIZE);
     if (ret != MI_SUCCESS)
     {
         DBG_ERR("Can't allocate output buffer 1\n");
@@ -608,7 +608,7 @@ static int MD_preprocess()
     sad_y_max = SadResult.u16Height;
 
     SAD_handle.width = HCFD_RAW_W;
-    SAD_handle.align_height =  ALIGN_UP(HCFD_RAW_H, 32);
+    SAD_handle.align_height =  ALIGN_DOWN(HCFD_RAW_H, 32);
     SAD_handle.ive_handle = ive_handle;
     SAD_handle.Y_image0 = &Y_image0;
     SAD_handle.Y_image1 = &Y_image1;
@@ -707,7 +707,7 @@ void* mid_hchdfd_Task(void *argu)
     Y_image0.eType = E_MI_IVE_IMAGE_TYPE_U8C1;
     Y_image0.apu8VirAddr[0] = (unsigned char*)stBufInfo.stFrameData.pVirAddr[0];
     Y_image0.aphyPhyAddr[0] = (MI_PHY)stBufInfo.stFrameData.phyAddr[0];
-    Y_image0.u16Height = ALIGN_UP(HCFD_RAW_H, 32);
+    Y_image0.u16Height = ALIGN_DOWN(HCFD_RAW_H, 32);
     Y_image0.u16Width = HCFD_RAW_W;
     Y_image0.azu16Stride[0] = HCFD_RAW_W;
     nHC_keepYuv_count=1;
@@ -735,7 +735,7 @@ void* mid_hchdfd_Task(void *argu)
             Y_image1.eType = E_MI_IVE_IMAGE_TYPE_U8C1;
             Y_image1.apu8VirAddr[0] = (MI_U8*)stBufInfo.stFrameData.pVirAddr[0];
             Y_image1.aphyPhyAddr[0] = (MI_PHY)stBufInfo.stFrameData.phyAddr[0];
-            Y_image1.u16Height =  ALIGN_UP(HCFD_RAW_H, 32);
+            Y_image1.u16Height =  ALIGN_DOWN(HCFD_RAW_H, 32);
             Y_image1.u16Width = HCFD_RAW_W;
             Y_image1.azu16Stride[0] = HCFD_RAW_W;
 
@@ -753,7 +753,7 @@ void* mid_hchdfd_Task(void *argu)
             
             Y_image0.apu8VirAddr[0] = (MI_U8*)stBufInfo.stFrameData.pVirAddr[0];
             Y_image0.aphyPhyAddr[0] = (MI_PHY)stBufInfo.stFrameData.phyAddr[0];
-            Y_image0.u16Height =  ALIGN_UP(HCFD_RAW_H, 32);
+            Y_image0.u16Height =  ALIGN_DOWN(HCFD_RAW_H, 32);
             Y_image0.u16Width = HCFD_RAW_W;
             Y_image0.azu16Stride[0] = HCFD_RAW_W;
 
@@ -761,7 +761,7 @@ void* mid_hchdfd_Task(void *argu)
         }
         
         YUV_image.eType = E_MI_IVE_IMAGE_TYPE_YUV420SP;
-        YUV_image.u16Height =  ALIGN_UP(HCFD_RAW_H, 32);
+        YUV_image.u16Height =  ALIGN_DOWN(HCFD_RAW_H, 32);
         YUV_image.u16Width = HCFD_RAW_W;
         YUV_image.azu16Stride[0] = HCFD_RAW_W;
         YUV_image.azu16Stride[1] = HCFD_RAW_W;
@@ -804,20 +804,20 @@ void* mid_hchdfd_Task(void *argu)
                 sad_x_min -= pad_x;
             }
 
-            if((sad_y_min < pad_y)&&(sad_y_max + pad_y >  ALIGN_UP(HCFD_RAW_H, 32)))
+            if((sad_y_min < pad_y)&&(sad_y_max + pad_y >  ALIGN_DOWN(HCFD_RAW_H, 32)))
             {
                 sad_y_min = 0;
-                sad_y_max =  ALIGN_UP(HCFD_RAW_H, 32) - 1;
+                sad_y_max =  ALIGN_DOWN(HCFD_RAW_H, 32) - 1;
             }
             else if (sad_y_min < pad_y)
             {
                 sad_y_max += (pad_y * 2 - sad_y_min);
                 sad_y_min = 0;
             } 
-            else if (sad_y_max + pad_y >=  ALIGN_UP(HCFD_RAW_H, 32))
+            else if (sad_y_max + pad_y >=  ALIGN_DOWN(HCFD_RAW_H, 32))
             {
-                sad_y_min -= (pad_y * 2 - ( ALIGN_UP(HCFD_RAW_H, 32) - 1 - sad_y_max));
-                sad_y_max =  ALIGN_UP(HCFD_RAW_H, 32) - 1;
+                sad_y_min -= (pad_y * 2 - ( ALIGN_DOWN(HCFD_RAW_H, 32) - 1 - sad_y_max));
+                sad_y_max =  ALIGN_DOWN(HCFD_RAW_H, 32) - 1;
             } 
             else
             {
@@ -881,7 +881,7 @@ void* mid_hchdfd_Task(void *argu)
             else {              //HD or FD
                 human_cnt = Get_Detection(ntwk_handle, sad_height, sad_width);
             }
-            //printf("human_cnt: %d\n",human_cnt);
+            //DBG_INFO("human_cnt: %d\n",human_cnt);
         }
         else if(USE_HC_HD_FD==2 || USE_HC_HD_FD==3)
         {
@@ -961,8 +961,11 @@ void* mid_hchdfd_Task(void *argu)
                 if(u32FdDetectCount > 0)
                 {
                     u32FdDetectCount--;
+                    //DBG_INFO("clean DetectCount: %d\n", u32FdDetectCount);
                     if(!u32FdDetectCount)
+                    {
                         ST_RGN_ClearRect(0);
+                    }
                 }
             }
         }

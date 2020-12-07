@@ -233,21 +233,29 @@ MI_S32 ClearRgnRect(MI_RGN_CanvasInfo_t *pstRgnCanvasInfo)
     return 0;
 }
 
+int ST_RGN_Init(void)
+{
+    if (MI_RGN_OK != MI_RGN_Init(&_gstPaletteTable))
+    {
+        DBG_ERR("MI_RGN_Init fail\n");
+        return -1;
+    }
 
-int ST_RGN_Init(MI_RGN_HANDLE hHandle)
+    return 0;
+}
+
+int ST_RGN_Create(MI_RGN_HANDLE hHandle)
 {
     MI_RGN_ChnPort_t stRgnChnPort;
     MI_RGN_Attr_t stRgnAttr;
     MI_RGN_ChnPortParam_t stChnAttr;
-    
-    MI_RGN_Init(&_gstPaletteTable);
 
     // create rgn
     memset(&stRgnChnPort, 0, sizeof(MI_RGN_ChnPort_t));
     memset(&stRgnAttr, 0, sizeof(MI_RGN_Attr_t));
     memset(&stChnAttr, 0, sizeof(MI_RGN_ChnPortParam_t));
 
-    stRgnChnPort.eModId = E_MI_RGN_MODID_VPE;
+    stRgnChnPort.eModId = E_MI_RGN_MODID_DIVP;
     stRgnChnPort.s32DevId = 0;
     stRgnChnPort.s32ChnId = 0;
     stRgnChnPort.s32OutputPortId = 0;
@@ -265,7 +273,6 @@ int ST_RGN_Init(MI_RGN_HANDLE hHandle)
     stChnAttr.unPara.stOsdChnPort.stOsdAlphaAttr.stAlphaPara.stArgb1555Alpha.u8BgAlpha = 0;
     stChnAttr.unPara.stOsdChnPort.stOsdAlphaAttr.stAlphaPara.stArgb1555Alpha.u8FgAlpha = 0xFF;
     
-
     if (MI_RGN_OK != MI_RGN_Create(hHandle, &stRgnAttr))
     {
         DBG_ERR("MI_RGN_Create fail\n");
@@ -279,16 +286,39 @@ int ST_RGN_Init(MI_RGN_HANDLE hHandle)
     }
 
     return 0;
-
 }
 
-int ST_RGN_Deinit(MI_RGN_HANDLE hHandle)
+int ST_RGN_Destroy(MI_RGN_HANDLE hHandle)
 {
-	MI_RGN_Destroy(hHandle);
-	MI_RGN_DeInit();
-	MI_RGN_DeInitDev();
+    MI_RGN_ChnPort_t stRgnChnPort;
 
-	return 0;
+    memset(&stRgnChnPort, 0, sizeof(MI_RGN_ChnPort_t));
+    stRgnChnPort.eModId = E_MI_RGN_MODID_DIVP;
+    stRgnChnPort.s32DevId = 0;
+    stRgnChnPort.s32ChnId = 0;
+    stRgnChnPort.s32OutputPortId = 0;
+    if (MI_RGN_OK != MI_RGN_DetachFromChn(hHandle, &stRgnChnPort))
+    {
+        DBG_ERR("MI_RGN_DetachFromChn fail\n");
+        return -1;
+    }
+    if (MI_RGN_OK != MI_RGN_Destroy(hHandle))
+    {
+        DBG_ERR("MI_RGN_Destroy fail\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int ST_RGN_Deinit(void)
+{
+    if (MI_RGN_OK != MI_RGN_DeInit())
+    {
+        DBG_ERR("MI_RGN_DeInit fail\n");
+        return -1;
+    }
+    return 0;
 }
 
 int ST_RGN_DrawRect(MI_RGN_HANDLE hHandle,ST_RGN_Rect_t *pstDrawRect,MI_S32 s32RectCnt)

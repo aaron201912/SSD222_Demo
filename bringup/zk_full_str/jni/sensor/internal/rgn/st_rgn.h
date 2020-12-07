@@ -47,8 +47,10 @@ void FillRect(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stLetfTopPt, DrawPo
 void DrawCircular(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stCenterPt, MI_U32 u32Radius, MI_U8 u8BorderWidth, DrawRgnColor_t stColor);
 void FillCircular(void *pBaseAddr, MI_U32 u32Stride, DrawPoint_t stCenterPt, MI_U32 u32Radius, DrawRgnColor_t stColor);
 
-int ST_RGN_Init(MI_RGN_HANDLE hHandle);
-int ST_RGN_Deinit(MI_RGN_HANDLE hHandle);
+int ST_RGN_Init(void);
+int ST_RGN_Create(MI_RGN_HANDLE hHandle);
+int ST_RGN_Destroy(MI_RGN_HANDLE hHandle);
+int ST_RGN_Deinit(void);
 int ST_RGN_DrawRect(MI_RGN_HANDLE hHandle,ST_RGN_Rect_t *pstDrawRect,MI_S32 s32RectCnt);
 int ST_RGN_ClearRect(MI_RGN_HANDLE hHandle);
 

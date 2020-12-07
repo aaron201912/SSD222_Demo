@@ -21,7 +21,7 @@ extern "C"{
 #include "mi_ive.h"
 #include "st_common.h"
 
-#define HCFD_DIVP_CHN	0
+#define HCFD_DIVP_CHN	1
 #define HCFD_FRMRATE	5
 #define HCFD_RAW_W		    352 //384
 #define HCFD_RAW_H		    288
