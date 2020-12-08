@@ -593,6 +593,6 @@ static bool onButtonClick_sys_back(ZKButton *pButton) {
     }
 
     STCHECKRESULT(MI_DISP_DisableInputPort(0, 0));
-
+    MI_DISP_DeInitDev();
     return false;
 }

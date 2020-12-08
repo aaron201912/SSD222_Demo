@@ -38,6 +38,7 @@ typedef struct
     MI_S32 s32UsePanel;
     MI_U8 u8SensorNum;
     MI_U8 u8FaceDetect;
+    MI_U8 u8SpiInit;
     MI_SYS_PixelFormat_e enPixelFormat;
     MI_S32 s32HDRtype;
     ST_Sensor_Type_T enSensorType;
