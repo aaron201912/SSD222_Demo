@@ -127,8 +127,9 @@ typedef struct
 typedef struct
 {
     MI_BOOL bEn;
-    MI_U16  u16Duty;
-    MI_U16  u16Period;
+    MI_U8    u8PwmNum;
+    MI_U32  u32Duty;
+    MI_U32  u32Period;
 }MI_PANEL_BackLightConfig_t;
 
 typedef struct

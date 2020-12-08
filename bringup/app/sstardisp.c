@@ -32,7 +32,7 @@ int sstar_disp_init()
     MI_PANEL_ParamConfig_t pstParamCfg;
 
     MI_SYS_Init();
-	
+
     //config disp
     memset(&stPubAttr, 0, sizeof(MI_DISP_PubAttr_t));
     stPubAttr.u32BgColor = YUYV_BLACK;
@@ -71,16 +71,25 @@ int sstar_disp_init()
     eIntfType = E_MI_PNL_INTF_TTL;
     MI_PANEL_Init(eIntfType);
 	MI_PANEL_GetPanelParam(eIntfType, &pstParamCfg);
-	
+
     return 0;
 }
 
 int sstar_disp_Deinit()
 {
+    MI_PANEL_IntfType_e eIntfType = E_MI_PNL_INTF_TTL;
+    MI_PANEL_BackLightConfig_t stBackLightCfg;
+    memset(&stBackLightCfg, 0, sizeof(MI_PANEL_BackLightConfig_t));
+
     MI_DISP_DisableInputPort(0, 0);
     MI_DISP_DisableVideoLayer(0);
     MI_DISP_UnBindVideoLayer(0, 0);
     MI_DISP_Disable(0);
+//    MI_PANEL_GetBackLight(eIntfType, &stBackLightCfg);
+//    printf("get bl cfg: bEn=%d, u8PwmNum=%d, u32Duty=%d, u32Period=%d\n",
+//           (int)stBackLightCfg.bEn, (int)stBackLightCfg.u8PwmNum, stBackLightCfg.u32Duty, stBackLightCfg.u32Period);
+//    stBackLightCfg.u32Duty = 0;
+//    MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
     MI_PANEL_DeInit();
 	MI_DISP_DeInitDev();
 	MI_PANEL_DeInitDev();

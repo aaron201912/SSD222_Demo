@@ -3,7 +3,7 @@ TARGET = zkgui
 #赋值对应的路径,此路径需要和本地sdk路径一致
 #PROJECT_PATH=/home/beal.wu/i2m_i6_master/project
 #PROJECT_PATH=/home/koda.xu/I6/master/project
-PROJECT_PATH = ../zk_mini/jni/sdkdir
+PROJECT_PATH = ../zk_full_str/jni/sdkdir
 
 MINIGUI_PATH=./minigui_dir
 COMPILE_ROOT := $(shell pwd)
