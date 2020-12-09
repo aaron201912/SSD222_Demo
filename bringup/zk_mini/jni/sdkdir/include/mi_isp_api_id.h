@@ -76,7 +76,10 @@ extern "C"
 #define ID_API_VIDEO_ENCODE_BASE        (0x3101)
 #define ID_API_VIDEO_ENCODE_END         (0x31FF)
 
-#define ID_API_RESERVED_BASE            (0x3200)
+#define ID_API_RAW_DATA_BASE            (0x3200)
+#define ID_API_RAW_DATA_END             (0x32FF)
+
+#define ID_API_RESERVED_BASE            (0x3300)
 #define ID_API_RESERVED_END             (0x3FFF)
 
 #endif
@@ -103,6 +106,8 @@ extern "C"
 #define ID_API_COMMON_FileID                        ( ID_API_COMMON_BASE + 100 ) //I1 or I3 or I2 or I5 ...
 #define ID_API_COMMON_CHANNEL_ID                    ( ID_API_COMMON_BASE + 101 )
 #define ID_API_COMMON_ISPROOT                       ( ID_API_COMMON_BASE + 102 )
+#define ID_API_COMMON_AVAILABLE_MEMINFO             ( ID_API_COMMON_BASE + 103 )
+
 
 //================================================================
 //  ID Defined : ISP  API
@@ -164,6 +169,8 @@ extern "C"
 #define ID_API_ISP_IQ_NR2D_CHROMA_PRE               ( ID_API_ISP_IQ_BASE  + 55 ) // 55. 4151
 #define ID_API_ISP_IQ_TEMP                          ( ID_API_ISP_IQ_BASE  + 56 ) // 56. 4152
 #define ID_API_ISP_IQ_TEMP_INFO                     ( ID_API_ISP_IQ_BASE  + 57 ) // 57. 4153
+#define ID_API_ISP_IQ_DAYNIGHT_DETECTION            ( ID_API_ISP_IQ_BASE  + 58 ) // 58. 4154
+#define ID_API_ISP_IQ_QUERY_DAYNIGHT_INFO           ( ID_API_ISP_IQ_BASE  + 59 ) // 59. 4155
 
 #define ID_API_ISP_AE_HIST_WEIGHT_Y                 ( ID_API_ISP_AE_BASE  +  1 ) //  1. 5121
 #define ID_API_ISP_AE_QUERY_EXPOSURE_INFO           ( ID_API_ISP_AE_BASE  +  2 ) //  2. 5122
@@ -188,6 +195,8 @@ extern "C"
 #define ID_API_ISP_AE_STABILIZER                    ( ID_API_ISP_AE_BASE  + 21 ) // 21. 5141
 #define ID_API_ISP_AE_STRATEGY_EX                   ( ID_API_ISP_AE_BASE  + 22 ) // 22. 5142
 #define ID_API_ISP_AE_QUERY_STRATEGY_EX_INFO        ( ID_API_ISP_AE_BASE  + 23 ) // 24. 5143
+#define ID_API_ISP_AE_DAYNIGHT_DETECTION            ( ID_API_ISP_AE_BASE  + 24 ) // 25. 5144
+#define ID_API_ISP_AE_QUERY_DAYNIGHT_INFO           ( ID_API_ISP_AE_BASE  + 25 ) // 26. 5145
 
 #define ID_API_ISP_AWB_QUERY_WHITE_BALANCE_INFO     ( ID_API_ISP_AWB_BASE +  1 ) //  1. 6145
 #define ID_API_ISP_AWB_ATTR                         ( ID_API_ISP_AWB_BASE +  2 ) //  2. 6146
@@ -195,6 +204,8 @@ extern "C"
 #define ID_API_ISP_AWB_MULTI_LS_ATTR                ( ID_API_ISP_AWB_BASE +  4 ) //  4. 6148
 #define ID_API_ISP_AWB_CT_WEIGHT                    ( ID_API_ISP_AWB_BASE +  5 ) //  5. 6149
 #define ID_API_ISP_AWB_CTMWB                        ( ID_API_ISP_AWB_BASE +  6 ) //  5. 6150
+#define ID_API_ISP_AWB_DAYNIGHT_DETECTION           ( ID_API_ISP_AWB_BASE +  7 ) //  6. 6151
+#define ID_API_ISP_AWB_QUERY_DAYNIGHT_INFO          ( ID_API_ISP_AWB_BASE +  8 ) //  7. 6152
 
 #define ID_API_ISP_AF_HW_ROI_MODE                   ( ID_API_ISP_AF_BASE  +  1 ) //  1. 7169
 #define ID_API_ISP_AF_HW_WIN                        ( ID_API_ISP_AF_BASE  +  2 ) //  2. 7170
@@ -297,6 +308,8 @@ extern "C"
 #define ID_API_CUS_AF_SET_PARAM                     ( ID_API_CUS3A_BASE  + 33 )//33. 11809 , Customer defined AF control only
 #define ID_API_CUS_AE_CROP_SIZE                     ( ID_API_CUS3A_BASE  + 34 )//34. 11810
 #define ID_API_CUS_AWB_CROP_SIZE                    ( ID_API_CUS3A_BASE  + 35 )//35. 11811
+#define ID_API_CUS_AF_YPARAM                        ( ID_API_CUS3A_BASE  + 36 )//36. 11812
+#define ID_API_CUS_AF_SOURCE                        ( ID_API_CUS3A_BASE  + 37 )//36. 11813
 
 //================================================================
 //  ID Defined : Debug Level  API
@@ -313,6 +326,12 @@ extern "C"
 #define ID_API_VIDEO_CHANNEL_ID                     ( ID_API_VIDEO_ENCODE_BASE  + 1 ) // 1. 12546
 #define ID_API_VIDEO_RATE_CONTROL_ATTR              ( ID_API_VIDEO_ENCODE_BASE  + 2 ) // 2. 12547
 #define ID_API_VIDEO_RATE_CONTROL_PARAM             ( ID_API_VIDEO_ENCODE_BASE  + 3 ) // 2. 12548
+
+
+#define ID_API_RAW_DATA_INFO                        ( ID_API_RAW_DATA_BASE + 1 ) //12801
+#define ID_API_RAW_DATA_INJECT_SWITCH               ( ID_API_RAW_DATA_BASE + 2 ) //12802
+#define ID_API_RAW_DATA_COUNT                       ( ID_API_RAW_DATA_BASE + 3 ) //12803
+
 
 #define ID_API_REGISTER_API_SET_CB                  ( ID_API_RESERVED_BASE + 1) //1. register API_SET callback
 #define ID_API_REGISTER_API_GET_CB                  ( ID_API_RESERVED_BASE + 2) //2. register API_GET callback

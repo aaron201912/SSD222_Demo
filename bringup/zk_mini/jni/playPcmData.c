@@ -16,6 +16,7 @@
 
 //========================== Add play audui file ============================
 #define MI_AUDIO_SAMPLE_PER_FRAME 	256
+#define MI_AUDIO_PT_NUMBER_FRAME	1024
 #define DMA_BUF_SIZE_8K     		(8000)
 #define DMA_BUF_SIZE_16K    		(16000)
 #define DMA_BUF_SIZE_32K    		(32000)
@@ -172,7 +173,7 @@ MI_S32 SSTAR_StartPlayAudioFile(const char *WavAudioFile, MI_S32 s32AoVolume)
     stAoSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = TRUE;
     stAoSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
     stAoSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
-    stAoSetAttr.u32PtNumPerFrm = MI_AUDIO_SAMPLE_PER_FRAME;
+    stAoSetAttr.u32PtNumPerFrm = MI_AUDIO_PT_NUMBER_FRAME;
     stAoSetAttr.u32ChnCnt = 1;
 
     if(g_stWavHeaderInput.wave.wChannels == 2)

@@ -1,5 +1,3 @@
-#include "../dualsensor/dualsensor.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +10,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include "dualsensor.h"
+#include "mi_isp.h"
+#include "mi_iqserver.h"
 
 #define DISP_INPUT_WIDTH    1024
 #define DISP_INPUT_HEIGHT   600
@@ -67,7 +67,7 @@ ST_Config_S g_stConfig =
     },
 };
 
-ST_DBG_LEVEL_e g_eSTDbgLevel = ST_DBG_ALL;
+ST_DBG_LEVEL_e g_eSTDbgLevel = ST_DBG_ERR;
 MI_BOOL g_bSTFuncTrace = 0;
 MI_U32 g_u32CapWidth = 0;
 MI_U32 g_u32CapHeight = 0;
@@ -574,6 +574,45 @@ MI_S32 ST_Vdisp_UnBind(void)
     return MI_SUCCESS;
 }
 
+MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
+{
+    MI_ISP_IQ_PARAM_INIT_INFO_TYPE_t status;
+    MI_U8  u8ispreadycnt = 0;
+    if (strlen(pConfigPath) == 0)
+    {
+        printf("IQ Bin File path NULL!\n");
+        return FALSE;
+    }
+    printf("%s:%d,vpech: %d,iqapi:%s\n", __FUNCTION__, __LINE__,Vpechn,pConfigPath);
+    do
+    {
+        if(u8ispreadycnt > 100)
+        {
+            printf("%s:%d, isp ready time out \n", __FUNCTION__, __LINE__);
+            u8ispreadycnt = 0;
+            break;
+        }
+
+        MI_ISP_IQ_GetParaInitStatus(Vpechn, &status);
+        if(status.stParaAPI.bFlag != 1)
+        {
+            usleep(300*1000);
+            u8ispreadycnt++;
+            continue;
+        }
+
+        u8ispreadycnt = 0;
+
+        printf("loading api bin...path:%s\n",pConfigPath);
+        MI_ISP_API_CmdLoadBinFile(Vpechn, (char *)pConfigPath, 1234);
+
+        usleep(10*1000);
+    }while(!status.stParaAPI.bFlag);
+
+    return 0;
+}
+
+
 MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
 {
     MI_U32 u32CapWidth = 0, u32CapHeight = 0;
@@ -599,6 +638,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     MI_U32 u32VifChnId = 0;
     MI_U32 u32VifPortId = 0;
     ST_VPE_ChannelInfo_T stVpeChannelInfo;
+    MI_VIF_ChnPortAttr_t stVifPortInfo;
     MI_U32 u32VpeDevId = 0;
     MI_U32 u32VpeChnId = 0;
     MI_U32 u32VpePortId = 0;
@@ -613,6 +653,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     //MI_U32 u32DispChnId = 0;
     MI_U32 u32DispPortId = 0;
     MI_U32 u32DispLayer = 0;
+    char acharIqApiPath[64]={0};
     
     memset(&stPadInfo, 0x0, sizeof(MI_SNR_PADInfo_t));
     memset(&stSnrPlaneInfo, 0x0, sizeof(MI_SNR_PlaneInfo_t));
@@ -621,7 +662,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     memset(&stRect, 0x0, sizeof(MI_SYS_WindowRect_t));
 
     /************************************************
-    Step1:  init SYS and Sensor
+     init SYS and Sensor
     *************************************************/
     STCHECKRESULT(ST_Sys_Init());
     
@@ -673,7 +714,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         ePixFormat = (MI_SYS_PixelFormat_e)RGB_BAYER_PIXEL(stSnrPlaneInfo.ePixPrecision, stSnrPlaneInfo.eBayerId);
 
         /************************************************
-        Step2:  init VIF
+         init VIF
         *************************************************/
         u32VifDevId = i;
         u32VifChnId = i * 4;
@@ -696,7 +737,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         STCHECKRESULT(ST_Vif_StartPort(u32VifDevId, u32VifChnId, u32VifPortId));
         
         /************************************************
-        Step3:  init VPE
+         init VPE
         *************************************************/
         u32VpeDevId = 0;
         u32VpeChnId = i;
@@ -756,9 +797,10 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
             STCHECKRESULT(MI_VPE_SetPortCrop(u32VpeChnId, u32VpePortId, &stRect));
         }
         STCHECKRESULT(ST_Vpe_StartPort(u32VpePortId, &stVpePortInfo));
+
     }
     /************************************************
-    Step4:  destory DISP and PANEL
+     init DISP
     *************************************************/
 
     
@@ -785,6 +827,21 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         stBindInfo.u32DstFrmrate = 30;
         stBindInfo.eBindType = E_MI_SYS_BIND_TYPE_FRAME_BASE;
         STCHECKRESULT(ST_Sys_Bind(&stBindInfo));
+    }
+    for(i = 0; i < u32SensorNum; i++)
+    {
+        u32VpeDevId = 0;
+        u32VpeChnId = i;
+        u32VpePortId = 0;
+        //open ip server
+        memset(&stVifPortInfo, 0, sizeof(MI_VIF_ChnPortAttr_t));
+        STCHECKRESULT(MI_VIF_GetChnPortAttr(u32VpeChnId, u32VpePortId, &stVifPortInfo));
+        STCHECKRESULT(MI_IQSERVER_Open(stVifPortInfo.stDestSize.u16Width, stVifPortInfo.stDestSize.u16Height, u32VpeChnId));
+
+        //Load IQ bin
+        memset(acharIqApiPath, 0x0, sizeof(acharIqApiPath));
+        snprintf(acharIqApiPath, sizeof(acharIqApiPath), "/config/iqfile/iqapifile%d.bin", u32VpeChnId);
+        ST_DoSetIqBin(u32VpeChnId, acharIqApiPath);
     }
     return MI_SUCCESS;
 }
@@ -877,6 +934,10 @@ MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
 	STCHECKRESULT(MI_SNR_DeInitDev());
 	STCHECKRESULT(MI_DISP_DeInitDev());
 	STCHECKRESULT(MI_PANEL_DeInitDev());
+	
+	STCHECKRESULT(MI_IQSERVER_Close());
+
+    STCHECKRESULT(ST_Sys_Exit());
 	
     return MI_SUCCESS;
 }

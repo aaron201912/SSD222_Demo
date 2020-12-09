@@ -34,10 +34,6 @@ extern "C"{
             printf("[%s %d]exec function failed, error:%x\n", __func__, __LINE__, s32Ret); \
             return s32Ret; \
         } \
-        else \
-        { \
-            printf("[%s %d]exec function pass\n", __func__, __LINE__); \
-        } \
     } while(0)
 #endif
 
@@ -50,10 +46,6 @@ extern "C"{
         { \
             printf("[%s %d]exec function failed, error:%x\n", __func__, __LINE__, s32Ret); \
             return s32Ret; \
-        } \
-        else \
-        { \
-            printf("(%s %d)exec function pass\n", __FUNCTION__,__LINE__); \
         } \
     } while(0)
 #endif

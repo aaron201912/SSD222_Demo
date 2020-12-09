@@ -15,7 +15,7 @@
 
 #include "st_common.h"
 
-ST_DBG_LEVEL_e g_eSTDbgLevel = ST_DBG_ALL;
+ST_DBG_LEVEL_e g_eSTDbgLevel = ST_DBG_ERR;
 MI_BOOL g_bSTFuncTrace = 0;
 
 MI_S32 ST_Sys_Init(void)

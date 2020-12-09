@@ -382,7 +382,6 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
     MI_DISP_RotateConfig_t stRotateConfig;
     MI_DISP_InputPortAttr_t stInputPortAttr;
     MI_DISP_VidWinRect_t stWinRect;
-    MI_PANEL_IntfType_e eIntfType;
     MI_DIVP_ChnAttr_t stAttr;
     MI_DIVP_OutputPortAttr_t stOutputPortAttr;
     MI_SYS_ChnPort_t stChnPort;

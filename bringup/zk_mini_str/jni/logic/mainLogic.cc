@@ -43,6 +43,10 @@
 #include "statusbarconfig.h"
 #include "hotplugdetect.h"
 
+#define TRIGLE_BY_GPIO	0
+#define BACKLIGHT_GPIO	62	// 7
+#define POWERCTRL_GPIO	63	// 8
+
 static int g_curPageIdx = 0;
 /**
  * 注册定时器
@@ -184,6 +188,30 @@ private:
   std::string m_file;
 };
 
+void setOutputGpio(int gpio, int value)
+{
+	char gpioDir[64] = {0};
+	char gpioExport[64] = {0};
+	char gpioDirection[64] = {0};
+	char gpioValue[64] = {0};
+
+	sprintf(gpioDir, "/sys/class/gpio/gpio%d", gpio);
+	sprintf(gpioExport, "echo %d > /sys/class/gpio/export", gpio);
+	sprintf(gpioDirection, "echo out > /sys/class/gpio/gpio%d/direction", gpio);
+	sprintf(gpioValue, "echo %d >/sys/class/gpio/gpio%d/value", value, gpio);
+
+	if (!access(gpioDir, F_OK))
+	{
+		system(gpioValue);
+	}
+	else
+	{
+		system(gpioExport);
+		system(gpioDirection);
+		system(gpioValue);
+	}
+}
+
 int checkShellResult(char const* cmd, char const*key)
 {
     if (cmd == NULL)
@@ -272,33 +300,21 @@ static void Exit_UI_Process()
 
 static void Enter_STR_SuspendMode()
 {
-	if (g_getIpThread)
-	{
-		pthread_join(g_getIpThread, NULL);
-		g_getIpThread = NULL;
-	}
+#if TRIGLE_BY_GPIO
+	setOutputGpio(BACKLIGHT_GPIO, 0);
+	setOutputGpio(POWERCTRL_GPIO, 0);
+#else
+	MI_PANEL_IntfType_e eIntfType = E_MI_PNL_INTF_TTL;
+	MI_PANEL_BackLightConfig_t stBackLightCfg;
+	memset(&stBackLightCfg, 0, sizeof(MI_PANEL_BackLightConfig_t));
 
-	if (!access("/sys/class/gpio/gpio7", F_OK))
-	{
-		system("echo 0 >/sys/class/gpio/gpio4/value");
-	}
-	else
-	{
-		system("echo 7 >/sys/class/gpio/export");
-		system("echo out >/sys/class/gpio/gpio7/direction");
-		system("echo 0 >/sys/class/gpio/gpio7/value");
-	}
-	if (!access("/sys/class/gpio/gpio8", F_OK))
-	{
-		system("echo 0 >/sys/class/gpio/gpio8/value");
-	}
-	else
-	{
-		system("echo 8 >/sys/class/gpio/export");
-		system("echo out >/sys/class/gpio/gpio8/direction");
-		system("echo 0 >/sys/class/gpio/gpio8/value");
-	}
-	system("rmmod ssw102b_wifi_sdio");
+	MI_PANEL_GetBackLight(eIntfType, &stBackLightCfg);
+	printf("Get BL cfg: bEn=%d, u8PwmNum=%d, u32Duty=%d, u32Period=%d\n",
+			(int)stBackLightCfg.bEn, (int)stBackLightCfg.u8PwmNum, stBackLightCfg.u32Duty,
+			stBackLightCfg.u32Period);
+	stBackLightCfg.u32Duty = 0;
+	MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
+#endif
 
     MI_GFX_DeInitDev();
     printf("gfx disable\n");
@@ -336,11 +352,21 @@ static void Enter_STR_SuspendMode()
 			}
 		}
 	}
+
+	if (g_getIpThread)
+	{
+		pthread_join(g_getIpThread, NULL);
+		g_getIpThread = NULL;
+	}
+
+	system("rmmod ssw102b_wifi_sdio");
 }
 
 static void Enter_STR_ResumeMode()
 {
-	system("echo 1 >/sys/class/gpio/gpio7/value");
+#if TRIGLE_BY_GPIO
+	setOutputGpio(POWERCTRL_GPIO, 1);
+#endif
 
 	IPCOutput o(SSD_IPC);
 	if(!o.Init())
@@ -380,7 +406,10 @@ static void Enter_STR_ResumeMode()
 	MI_GFX_Open();
 
 	usleep(30*1000);
-	system("echo 1 >/sys/class/gpio/gpio8/value");
+#if TRIGLE_BY_GPIO
+	setOutputGpio(BACKLIGHT_GPIO, 1);
+#endif
+
 	printf("begin to insmod wifi ko\n");
 	system("insmod /config/wifi/ssw102b_wifi_sdio.ko");
 	printf("insmod wifi ko success\n");

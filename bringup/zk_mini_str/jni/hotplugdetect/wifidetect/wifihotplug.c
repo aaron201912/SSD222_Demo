@@ -185,18 +185,15 @@ static int WifiInit()
 	}
 
 	// init wlan dev
-	printf("start to init wlan, system time: %ul\n", GetTickCount());
 	if (MI_WLAN_Init(&g_stParm) || MI_WLAN_Open(&g_stStaOpenParam))
 	{
 		//setWifiSupportStatus(false);
 		g_wifiSupported = 0;
 		printf("open wifi failed\n");
-		printf("wlan init failed, system time: %ul\n", GetTickCount());
 		return -1;
 	}
 
 	g_staInit = 1;
-	printf("wlan init success, system time: %ul\n", GetTickCount());
 	return 0;
 }
 

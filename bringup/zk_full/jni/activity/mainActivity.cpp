@@ -118,9 +118,6 @@ mainActivity::mainActivity() {
 	//todo add init code here
 	mVideoLoopIndex = 0;
 	mVideoLoopErrorCount = 0;
-
-	// animation support
-	mNeedSwitchEffect = true;
 }
 
 mainActivity::~mainActivity() {
@@ -240,16 +237,6 @@ void mainActivity::onItemClick(ZKListView *pListView, int index, int id){
 }
 
 void mainActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
-	vector<ZKBase*> ctrlList;
-	pSlideWindow->getAllControls(ctrlList);
-
-//	printf("ctrlList size: %d\n", ctrlList.size());
-
-//	printf("index 0 ptr is %p\n", pSlideWindow->findControlByID(0));
-	//printf("ctrlList[%d] id is %d\n", index, ctrlList[index]->getID());
-
-	//ctrlList[index]->setBackgroundPic("main_/sp.png");
-
     int tablen = sizeof(SSlideWindowItemClickCallbackTab) / sizeof(S_SlideWindowItemClickCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SSlideWindowItemClickCallbackTab[i].id == pSlideWindow->getID()) {

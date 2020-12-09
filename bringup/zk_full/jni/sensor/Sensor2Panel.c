@@ -12,6 +12,8 @@
 #include <sys/stat.h>
 
 #include "panelconfig.h"
+#include "mi_isp.h"
+#include "mi_iqserver.h"
 #include "Sensor2Panel.h"
 
 ST_Config_S g_stConfig =
@@ -23,6 +25,7 @@ ST_Config_S g_stConfig =
     .s32UsePanel = 0,
     .u8SensorNum = 1,
     .u8FaceDetect = 0,
+    .u8SpiInit = 0,
     .enPixelFormat = E_MI_SYS_PIXEL_FRAME_FORMAT_MAX,
     .s32HDRtype = 0,
     .enSensorType = ST_Sensor_Type_GC1054,
@@ -46,8 +49,6 @@ ST_Config_S g_stConfig =
 MI_U32 g_u32CapWidth = 0;
 MI_U32 g_u32CapHeight = 0;
 static MI_BOOL g_bExit = FALSE;
-
-//static MI_U8 g_u8RGNSkipFlag = 0;
 
 /*
 * 初始化vdisp模块
@@ -307,6 +308,44 @@ MI_S32 ST_Vdisp_UnBind(void)
     return MI_SUCCESS;
 }
 
+MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
+{
+    MI_ISP_IQ_PARAM_INIT_INFO_TYPE_t status;
+    MI_U8  u8ispreadycnt = 0;
+    if (strlen(pConfigPath) == 0)
+    {
+        printf("IQ Bin File path NULL!\n");
+        return FALSE;
+    }
+    printf("%s:%d,vpech: %d,iqapi:%s\n", __FUNCTION__, __LINE__,Vpechn,pConfigPath);
+    do
+    {
+        if(u8ispreadycnt > 100)
+        {
+            printf("%s:%d, isp ready time out \n", __FUNCTION__, __LINE__);
+            u8ispreadycnt = 0;
+            break;
+        }
+
+        MI_ISP_IQ_GetParaInitStatus(Vpechn, &status);
+        if(status.stParaAPI.bFlag != 1)
+        {
+            usleep(300*1000);
+            u8ispreadycnt++;
+            continue;
+        }
+
+        u8ispreadycnt = 0;
+
+        printf("loading api bin...path:%s\n",pConfigPath);
+        MI_ISP_API_CmdLoadBinFile(Vpechn, (char *)pConfigPath, 1234);
+
+        usleep(10*1000);
+    }while(!status.stParaAPI.bFlag);
+
+    return 0;
+}
+
 MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
 {
     MI_U32 u32CapWidth = 0, u32CapHeight = 0;
@@ -333,6 +372,7 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
     MI_U32 u32VifChnId = 0;
     MI_U32 u32VifPortId = 0;
     ST_VPE_ChannelInfo_T stVpeChannelInfo;
+    MI_VIF_ChnPortAttr_t stVifPortInfo;
     MI_U32 u32VpeDevId = 0;
     MI_U32 u32VpeChnId = 0;
     MI_U32 u32VpePortId = 0;
@@ -348,6 +388,7 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
     //MI_U32 u32DispChnId = 0;
     MI_U32 u32DispPortId = 0;
     MI_U32 u32DispLayer = 0;
+    char acharIqApiPath[64]={0};
     
     memset(&stPadInfo, 0x0, sizeof(MI_SNR_PADInfo_t));
     memset(&stSnrPlaneInfo, 0x0, sizeof(MI_SNR_PlaneInfo_t));
@@ -356,31 +397,16 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
     memset(&stRect, 0x0, sizeof(MI_SYS_WindowRect_t));
 
     /************************************************
-    Step1:  init SYS and Sensor
+     init SYS and Sensor
     *************************************************/
     STCHECKRESULT(ST_Sys_Init());
     
     u8SensorNum = pstConfig->u8SensorNum;
     u8FaceDetect = pstConfig->u8FaceDetect;
-#if 1
     if(1 == u8FaceDetect)
     {
         STCHECKRESULT(ST_RGN_Init());
     }
-#else
-    if(1 == u8FaceDetect)
-    {
-        if(0 == g_u8RGNSkipFlag)
-        {
-            STCHECKRESULT(ST_RGN_Init());
-            g_u8RGNSkipFlag = 1;
-        }
-        else
-        {
-            g_u8RGNSkipFlag = 1;
-        }
-    }
-#endif
     for(i = 0; i < u8SensorNum; i++)
     {
         DBG_INFO("i[%d]\n", i);
@@ -430,7 +456,7 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
         ePixFormat = (MI_SYS_PixelFormat_e)RGB_BAYER_PIXEL(stSnrPlaneInfo.ePixPrecision, stSnrPlaneInfo.eBayerId);
 
         /************************************************
-        Step2:  init VIF
+         init VIF
         *************************************************/
         u32VifDevId = i;
         u32VifChnId = i * 4;
@@ -453,7 +479,7 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
         STCHECKRESULT(ST_Vif_StartPort(u32VifDevId, u32VifChnId, u32VifPortId));
         
         /************************************************
-        Step3:  init VPE
+         init VPE
         *************************************************/
         u32VpeDevId = 0;
         u32VpeChnId = i;
@@ -614,7 +640,7 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
         if(1 == u8FaceDetect)
         {
             /************************************************
-            Step7:  //hc fd stream 
+             hc fd stream 
             *************************************************/
             memset(&stAttr, 0, sizeof(stAttr));
             memset(&stOutputPortAttr, 0, sizeof(stOutputPortAttr));
@@ -662,6 +688,21 @@ MI_S32 ST_Sensor2PanelInit(ST_Config_S* pstConfig)
             ST_RGN_Create(0);
             mid_hchdfd_Initial();
         }
+    }
+    for(i = 0; i < u8SensorNum; i++)
+    {
+        u32VpeDevId = 0;
+        u32VpeChnId = i;
+        u32VpePortId = 0;
+        //open ip server
+        memset(&stVifPortInfo, 0, sizeof(MI_VIF_ChnPortAttr_t));
+        STCHECKRESULT(MI_VIF_GetChnPortAttr(u32VpeChnId, u32VpePortId, &stVifPortInfo));
+        STCHECKRESULT(MI_IQSERVER_Open(stVifPortInfo.stDestSize.u16Width, stVifPortInfo.stDestSize.u16Height, u32VpeChnId));
+
+        //Load IQ bin
+        memset(acharIqApiPath, 0x0, sizeof(acharIqApiPath));
+        snprintf(acharIqApiPath, sizeof(acharIqApiPath), "/config/iqfile/iqapifile%d.bin", u32VpeChnId);
+        ST_DoSetIqBin(u32VpeChnId, acharIqApiPath);
     }
     return MI_SUCCESS;
 }
@@ -753,7 +794,7 @@ MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
         }
 
         /************************************************
-         destory DIVP & RGN
+         destory DIVP
         *************************************************/
         if(1 == u8FaceDetect)
         {
@@ -815,7 +856,7 @@ MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
         *************************************************/
         STCHECKRESULT(MI_SNR_Disable(eSNRPad));
     }
-    /************************************************
+	/************************************************
      deinit RGN
     *************************************************/
     if(1 == u8FaceDetect)
@@ -825,6 +866,7 @@ MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
     /************************************************
      destory SYS
     *************************************************/
+    STCHECKRESULT(MI_IQSERVER_Close());
 
     STCHECKRESULT(ST_Sys_Exit());
 

@@ -72,6 +72,8 @@ MI_RESULT MI_WLAN_Close(MI_WLAN_OpenParams_t *pstParam);
 ///
 /// infra mode : connect to certain wifi network
 /// ap mode: start dns hdcp service and wait hosts to connect
+///          use corresponding default setting in conf files if ssid or password == NULL
+///          set key mgmt to NONE if password == "NONE"(not case sensitive)  
 /// @param[in/out] hWLan: wlan handle.
 /// (==WLAN_HANDLE_AP) indicates the AP service
 /// (<0)indicates a new sta connection and will be assigned a sensible ID if connecton set up
@@ -80,6 +82,8 @@ MI_RESULT MI_WLAN_Close(MI_WLAN_OpenParams_t *pstParam);
 /// nessesarry information to establish the connection
 /// @return MI_SUCCESS: connect success.
 /// @return MI_WLAN_ERR_NOT_CONFIG: open wlan device first
+/// @return MI_WLAN_ERR_NULL_PTR: open configuration file failed
+/// @return MI_WLAN_ERR_ILLEGAL_PARAM: ssid or password invalid
 /// @note a set up connection just specify the setting itself,does not indicate the connection
 ///  has been build successfully
 //------------------------------------------------------------------------------
