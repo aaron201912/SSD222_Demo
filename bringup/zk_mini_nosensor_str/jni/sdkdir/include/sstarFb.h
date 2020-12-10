@@ -104,42 +104,12 @@ typedef enum
 
 typedef enum
 {
-    //E_DRV_FB_GOP_DST_IP0
-    E_MI_FB_DST_IP0 = 0,
-    //E_DRV_FB_GOP_DST_IP0_SUB
-    E_MI_FB_DST_IP0_SUB = 1,
-    //E_DRV_FB_GOP_DST_MIXER2VE
-    E_MI_FB_DST_MIXER2VE = 2,
     //E_DRV_FB_GOP_DST_OP0
-    E_MI_FB_DST_OP0 = 3,
-    //E_DRV_FB_GOP_DST_VOP
-    E_MI_FB_DST_VOP = 4,
-    //E_DRV_FB_GOP_DST_IP1
-    E_MI_FB_DST_IP1 = 5,
-    //E_DRV_FB_GOP_DST_IP1_SUB
-    E_MI_FB_DST_IP1_SUB = 6,
-    //E_DRV_FB_GOP_DST_MIXER2OP
-    E_MI_FB_DST_MIXER2OP = 7,
-    //E_DRV_FB_GOP_DST_VOP_SUB
-    E_MI_FB_DST_VOP_SUB = 8,
-    //E_DRV_FB_GOP_DST_FRC
-    E_MI_FB_DST_FRC = 9,
-    //E_DRV_FB_GOP_DST_VE
-    E_MI_FB_DST_VE = 10,
-    //E_DRV_FB_GOP_DST_BYPASS
-    E_MI_FB_DST_BYPASS = 11,
+    E_MI_FB_DST_OP0 = 0,
     //E_DRV_FB_GOP_DST_OP1
-    E_MI_FB_DST_OP1 = 12,
-    //E_DRV_FB_GOP_DST_MIXER2OP1
-    E_MI_FB_DST_MIXER2OP1 = 13,
-    //E_DRV_FB_GOP_DST_DIP
-    E_MI_FB_DST_DIP = 14,
-    //E_DRV_FB_GOP_DST_GOPScaling
-    E_MI_FB_DST_GOPScaling  = 15,
-    //E_DRV_FB_GOP_DST_OP_DUAL_RATE
-    E_MI_FB_DST_OP_DUAL_RATE = 16,
+    E_MI_FB_DST_OP1 = 1,
     //E_DRV_FB_GOP_DST_INVALID
-    E_MI_FB_DST_INVALID = 17,
+    E_MI_FB_DST_INVALID,
 }MI_FB_DstDisplayplane_e;
 
 typedef struct MI_FB_DisplayLayerAttr_s

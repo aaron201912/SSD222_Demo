@@ -871,7 +871,6 @@ MI_S32 ST_Sensor2PanelDeinit(ST_Config_S* pstConfig)
 	STCHECKRESULT(MI_VIF_DeInitDev());
 	STCHECKRESULT(MI_SNR_DeInitDev());
 	STCHECKRESULT(MI_DISP_DeInitDev());
-	STCHECKRESULT(MI_PANEL_DeInitDev());
 	
     /************************************************
      destory SYS

@@ -21,8 +21,7 @@
 #define AO_DEV_HEADPHONE	4		// 4:HeadPhone chn=2
 
 #define AI_MAX_CHN_CNT		4
-#define MI_AUDIO_SAMPLE_PER_FRAME 	256
-#define AUDIO_PT_NUMBER_FRAME		1024
+#define MI_AUDIO_SAMPLE_PER_FRAME 	256		//1024
 
 #define AUDIO_IN_RECORD_PREFIX	AUDIO_IN_RECORD_DIR"/AudioIn_record_"
 #define AUDIO_IN_RECORD(idx)	AUDIO_IN_RECORD_PREFIX#idx
@@ -152,6 +151,8 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
 	WaveFileHeader_t waveHeader;
 	int totalSize = 0;
 	MI_AUDIO_SampleRate_e eSampleRate = g_eSampleRate;
+	//int waitTime = 1000 * (int)g_eSampleRate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME / (int)g_eSampleRate;
+	int waitTime = 1000 * MI_AUDIO_SAMPLE_PER_FRAME / (int)E_MI_AUDIO_SAMPLE_RATE_8000;
 
 	memset(&stAudioFrame, 0, sizeof(MI_AUDIO_Frame_t));
     memset(&stAecFrame, 0, sizeof(MI_AUDIO_AecFrame_t));
@@ -200,7 +201,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
         {
             if(FD_ISSET(s32Fd, &read_fds))
             {
-                MI_AI_GetFrame(pThreadData->devId, pThreadData->chnId, &stAudioFrame, &stAecFrame, 128);//1024 / 8000 = 128ms
+                MI_AI_GetFrame(pThreadData->devId, pThreadData->chnId, &stAudioFrame, &stAecFrame, waitTime);//1024 / 8000 = 128ms
                 if (0 == stAudioFrame.u32Len)
                 {
                     usleep(10 * 1000);
@@ -249,7 +250,7 @@ int SSTAR_AI_StartRecord()
 	stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
 	stAiSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_MASTER;
 	stAiSetAttr.u32ChnCnt = 4;
-	stAiSetAttr.u32PtNumPerFrm = AUDIO_PT_NUMBER_FRAME;
+	stAiSetAttr.u32PtNumPerFrm = (int)g_eSampleRate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = 1;
@@ -308,6 +309,7 @@ int SSTAR_AI_StopRecord()
 	}
 
 	MI_AI_Disable(AiDevId);
+	MI_AI_DeInitDev();
 
 	return 0;
 }
@@ -378,7 +380,6 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 	MI_AUDIO_Attr_t stAoSetAttr, stAoGetAttr;
 	MI_S32 s32AoGetVolume;
 	MI_AO_ChnParam_t stAoChnParam;
-	MI_AUDIO_SampleRate_e eAoInSampleRate = E_MI_AUDIO_SAMPLE_RATE_INVALID;
 
 	g_AoReadFd = open((const char *)pPcmFile, O_RDONLY, 0666);
 	if(g_AoReadFd < 0)
@@ -396,13 +397,13 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 	}
 
 	memset(&stAoSetAttr, 0x0, sizeof(MI_AUDIO_Attr_t));
+	stAoSetAttr.eSamplerate = (MI_AUDIO_SampleRate_e)g_stWavHeaderInput.wave.dwSamplesPerSec;
 	stAoSetAttr.eBitwidth = E_MI_AUDIO_BIT_WIDTH_16;
 	stAoSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_MASTER;
 	stAoSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = TRUE;	//FALSE;
 	stAoSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
 	stAoSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
-	stAoSetAttr.u32PtNumPerFrm = MI_AUDIO_SAMPLE_PER_FRAME;
-	//stAoSetAttr.u32ChnCnt = g_stWavHeaderInput.wave.wChannels;
+	stAoSetAttr.u32PtNumPerFrm = (int)stAoSetAttr.eSamplerate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME;
 	stAoSetAttr.u32ChnCnt = 1;		// max chn count is 1
 
 	if(g_stWavHeaderInput.wave.wChannels == 2)
@@ -414,9 +415,6 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 		stAoSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
 	}
 
-	stAoSetAttr.eSamplerate = (MI_AUDIO_SampleRate_e)g_stWavHeaderInput.wave.dwSamplesPerSec;
-	eAoInSampleRate = (MI_AUDIO_SampleRate_e)g_stWavHeaderInput.wave.dwSamplesPerSec;
-
 	MI_AO_SetPubAttr(aoDevId, &stAoSetAttr);
 	MI_AO_GetPubAttr(aoDevId, &stAoGetAttr);
 	MI_AO_Enable(aoDevId);
@@ -424,7 +422,7 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 	MI_AO_SetVolume(aoDevId, 0, volume, E_MI_AO_GAIN_FADING_OFF);
 	MI_AO_GetVolume(aoDevId, 0, &s32AoGetVolume);
 
-	g_s32NeedSize = MI_AUDIO_SAMPLE_PER_FRAME * 2 * stAoSetAttr.u32ChnCnt * g_stWavHeaderInput.wave.wChannels;
+	g_s32NeedSize = stAoSetAttr.u32PtNumPerFrm * 2 * stAoSetAttr.u32ChnCnt * g_stWavHeaderInput.wave.wChannels;
 	g_s32NeedSize = g_s32NeedSize / (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels) * (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels);
 
 	g_stAudioOutPlayFile.bExit = FALSE;

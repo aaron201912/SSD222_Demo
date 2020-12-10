@@ -434,9 +434,9 @@ MI_S32 MI_IVE_Ncc(MI_IVE_HANDLE hHandle, MI_IVE_SrcImage_t *pstSrc1,
 *   Prototype    : MI_IVE_Ccl
 *   Description  : Connected Component Labeling. Only 8-Connected method is supported.
 *   Parameters   : MI_IVE_HANDLE         hHandle      Handle ID of a task
-*                  MI_IVE_SrcImage_t        *pstSrcDst       Input source
-*                  MI_IVE_MemInfo_t     *pstBlob         Output result of detected region;
-*                  MI_IVE_CclCtrl_t     *pstCclCtrl      CCL control parameter
+*                  MI_IVE_SrcImage_t     *pstSrcDst       Input source
+*                  MI_IVE_CcBlob_t       *pstBlob         Output result of detected region;
+*                  MI_IVE_CclCtrl_t      *pstCclCtrl      CCL control parameter
 *                  MI_BOOL               bInstant        Reserved
 *   Return Value : MI_SUCCESS: Success;Error codes: Failure.
 *   Spec         : The size of the input data ranges from 64x64 pixels to 720x640 pixels.
@@ -445,7 +445,7 @@ MI_S32 MI_IVE_Ncc(MI_IVE_HANDLE hHandle, MI_IVE_SrcImage_t *pstSrc1,
 *   History:
 *****************************************************************************/
 MI_S32 MI_IVE_Ccl(MI_IVE_HANDLE hHandle, MI_IVE_SrcImage_t *pstSrcDst,
-    MI_IVE_DstMemInfo_t *pstBlob, MI_IVE_CclCtrl_t *pstCclCtrl, MI_BOOL bInstant);
+    MI_IVE_CcBlob_t *pstBlob, MI_IVE_CclCtrl_t *pstCclCtrl, MI_BOOL bInstant);
 
 /*****************************************************************************
 *   Prototype    : MI_IVE_Gmm
@@ -763,6 +763,45 @@ MI_S32 MI_IVE_Matrix_Transform(MI_IVE_HANDLE hHandle,
 *****************************************************************************/
 MI_S32 MI_IVE_Image_Dot(MI_IVE_HANDLE hHandle, MI_IVE_SrcImage_t *pstSrc1, MI_IVE_SrcImage_t *pstSrc2,
     MI_IVE_DstImage_t *pstDst, MI_BOOL bInstant);
+
+/*****************************************************************************
+*   Prototype    : MI_IVE_AlphaBlending
+*   Description  : Matrix transform operation.
+*   Parameters   : MI_IVE_HANDLE          hHandle      Handle ID of a task
+*                  MI_IVE_SrcImage_t     *pstSrc1      Input source 1.
+*                  MI_IVE_SrcImage_t     *pstSrc2      Input source 2.
+*                  MI_IVE_SrcImage_t     *pstAlpha     Input alpha table.
+*                  MI_IVE_DstImage_t     *pstDst1      Output result
+*                  MI_BOOL               bInstant      Reserved
+*   Return Value : MI_SUCCESS: Success;Error codes: Failure.
+*   Spec         : The size of the input data ranges from 64x64 pixels to 1920x1080 pixels.
+*                  The stride must be 16-pixel-aligned.
+*                  The types, widths, heights of input sources must be the same.
+*   History:
+*****************************************************************************/
+MI_S32 MI_IVE_AlphaBlending(MI_IVE_HANDLE hHandle,
+     MI_IVE_SrcImage_t *pstSrc1, MI_IVE_SrcImage_t *pstSrc2, MI_IVE_SrcImage_t *pstAlpha,
+     MI_IVE_DstImage_t *pstDst, MI_BOOL bInstant);
+
+/*****************************************************************************
+*   Prototype    : MI_IVE_Shift_Detector
+*   Description  : Matrix transform operation.
+*   Parameters   : MI_IVE_HANDLE          hHandle   Handle ID of a task
+*                  MI_IVE_SrcImage_t     *pstSrc1      Input source 1.
+*                  MI_IVE_SrcImage_t     *pstSrc2      Input source 2.
+*                  MI_IVE_DstImage_t     *pstDstX      Output result 1.
+*                  MI_IVE_DstImage_t     *pstDstY      Output result 2.
+*                  MI_IVE_SHIFT_DETECT_CTRL_t    *pstCtrl    Control parameters.
+*                  MI_BOOL              bInstant     Reserved
+
+*   Return Value : MI_SUCCESS: Success;Error codes: Failure.
+*   Spec         : The size of the input data ranges from 64x64 pixels to 1920x1080 pixels.
+*                  The stride must be 16-pixel-aligned.
+*                  The types, widths, heights of input sources must be the same.
+*   History:
+*****************************************************************************/
+MI_S32 MI_IVE_Shift_Detector(MI_IVE_HANDLE hHandle, MI_IVE_SrcImage_t *pstSrc1, MI_IVE_SrcImage_t *pstSrc2, MI_IVE_DstImage_t *pstDstX, MI_IVE_DstImage_t *pstDstY, MI_IVE_SHIFT_DETECT_CTRL_t *pstCtrl, MI_BOOL bInstant);
+
 
 #ifdef __cplusplus
 #if __cplusplus

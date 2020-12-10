@@ -18,9 +18,9 @@
 #include <dlfcn.h>
 
 
-#define AUDIO_PT_NUMBER_FRAME (1024)
-#define AUDIO_SAMPLE_RATE (E_MI_AUDIO_SAMPLE_RATE_16000)
-#define AUDIO_SOUND_MODE (E_MI_AUDIO_SOUND_MODE_MONO)
+#define AUDIO_SAMPLE_PER_FRAME 		(256)
+#define AUDIO_SAMPLE_RATE 			(E_MI_AUDIO_SAMPLE_RATE_16000)
+#define AUDIO_SOUND_MODE 			(E_MI_AUDIO_SOUND_MODE_MONO)
 
 #define AUDIO_AO_DEV_ID_LINE_OUT 	0
 #define AUDIO_AO_DEV_ID_I2S_OUT  	1
@@ -487,7 +487,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pdata)
         {
             if(FD_ISSET(s32Fd, &read_fds))
             {
-                MI_AI_GetFrame(AiDevId, AiChn, &stAudioFrame, &stAecFrame, 128);//1024 / 8000 = 128ms
+                MI_AI_GetFrame(AiDevId, AiChn, &stAudioFrame, &stAecFrame, AUDIO_SAMPLE_PER_FRAME*1000/E_MI_AUDIO_SAMPLE_RATE_8000);//1024 / 8000 = 128ms
                 if (0 == stAudioFrame.u32Len)
                 {
                     usleep(10 * 1000);
@@ -526,7 +526,7 @@ static MI_S32 SSTAR_AudioInStart()
     stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
     stAiSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_MASTER;
     stAiSetAttr.u32ChnCnt = 1;
-    stAiSetAttr.u32PtNumPerFrm = AUDIO_PT_NUMBER_FRAME;
+    stAiSetAttr.u32PtNumPerFrm = (int)stAiSetAttr.eSamplerate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * AUDIO_SAMPLE_PER_FRAME;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = 1;
@@ -541,11 +541,6 @@ static MI_S32 SSTAR_AudioInStart()
     stAiChn0OutputPort0.u32DevId = AiDevId;
     stAiChn0OutputPort0.u32ChnId = AiChn;
     stAiChn0OutputPort0.u32PortId = 0;
-//	for (i = 0; i < stAiSetAttr.u32ChnCnt; i++)
-//    {
-//        stAiChn0OutputPort0.u32ChnId = i;
-//        ExecFunc(MI_SYS_SetChnOutputPortDepth(&stAiChn0OutputPort0, 4, 8), MI_SUCCESS);
-//    }
 
 	ExecFunc(MI_SYS_SetChnOutputPortDepth(&stAiChn0OutputPort0, 4, 8), MI_SUCCESS);
 	

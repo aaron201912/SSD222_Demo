@@ -314,6 +314,7 @@ static void Enter_STR_SuspendMode()
 			stBackLightCfg.u32Period);
 	stBackLightCfg.u32Duty = 0;
 	MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
+	MI_PANEL_DeInitDev();
 #endif
 
     MI_GFX_DeInitDev();

@@ -144,12 +144,9 @@ MI_S32 SSTAR_StartPlayAudioFile(const char *WavAudioFile, MI_S32 s32AoVolume)
 {
     MI_S32 s32Ret = MI_SUCCESS;
     MI_AUDIO_Attr_t stAoSetAttr, stAoGetAttr;
-    MI_AO_AdecConfig_t stAoSetAdecConfig, stAoGetAdecConfig;
-    MI_AO_VqeConfig_t stAoSetVqeConfig, stAoGetVqeConfig;
     MI_S32 s32AoGetVolume;
     MI_AO_ChnParam_t stAoChnParam;
     MI_U32 u32DmaBufSize;
-    MI_AUDIO_SampleRate_e eAoInSampleRate = E_MI_AUDIO_SAMPLE_RATE_INVALID;
 
     g_AoReadFd = open((const char *)WavAudioFile, O_RDONLY, 0666);
     if(g_AoReadFd <= 0)
@@ -172,7 +169,7 @@ MI_S32 SSTAR_StartPlayAudioFile(const char *WavAudioFile, MI_S32 s32AoVolume)
     stAoSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = TRUE;
     stAoSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
     stAoSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
-    stAoSetAttr.u32PtNumPerFrm = MI_AUDIO_SAMPLE_PER_FRAME;
+
     stAoSetAttr.u32ChnCnt = 1;
 
     if(g_stWavHeaderInput.wave.wChannels == 2)
@@ -185,68 +182,17 @@ MI_S32 SSTAR_StartPlayAudioFile(const char *WavAudioFile, MI_S32 s32AoVolume)
     }
 
     stAoSetAttr.eSamplerate = (MI_AUDIO_SampleRate_e)g_stWavHeaderInput.wave.dwSamplesPerSec;
-    eAoInSampleRate = (MI_AUDIO_SampleRate_e)g_stWavHeaderInput.wave.dwSamplesPerSec;
-
-    stAoSetVqeConfig.bAgcOpen = FALSE;
-    stAoSetVqeConfig.bAnrOpen = FALSE;
-    stAoSetVqeConfig.bEqOpen = FALSE;
-    stAoSetVqeConfig.bHpfOpen = FALSE;
-    stAoSetVqeConfig.s32FrameSample = 128;
-    stAoSetVqeConfig.s32WorkSampleRate = eAoInSampleRate;
-    //memcpy(&stAoSetVqeConfig.stAgcCfg, &stAgcCfg, sizeof(MI_AUDIO_AgcConfig_t));
-    //memcpy(&stAoSetVqeConfig.stAnrCfg, &stAnrCfg, sizeof(MI_AUDIO_AnrConfig_t));
-    //memcpy(&stAoSetVqeConfig.stEqCfg, &stEqCfg, sizeof(MI_AUDIO_EqConfig_t));
-    //memcpy(&stAoSetVqeConfig.stHpfCfg, &stHpfCfg, sizeof(MI_AUDIO_HpfConfig_t));
+    stAoSetAttr.u32PtNumPerFrm = (int)stAoSetAttr.eSamplerate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME;
 
     ExecFunc(MI_AO_SetPubAttr(g_AoDevId, &stAoSetAttr), MI_SUCCESS);
     ExecFunc(MI_AO_GetPubAttr(g_AoDevId, &stAoGetAttr), MI_SUCCESS);
-
     ExecFunc(MI_AO_Enable(g_AoDevId), MI_SUCCESS);
-
     ExecFunc(MI_AO_EnableChn(g_AoDevId, g_AoChn), MI_SUCCESS);
-
-    if(FALSE)
-    {
-        ExecFunc(MI_AO_SetVqeAttr(g_AoDevId, g_AoChn, &stAoSetVqeConfig), MI_SUCCESS);
-        ExecFunc(MI_AO_GetVqeAttr(g_AoDevId, g_AoChn, &stAoGetVqeConfig), MI_SUCCESS);
-        ExecFunc(MI_AO_EnableVqe(g_AoDevId, g_AoChn), MI_SUCCESS);
-    }
-
     ExecFunc(MI_AO_SetVolume(g_AoDevId, g_AoChn, s32AoVolume, E_MI_AO_GAIN_FADING_OFF), MI_SUCCESS);
     ExecFunc(MI_AO_GetVolume(g_AoDevId, g_AoChn, &s32AoGetVolume), MI_SUCCESS);
 
-    g_s32NeedSize = MI_AUDIO_SAMPLE_PER_FRAME * 2 * (stAoSetAttr.u32ChnCnt);
-    if (E_MI_AUDIO_SAMPLE_RATE_8000 == stAoSetAttr.eSamplerate)
-    {
-        u32DmaBufSize = DMA_BUF_SIZE_8K;;
-    }
-    else if (E_MI_AUDIO_SAMPLE_RATE_16000 == stAoSetAttr.eSamplerate)
-    {
-        u32DmaBufSize = DMA_BUF_SIZE_16K;
-    }
-    else if (E_MI_AUDIO_SAMPLE_RATE_32000 == stAoSetAttr.eSamplerate)
-    {
-        u32DmaBufSize = DMA_BUF_SIZE_32K;
-    }
-    else if (E_MI_AUDIO_SAMPLE_RATE_48000 == stAoSetAttr.eSamplerate)
-    {
-        u32DmaBufSize = DMA_BUF_SIZE_48K;
-    }
-
-    if (stAoSetAttr.eSoundmode == E_MI_AUDIO_SOUND_MODE_STEREO)
-    {
-        if (g_s32NeedSize > (u32DmaBufSize / 4))
-        {
-            g_s32NeedSize = u32DmaBufSize / 4;
-        }
-    }
-    else if (stAoSetAttr.eSoundmode == E_MI_AUDIO_SOUND_MODE_MONO)
-    {
-        if (g_s32NeedSize > (u32DmaBufSize / 8))
-        {
-            g_s32NeedSize = u32DmaBufSize / 8;
-        }
-    }
+    g_s32NeedSize = stAoSetAttr.u32PtNumPerFrm * 2 * stAoSetAttr.u32ChnCnt * g_stWavHeaderInput.wave.wChannels;
+    g_s32NeedSize = g_s32NeedSize / (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels) * (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels);
 
     pthread_create(&tid_playaudio, NULL, SSTAR_aoSendFrame, NULL);
     printf("create ao thread.\n");
