@@ -12,8 +12,6 @@
 #include <sys/stat.h>
 
 #include "panelconfig.h"
-#include "mi_isp.h"
-#include "mi_iqserver.h"
 #include "Sensor2Panel.h"
 
 ST_Config_S g_stConfig =
@@ -312,6 +310,7 @@ MI_S32 ST_Vdisp_UnBind(void)
 MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
 {
     MI_ISP_IQ_PARAM_INIT_INFO_TYPE_t status;
+    CUS3A_ALGO_STATUS_t stCus3AAlgoStatus;
     MI_U8  u8ispreadycnt = 0;
     if (strlen(pConfigPath) == 0)
     {
@@ -319,6 +318,8 @@ MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
         return FALSE;
     }
     printf("%s:%d,vpech: %d,iqapi:%s\n", __FUNCTION__, __LINE__,Vpechn,pConfigPath);
+    memset(&status, 0x00, sizeof(status));
+    memset(&stCus3AAlgoStatus, 0x00, sizeof(stCus3AAlgoStatus));
     do
     {
         if(u8ispreadycnt > 100)
@@ -329,10 +330,13 @@ MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
         }
 
         MI_ISP_IQ_GetParaInitStatus(Vpechn, &status);
-        if(status.stParaAPI.bFlag != 1)
+        CUS3A_GetAlgoStatus((CUS3A_ISP_CH_e)Vpechn, &stCus3AAlgoStatus);
+        //printf("00%s,%d:bFlag:%d, Ae:%d，cnt:%d \n", __FUNCTION__, __LINE__, status.stParaAPI.bFlag, stCus3AAlgoStatus.Ae, u8ispreadycnt);
+        if((status.stParaAPI.bFlag != 1) || (stCus3AAlgoStatus.Ae != E_ALGO_STATUS_RUNNING))
         {
             usleep(300*1000);
             u8ispreadycnt++;
+            //printf("3%s,%d:bFlag:%d, Ae:%d，cnt:%d \n", __FUNCTION__, __LINE__, status.stParaAPI.bFlag, stCus3AAlgoStatus.Ae, u8ispreadycnt);
             continue;
         }
 
@@ -342,7 +346,7 @@ MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
         MI_ISP_API_CmdLoadBinFile(Vpechn, (char *)pConfigPath, 1234);
 
         usleep(10*1000);
-    }while(!status.stParaAPI.bFlag);
+    }while((status.stParaAPI.bFlag != 1) || (stCus3AAlgoStatus.Ae != E_ALGO_STATUS_RUNNING));
 
     return 0;
 }
