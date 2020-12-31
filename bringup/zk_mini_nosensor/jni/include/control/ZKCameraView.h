@@ -20,7 +20,7 @@ class ZKCameraView : public ZKBase {
 	ZK_DECLARE_PRIVATE(ZKCameraView)
 
 public:
-	ZKCameraView(HWND hParentWnd);
+	ZKCameraView(ZKBase *pParent);
 	virtual ~ZKCameraView();
 
 	/**
@@ -44,6 +44,8 @@ public:
 	ECameraStatusCode takePicture();
 
 	void setPosition(const LayoutPosition &position);
+	void setCropPosition(const LayoutPosition &position);
+
 	void setRotation(ERotation rotation);
 	void setMirror(EMirror mirror);
 
@@ -62,13 +64,13 @@ public:
 	void setErrorCodeCallback(ZKCamera::IErrorCodeCallback *pCallback);
 
 protected:
-	ZKCameraView(HWND hParentWnd, ZKBasePrivate *pBP);
+	ZKCameraView(ZKBase *pParent, ZKBasePrivate *pBP);
 
 	virtual void onBeforeCreateWindow(const Json::Value &json);
 	virtual void onAfterCreateWindow(const Json::Value &json);
 	virtual const char* getClassName() const { return ZK_CAMERAVIEW; }
 
-	virtual void onDraw(HDC hdc);
+	virtual void onDraw(ZKCanvas *pCanvas);
 
 private:
 	void parseCameraViewAttributeFromJson(const Json::Value &json);

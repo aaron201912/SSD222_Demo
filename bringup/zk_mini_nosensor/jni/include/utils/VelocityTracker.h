@@ -8,7 +8,6 @@
 #ifndef _UTILS_VELOCITY_TRACKER_H_
 #define _UTILS_VELOCITY_TRACKER_H_
 
-#include <minigui/common.h>
 #include "control/Common.h"
 
 class VelocityTracker {
@@ -23,7 +22,7 @@ public:
 	float getYVelocity() const;
 
 private:
-	BOOL canComputeVelocity() const;
+	bool canComputeVelocity() const;
 
 private:
 	int mCurIndex;

@@ -25,9 +25,10 @@ public:
 	void hide();
 	bool isShow() const;
 
-	HDC snapshot() const;
-
 	void updateLocales();
+
+	void setPosition(const LayoutPosition &position);
+	const LayoutPosition& getPosition() const;
 
 protected:
 	virtual const char* getAppName() const { return NULL; }

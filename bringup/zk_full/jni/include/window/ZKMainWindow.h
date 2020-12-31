@@ -17,43 +17,29 @@ class ZKMainWindow : public ZKWindow {
 	ZK_DECLARE_PRIVATE(ZKMainWindow)
 
 public:
-	ZKMainWindow(HWND hParentWnd);
+	ZKMainWindow();
 	virtual ~ZKMainWindow();
 
-	HDC getWindowForeground();
-
-public:
 	class ITimerListener {
 	public:
 		virtual ~ITimerListener() { }
 		virtual bool onTimer(int id) = 0;
 	};
 
-	void registerTimerListener(int id, int time, ITimerListener *pListener);
+	void registerTimerListener(int id, uint32_t time, ITimerListener *pListener);
 	void unregisterTimerListener(int id, ITimerListener *pListener);
-	void resetTimer(int id, int time);
+	void resetTimer(int id, uint32_t time);
 
 protected:
-	ZKMainWindow(HWND hParentWnd, ZKBasePrivate *pBP);
-
 	virtual void onBeforeCreateWindow(const Json::Value &json);
-	virtual BOOL createWindow();
-	virtual int procCtrlFun(HWND hWnd, int message, WPARAM wParam, LPARAM lParam);
+	virtual bool createWindow();
+	virtual ret_t procCtrlFun(const struct _message_t *pMsg);
 
 private:
 	const char* getClassName() const { return NULL; }
-	void _section_(zk) parseMainWindowAttributeFromJson(const Json::Value &json);
+	void parseMainWindowAttributeFromJson(const Json::Value &json);
 
 	void notifyTimerListener(int id);
-
-private:
-	typedef struct {
-		int id;
-		ITimerListener *pListener;
-	} STimerInfo;
-	std::vector<STimerInfo> mTimerInfoList;
-
-	mutable Mutex mTimerLock;
 };
 
 #endif /* _WINDOW_ZKMAINWINDOW_H_ */

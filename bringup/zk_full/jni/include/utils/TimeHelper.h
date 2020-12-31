@@ -18,7 +18,7 @@ public:
 	/**
 	 * @brief 获取当前日期时间，单位为毫秒
 	 */
-	static long getCurrentTime();
+	static long long getCurrentTime();
 
 	/**
 	 * @brief 获取当前日期

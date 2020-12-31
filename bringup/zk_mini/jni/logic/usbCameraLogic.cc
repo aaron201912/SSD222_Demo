@@ -205,7 +205,9 @@ int display_deinit()
 
     MI_DIVP_StopChn(0);
     MI_DIVP_DestroyChn(0);
+	MI_DIVP_DeInitDev();
 #endif
+	MI_DISP_DeInitDev();
 
     return 0;
 }
@@ -591,6 +593,6 @@ static bool onButtonClick_sys_back(ZKButton *pButton) {
     }
 
     STCHECKRESULT(MI_DISP_DisableInputPort(0, 0));
-
+    MI_DISP_DeInitDev();
     return false;
 }

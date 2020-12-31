@@ -19,7 +19,7 @@ class ZKSeekBar : public ZKBase {
 	ZK_DECLARE_PRIVATE(ZKSeekBar)
 
 public:
-	ZKSeekBar(HWND hParentWnd);
+	ZKSeekBar(ZKBase *pParent);
 	virtual ~ZKSeekBar();
 
 	/**
@@ -30,7 +30,7 @@ public:
 	/**
 	 * @brief 获取最大进度值
 	 */
-	int getMax() const { return mMax; }
+	int getMax() const;
 
 	/**
 	 * @brief 设置当前进度值
@@ -40,7 +40,7 @@ public:
 	/**
 	 * @brief 获取当前进度值
 	 */
-	int getProgress() const { return mProgress; }
+	int getProgress() const;
 
 public:
 	class ISeekBarChangeListener {
@@ -51,39 +51,19 @@ public:
 		virtual void onStopTrackingTouch(ZKSeekBar *pSeekBar) { }
 	};
 
-	void setSeekBarChangeListener(ISeekBarChangeListener *pListener) {
-		mSeekBarChangeListenerPtr = pListener;
-	}
+	void setSeekBarChangeListener(ISeekBarChangeListener *pListener);
 
 protected:
-	ZKSeekBar(HWND hParentWnd, ZKBasePrivate *pBP);
+	ZKSeekBar(ZKBase *pParent, ZKBasePrivate *pBP);
 
 	virtual void onBeforeCreateWindow(const Json::Value &json);
 	virtual const char* getClassName() const { return ZK_SEEKBAR; }
 
-	virtual void onDraw(HDC hdc);
-	virtual BOOL onTouchEvent(const MotionEvent &ev);
-
-	void _section_(zk) drawProgress(HDC hdc);
-	void _section_(zk) drawThumb(HDC hdc);
+	virtual void onDraw(ZKCanvas *pCanvas);
+	virtual bool onTouchEvent(const MotionEvent &ev);
 
 private:
-	void _section_(zk) parseSeekBarAttributeFromJson(const Json::Value &json);
-	BOOL isHorizontalOrientation() const { return mOrientation == E_ORIENTATION_HORIZONTAL; }
-	int calculateProgress(int x, int y);
-
-protected:
-	ISeekBarChangeListener *mSeekBarChangeListenerPtr;
-
-	int mMax;
-	int mProgress;
-	EOrientation mOrientation;	// 方向: 0 横向, 1 纵向
-
-	PBITMAP mProgressPicPtr;
-	PBITMAP mThumbNormalPicPtr;
-	PBITMAP mThumbPressedPicPtr;
-
-	SIZE mThumbSize;
+	void parseSeekBarAttributeFromJson(const Json::Value &json);
 };
 
 #endif /* _CONTROL_ZKSEEKBAR_H_ */

@@ -20,7 +20,7 @@ class ZKVideoView : public ZKBase {
 	ZK_DECLARE_PRIVATE(ZKVideoView)
 
 public:
-	ZKVideoView(HWND hParentWnd);
+	ZKVideoView(ZKBase *pParent);
 	virtual ~ZKVideoView();
 
 	/**
@@ -98,13 +98,13 @@ public:
 	}
 
 protected:
-	ZKVideoView(HWND hParentWnd, ZKBasePrivate *pBP);
+	ZKVideoView(ZKBase *pParent, ZKBasePrivate *pBP);
 
 	virtual void onBeforeCreateWindow(const Json::Value &json);
 	virtual void onAfterCreateWindow(const Json::Value &json);
 	virtual const char* getClassName() const { return ZK_VIDEOVIEW; }
 
-	virtual void onDraw(HDC hdc);
+	virtual void onDraw(ZKCanvas *pCanvas);
 
 private:
 	void parseVideoViewAttributeFromJson(const Json::Value &json);

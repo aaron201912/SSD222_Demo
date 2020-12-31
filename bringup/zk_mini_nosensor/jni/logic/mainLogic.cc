@@ -28,9 +28,24 @@
 *
 * 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
 */
-
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include "mi_panel.h"
+#include "mi_disp_datatype.h"
+#include "mi_disp.h"
+#include "mi_gfx.h"
+#include "panelconfig.h"
 #include "statusbarconfig.h"
 #include "hotplugdetect.h"
+
+#define TRIGLE_BY_GPIO	0
+#define BACKLIGHT_GPIO	62	// 7
+#define POWERCTRL_GPIO	63	// 8
 
 static int g_curPageIdx = 0;
 /**
@@ -42,8 +57,375 @@ static S_ACTIVITY_TIMEER REGISTER_ACTIVITY_TIMER_TAB[] = {
 	//{1,  1000},
 };
 
+typedef enum
+{
+  IPC_KEYEVENT = 0,
+  IPC_COMMAND,
+  IPC_LOGCMD,
+  IPC_EVENT_MAX,
+} IPC_EVENT_TYPE;
+
+typedef enum
+{
+  IPC_COMMAND_EXIT = 0,
+  IPC_COMMAND_SUSPEND,
+  IPC_COMMAND_RESUME,
+  IPC_COMMAND_RELOAD,
+  IPC_COMMAND_BROWN_GETFOCUS,
+  IPC_COMMAND_BROWN_LOSEFOCUS,
+  IPC_COMMAND_APP_START_DONE,
+  IPC_COMMAND_APP_STOP_DONE,
+  IPC_COMMAND_SETUP_WATERMARK,
+  IPC_COMMAND_APP_START,
+  IPC_COMMAND_APP_STOP,
+  IPC_COMMAND_UI_EXIT,
+  IPC_COMMAND_APP_SUSPEND,
+  IPC_COMMAND_APP_SUSPEND_DONE,
+  IPC_COMMAND_APP_RESUME,
+  IPC_COMMAND_APP_RESUME_DONE,
+  IPC_COMMAND_MAX,
+} IPC_COMMAND_TYPE;
+
+typedef struct {
+  uint32_t EventType;
+  uint32_t Data;
+  char StrData[256];
+} IPCEvent;
+
+#define SSD_IPC "/tmp/ssd_apm_input"
+#define UI_IPC	"/tmp/zkgui_msg_input"
+
+class IPCNameFifo {
+public:
+  IPCNameFifo(const char* file): m_file(file) {
+    unlink(m_file.c_str());
+    printf("mkfifo: %s\n",m_file.c_str());
+    m_valid = !mkfifo(m_file.c_str(), 0777);
+  }
+
+  ~IPCNameFifo() {
+    unlink(m_file.c_str());
+  }
+
+  inline const std::string& Path() { return m_file; }
+  inline bool IsValid() { return m_valid; }
+
+private:
+  bool m_valid;
+  std::string m_file;
+};
+
+class IPCInput {
+public:
+  IPCInput(const std::string& file):m_fd(-1),m_file(file),m_fifo(file.c_str()){
+  printf("construct ipcinput\n");}
+
+  virtual ~IPCInput() {
+    Term();
+  }
+  bool Init() {
+    if (!m_fifo.IsValid()){
+        printf("%s non-existent!!!! \n",m_fifo.Path().c_str());
+        return false;
+    }
+    if (m_fd < 0) {
+      m_fd = open(m_file.c_str(), O_RDWR | O_NONBLOCK);
+    }
+    return m_fd >= 0;
+  }
+
+  int Read(IPCEvent& evt) {
+    if (m_fd >= 0) {
+      return read(m_fd, &evt, sizeof(IPCEvent));
+    }
+    return 0;
+  }
+
+  void Term() {
+    if (m_fd >= 0) {
+      close(m_fd);
+      m_fd = -1;
+    }
+  }
+
+private:
+  int m_fd;
+  std::string m_file;
+  IPCNameFifo m_fifo;
+};
+
+class IPCOutput {
+public:
+  IPCOutput(const std::string& file):m_fd(-1), m_file(file) {
+  }
+
+  virtual ~IPCOutput() {
+    Term();
+  }
+
+  bool Init() {
+    if (m_fd < 0) {
+      m_fd = open(m_file.c_str(), O_WRONLY | O_NONBLOCK);
+    }
+    return m_fd >= 0;
+  }
+
+  void Term() {
+    if (m_fd >= 0) {
+      close(m_fd);
+      m_fd = -1;
+    }
+  }
+
+  void Send(const IPCEvent& evt) {
+    if (m_fd >= 0) {
+      write(m_fd, &evt, sizeof(IPCEvent));
+    }
+  }
+
+private:
+  int m_fd;
+  std::string m_file;
+};
+
+void setOutputGpio(int gpio, int value)
+{
+	char gpioDir[64] = {0};
+	char gpioExport[64] = {0};
+	char gpioDirection[64] = {0};
+	char gpioValue[64] = {0};
+
+	sprintf(gpioDir, "/sys/class/gpio/gpio%d", gpio);
+	sprintf(gpioExport, "echo %d > /sys/class/gpio/export", gpio);
+	sprintf(gpioDirection, "echo out > /sys/class/gpio/gpio%d/direction", gpio);
+	sprintf(gpioValue, "echo %d >/sys/class/gpio/gpio%d/value", value, gpio);
+
+	if (!access(gpioDir, F_OK))
+	{
+		system(gpioValue);
+	}
+	else
+	{
+		system(gpioExport);
+		system(gpioDirection);
+		system(gpioValue);
+	}
+}
+
+int checkShellResult(char const* cmd, char const*key)
+{
+    if (cmd == NULL)
+    {
+        printf("popen cmd is NULL\n");
+        return -1;
+    }
+
+    char tmp[1024];
+    FILE* fp = popen(cmd, "r");
+    if (NULL == fp)
+    {
+        printf("exec cmd: %s failed, err: %s\n", cmd, strerror(errno));
+        return 1;
+    }
+    while (fgets(tmp, 1024, fp) != NULL)
+    {
+        if (tmp[strlen(tmp) - 1] == '\n')
+        {
+            tmp[strlen(tmp) - 1] = '\0'; //去除换行符
+        }
+
+		if (strstr(tmp, key))
+		{
+			pclose(fp);
+			return 0;
+		}
+    }
+
+    printf("exec cmd: %s ,not find %s item\n", cmd, key);
+
+    pclose(fp);
+    return -1;
+}
+
+static pthread_t g_getIpThread = 0;
+
+void *GetIpProc(void* pData)
+{
+	char *cmd = "cat /proc/net/wireless | grep wlan0";
+	char *key = "wlan0";
+	int tryCnt = 40;
+
+	printf("try to get ip...\n");
+
+	while (tryCnt--)
+	{
+		if (!checkShellResult(cmd, key))
+		{
+			system("udhcpc -i wlan0 -s /etc/init.d/udhcpc.script -a -q -b -t 20 -T 1 &");
+			break;
+		}
+
+		usleep(500*1000);
+	}
+
+	return NULL;
+}
+
+
+static void Exit_UI_Process()
+{
+	if (g_getIpThread)
+	{
+		pthread_join(g_getIpThread, NULL);
+		g_getIpThread = NULL;
+	}
+
+	IPCOutput o(SSD_IPC);
+	if(!o.Init())
+	{
+		printf("main ipc init fail!!!\n");
+		o.Term();
+	}
+	IPCEvent sendevt;
+	memset(&sendevt,0,sizeof(IPCEvent));
+	sendevt.EventType = IPC_COMMAND;
+	sendevt.Data = IPC_COMMAND_UI_EXIT;
+	o.Send(sendevt);
+	printf("UI process send %d to exit\n", IPC_COMMAND_UI_EXIT);
+	SSTAR_DeinitHotPlugDetect();
+	MI_DISP_DeInitDev();
+	MI_GFX_DeInitDev();
+	exit(0);
+}
+
+static void Enter_STR_SuspendMode()
+{
+#if TRIGLE_BY_GPIO
+	setOutputGpio(BACKLIGHT_GPIO, 0);
+	setOutputGpio(POWERCTRL_GPIO, 0);
+#else
+	MI_PANEL_IntfType_e eIntfType = E_MI_PNL_INTF_TTL;
+	MI_PANEL_BackLightConfig_t stBackLightCfg;
+	memset(&stBackLightCfg, 0, sizeof(MI_PANEL_BackLightConfig_t));
+
+	MI_PANEL_GetBackLight(eIntfType, &stBackLightCfg);
+	printf("Get BL cfg: bEn=%d, u8PwmNum=%d, u32Duty=%d, u32Period=%d\n",
+			(int)stBackLightCfg.bEn, (int)stBackLightCfg.u8PwmNum, stBackLightCfg.u32Duty,
+			stBackLightCfg.u32Period);
+	stBackLightCfg.u32Duty = 0;
+	MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
+	MI_PANEL_DeInitDev();
+#endif
+
+    MI_GFX_DeInitDev();
+    printf("gfx disable\n");
+
+    IPCOutput o(SSD_IPC);
+	if(!o.Init())
+	{
+		printf("main ipc init fail!!!\n");
+		o.Term();
+	}
+	IPCEvent sendevt;
+	memset(&sendevt,0,sizeof(IPCEvent));
+	sendevt.EventType = IPC_COMMAND;
+	sendevt.Data = IPC_COMMAND_APP_SUSPEND;
+	o.Send(sendevt);
+	printf("UI process send %d to suspend\n", IPC_COMMAND_APP_SUSPEND);
+
+	IPCEvent getevt;
+	IPCInput uiInput(UI_IPC);
+	if(!uiInput.Init())
+	{
+		printf("ui ipc init fail\n");
+		return;
+	}
+
+	memset(&getevt,0,sizeof(IPCEvent));
+	while (1)
+	{
+		if(uiInput.Read(getevt) > 0)
+		{
+			if (getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_SUSPEND_DONE)
+			{
+				printf("recv app suspend done msg %d\n", IPC_COMMAND_APP_SUSPEND_DONE);
+				break;
+			}
+		}
+	}
+
+	if (g_getIpThread)
+	{
+		pthread_join(g_getIpThread, NULL);
+		g_getIpThread = NULL;
+	}
+
+	system("rmmod ssw102b_wifi_sdio");
+}
+
+static void Enter_STR_ResumeMode()
+{
+#if TRIGLE_BY_GPIO
+	setOutputGpio(POWERCTRL_GPIO, 1);
+#endif
+
+	IPCOutput o(SSD_IPC);
+	if(!o.Init())
+	{
+		printf("main ipc init fail!!!\n");
+		o.Term();
+	}
+
+	IPCEvent sendevt;
+	memset(&sendevt,0,sizeof(IPCEvent));
+	sendevt.EventType = IPC_COMMAND;
+	sendevt.Data = IPC_COMMAND_APP_RESUME;
+	o.Send(sendevt);
+	printf("UI process send %d to resume\n", IPC_COMMAND_APP_RESUME);
+
+	IPCEvent getevt;
+	IPCInput uiInput(UI_IPC);
+	if(!uiInput.Init())
+	{
+		printf("ui ipc init fail\n");
+		return;
+	}
+
+	memset(&getevt,0,sizeof(IPCEvent));
+	while (1)
+	{
+		if(uiInput.Read(getevt) > 0)
+		{
+			if (getevt.EventType == IPC_COMMAND && getevt.Data == IPC_COMMAND_APP_RESUME_DONE)
+			{
+				printf("recv app resume done msg %d\n", IPC_COMMAND_APP_RESUME_DONE);
+				break;
+			}
+		}
+	}
+
+	MI_GFX_Open();
+
+	usleep(30*1000);
+#if TRIGLE_BY_GPIO
+	setOutputGpio(BACKLIGHT_GPIO, 1);
+#endif
+
+	printf("begin to insmod wifi ko\n");
+	system("insmod /config/wifi/ssw102b_wifi_sdio.ko");
+	printf("insmod wifi ko success\n");
+
+	// udhcpc
+	if (SSTAR_GetWifiLastConnStatus())
+	{
+		printf("start thread to get ip\n");
+		pthread_create(&g_getIpThread, NULL, GetIpProc, NULL);
+	}
+}
+
 static void onUI_init(){
     //Tips :添加 UI初始化的显示代码到这里,如:mText1->setText("123");
+	MI_GFX_Open();
 	ShowStatusBar(1, 0, 0);
 }
 
@@ -109,11 +491,13 @@ const char* IconTab[]={
 //		"airportActivity",
 		"playPcmFileActivity",
 //		"facedetectActivity",
-//		"dualsensorActivity"
+//		"dualsensorActivity",
+		"usbCameraActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
 	ShowStatusBar(0, 1 ,1);
+	printf("select idx is %d\n", index);
 	EASYUICONTEXT->openActivity(IconTab[index]);
 }
 

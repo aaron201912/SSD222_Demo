@@ -17,6 +17,8 @@ typedef enum {
 	E_CAMERA_STATUS_CODE_DEV_NOT_EXIST,
 	E_CAMERA_STATUS_CODE_DEV_OPEN_FAILED,
 	E_CAMERA_STATUS_CODE_TAKE_PIC_FAILED,
+	E_CAMERA_STATUS_CODE_NO_SIGNAL,
+	E_CAMERA_STATUS_CODE_HAS_SIGNAL,
 	E_CAMERA_STATUS_CODE_UNKNOWN_ERRORNO
 } ECameraStatusCode;
 
@@ -36,7 +38,6 @@ typedef enum {
 class CameraCtrl;
 
 class ZKCamera {
-	typedef unsigned char	BYTE;
 public:
 	ZKCamera();
 	virtual ~ZKCamera();
@@ -46,12 +47,17 @@ public:
 	bool isPreviewing() const;
 
 	void setFormatSize(int width, int height);
+	void setCvbsSignal(bool isCvbs);
 
 	ECameraStatusCode takePicture();
 
 	void setPreviewPos(const LayoutPosition &pos);
+	void setCropPos(const LayoutPosition &pos);
+
 	void setRotation(ERotation rotation);
 	void setMirror(EMirror mirror);
+
+	bool performV4L2Ctrl(int id, int val);
 
 	class IPictureCallback {
 	public:
@@ -87,9 +93,6 @@ private:
 
 	void initDisp();
 	void deinitDisp();
-
-	bool convertYUYVToRGB24(const BYTE *pYUYV, BYTE *pRGB24, int width, int height);
-	bool convertYUYVIToYUYVP(const BYTE *pYUYVI, BYTE *pYUYVP, int width, int height);
 
 	typedef enum {
 		E_CAMERA_REQ_START_PREVIEW,
@@ -151,15 +154,13 @@ private:
 	IPictureCallback *mPictureCallbackPtr;
 	IErrorCodeCallback *mErrorCodeCallbackPtr;
 
-	BYTE *mPictureDataPtr;
+	uint8_t *mPictureDataPtr;
 
-	int mDisplayLayer;
 	LayoutPosition mPreviewPos;
-
-	BYTE *mPreviewDataYUVPtr;
-	int mIndexOfData;
+	LayoutPosition mCropPos;
 
 	int mRetryCount;
+	int mSkipFrames;
 };
 
 #endif /* _CAMERA_ZKCAMERA_H_ */

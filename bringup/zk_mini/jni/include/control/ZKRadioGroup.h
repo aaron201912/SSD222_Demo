@@ -16,13 +16,17 @@ class ZKRadioGroup : public ZKBase {
 	ZK_DECLARE_PRIVATE(ZKRadioGroup)
 
 public:
-	ZKRadioGroup(HWND hParentWnd);
+	ZKRadioGroup(ZKBase *pParent);
 	virtual ~ZKRadioGroup();
 
 	void setCheckedID(int id);
-	int getCheckedID() const { return mCheckedID; }
+	int getCheckedID() const;
+
+	ZKCheckBox* getRadioItem(int index) const;
 
 	void clearCheck();
+
+	void reloadTextTr();
 
 public:
 	class ICheckedChangeListener {
@@ -31,28 +35,20 @@ public:
 		virtual void onCheckedChanged(ZKRadioGroup *pRadioGroup, int checkedID) = 0;
 	};
 
-	void setCheckedChangeListener(ICheckedChangeListener *pListener) {
-		mCheckedChangeListenerPtr = pListener;
-	}
+	void setCheckedChangeListener(ICheckedChangeListener *pListener);
 
 protected:
-	ZKRadioGroup(HWND hParentWnd, ZKBasePrivate *pBP);
+	ZKRadioGroup(ZKBase *pParent, ZKBasePrivate *pBP);
 
 	virtual void onBeforeCreateWindow(const Json::Value &json);
 	virtual void onAfterCreateWindow(const Json::Value &json);
 	virtual const char* getClassName() const { return ZK_RADIOGROUP; }
 
-	virtual BOOL onTouchEvent(const MotionEvent &ev);
+	virtual bool onTouchEvent(const MotionEvent &ev);
 
 private:
 	void parseRadioGroupAttributeFromJson(const Json::Value &json);
 	void parseRadioButtonsAttributeFromJson(const Json::Value &json);
-
-private:
-	ICheckedChangeListener *mCheckedChangeListenerPtr;
-	int mCheckedID;
-
-	vector<ZKCheckBox*> mCheckBoxsList;
 };
 
 #endif /* _CONTROL_ZKRADIOGROUP_H_ */

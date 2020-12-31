@@ -14,11 +14,14 @@ class ConfigManager {
 public:
 	static ConfigManager* getInstance();
 
-	const std::string& getResFilePath(const std::string &resFileName) const;
-	int getLongClickTimeOut() const;
+	const char* getVersion() const;
 
+	std::string getResFilePath(const std::string &resFileName) const;
+
+	int getLongClickTimeOut() const;
 	int getMinBrightness() const;
 	int getMaxBrightness() const;
+	int getDefBrightness() const;
 
 	const std::string& getStartupLibPath() const;
 
@@ -36,6 +39,8 @@ public:
 	int getScreenRotate() const;
 
 	bool isDebugVersion() const;
+
+	bool isNeedToStartupTouchCalibration() const;
 
 private:
 	ConfigManager();

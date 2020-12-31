@@ -111,6 +111,8 @@ public:
 	 */
 	bool isStatusBarShow() const;
 
+	BaseApp* getStatusBar() const;
+
 	/**
 	 * @brief 显示导航栏
 	 */
@@ -125,6 +127,8 @@ public:
 	 * @brief 导航栏是否显示
 	 */
 	bool isNaviBarShow() const;
+
+	BaseApp* getNaviBar() const;
 
 	void powerOff();
 	void powerOn();
@@ -178,7 +182,7 @@ public:
 	void performScreensaverOn();
 	void performScreensaverOff();
 
-	void showIME(const IMEContext::SIMETextInfo &info, IMEContext::IIMETextUpdateListener *pListener);
+	void showIME(IMEContext::SIMETextInfo *pInfo, IMEContext::IIMETextUpdateListener *pListener);
 	void hideIME();
 	void performHideIME();
 
@@ -193,13 +197,14 @@ public:
 	 */
 	void updateLocalesCode(const char *code);
 
-private:
-	EasyUIContext();
-	~EasyUIContext();
-
 	bool initEasyUI();
 	void deinitEasyUI();
 	void runEasyUI();
+	void reqExit();
+
+private:
+	EasyUIContext();
+	~EasyUIContext();
 
 	bool initLib();
 	void deinitLib();
@@ -220,6 +225,9 @@ private:
 private:
 	std::vector<ITouchListener *> mGlobalTouchListenerList;
 	mutable Mutex mTouchLock;
+
+	std::vector<IKeyListener *> mKeyListenerList;
+	mutable Mutex mKeyLock;
 
 	BaseApp *mStatusBarPtr;
 	BaseApp *mNaviBarPtr;

@@ -28,7 +28,6 @@
 *
 * 在Eclipse编辑器中  使用 “alt + /”  快捷键可以打开智能提示
 */
-#include "utils/BrightnessHelper.h"
 #include "uart/ProtocolSender.h"
 #include "statusbarconfig.h"
 

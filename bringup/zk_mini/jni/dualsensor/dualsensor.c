@@ -456,7 +456,8 @@ MI_S32 ST_Vdisp_Deinit(void)
     *退出vdisp模块
     */
     STCHECKRESULT(MI_VDISP_Exit());
-    
+	STCHECKRESULT(MI_VDISP_DeInitDev());
+	    
     return MI_SUCCESS;
 }
 
@@ -928,6 +929,11 @@ MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
         STCHECKRESULT(MI_SNR_Disable(eSNRPad));
     }
 
+	STCHECKRESULT(MI_VPE_DeInitDev());
+	STCHECKRESULT(MI_VIF_DeInitDev());
+	STCHECKRESULT(MI_SNR_DeInitDev());
+	STCHECKRESULT(MI_DISP_DeInitDev());
+	
 	STCHECKRESULT(MI_IQSERVER_Close());
 
     STCHECKRESULT(ST_Sys_Exit());

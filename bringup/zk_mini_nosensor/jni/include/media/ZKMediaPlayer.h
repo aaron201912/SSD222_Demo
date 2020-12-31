@@ -5,18 +5,13 @@
 #include "utils/MessageQueue.h"
 #include "control/Common.h"
 
-namespace android {
-class CedarMediaPlayer;
-class CedarDisplay;
-}
-
-class InternalPlayerListener;
+class InternalMediaPlayer;
 
 /**
  * @brief 媒体播放
  */
 class ZKMediaPlayer {
-	friend class InternalPlayerListener;
+	friend class InternalMediaPlayer;
 public:
 	/**
 	 * @brief 媒体类型
@@ -34,9 +29,6 @@ public:
 		E_MSGTYPE_STOP_FILE,
 		E_MSGTYPE_PLAY_STARTED,
 		E_MSGTYPE_PLAY_COMPLETED,
-		E_MSGTYPE_MEDIA_SET_VIDEO_SIZE,
-		E_MSGTYPE_MEDIA_INFO, 			// MEDIA_INFO_UNKNOWN
-		E_MSGTYPE_MEDIA_SEEK_COMPLETE,
 		E_MSGTYPE_ERROR_MEDIA_ERROR,  	// MEDIA_ERROR_UNKNOWN, ...
 		E_MSGTYPE_ERROR_UNKNOWN,
 		E_MSGTYPE_ERROR_INVALID_FILEPATH,
@@ -92,10 +84,9 @@ public:
 
 	/**
 	 * @brief 设置音量
-	 * @param leftVolume 左声道音量范围：0.0 ～ 1.0
-	 * @param rightVolume 右声道音量范围：0.0 ～ 1.0
+	 * @param volume 音量范围：0.0 ～ 1.0
 	 */
-	void setVolume(float leftVolume, float rightVolume);
+	void setVolume(float volume);
 
 	void setPreviewPos(const LayoutPosition &pos);
 
@@ -124,8 +115,6 @@ public:
 
 private:
 	bool playerThreadLoop();
-	bool executePlayFile(const char *pFilePath, int msec = 0);
-	void resetPlayer();
 
 	enum EPlayState {
 		E_PLAY_STATE_ERROR = -1,
@@ -149,26 +138,17 @@ private:
 
 private:
 	PlayerThread mPlayerThread;
-	InternalPlayerListener *mInternalPlayerListenerPtr;
 
 	EMediaType mMediaType;
-
-	android::CedarMediaPlayer *mMediaPlayerPtr;
-	android::CedarDisplay *mDisplayPtr;
-	int mHLay;
+	InternalMediaPlayer *mMediaPlayerPtr;
 
 	MessageQueue mMsgQueue;
 
 	mutable Mutex mLock;
-	mutable Mutex mPlayerListenerLock;
-
 	Condition mExecuteDoneCondition;
 
 	EPlayState mCurrentPlayState;
-
 	IPlayerMessageListener *mPlayerMessageListenerPtr;
-
-	int mVideoRotation;
 };
 
 #endif  /* _MEDIA_ZKMEDIAPLAYER_H_ */

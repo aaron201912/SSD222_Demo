@@ -8,6 +8,9 @@
 #ifndef _CAMERA_CAMERACTRL_H_
 #define _CAMERA_CAMERACTRL_H_
 
+#include <string>
+#include "CameraCommDef.h"
+
 class CameraCtrl {
 public:
 	CameraCtrl();
@@ -25,11 +28,16 @@ public:
 
 	bool isCaptureDevExist();
 
+	void setCvbsSignal(bool isCvbs);
+	bool isCvbsSignal() const { return mIsCvbsSignal; }
+
 	bool openCaptureDev();
 	void closeCaptureDev();
 	bool isCaptureDevOpened() const { return mIsCaptureDevOpened; }
 
 	bool getCaptureDevFormatSize(int &width, int &height);
+
+	bool performV4L2Ctrl(int id, int val);
 
 private:
 	bool queryCaptureDevCapabilities();
@@ -46,13 +54,23 @@ private:
 
 	bool enableCaptureDev(bool isEnable);
 
+	bool updateControls();
+
 private:
+	std::string mDevPath;
+	bool mIsCvbsSignal;
+
 	int mCaptureDev;
 	bool mIsCaptureDevOpened;
 
 	SBufferInfo *mBufInfos;
 	int mLenOfBufInfos;
 	int mBufIndex;
+
+	struct {
+		bool isEnable;
+		int value;
+	} mV4L2CtrlFlagTab[V4L2_CID_LASTP1 - V4L2_CID_BASE];
 };
 
 #endif /* _CAMERA_CAMERACTRL_H_ */

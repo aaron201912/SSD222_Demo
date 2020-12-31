@@ -16,7 +16,7 @@ class ZKCheckBox : public ZKButton {
 	ZK_DECLARE_PRIVATE(ZKCheckBox)
 
 public:
-	ZKCheckBox(HWND hParentWnd);
+	ZKCheckBox(ZKBase *pParent);
 	virtual ~ZKCheckBox();
 
 	void setChecked(bool isChecked);
@@ -29,23 +29,18 @@ public:
 		virtual void onCheckedChanged(ZKCheckBox *pCheckBox, bool isChecked) = 0;
 	};
 
-	void setCheckedChangeListener(ICheckedChangeListener *pListener) {
-		mCheckedChangeListenerPtr = pListener;
-	}
+	void setCheckedChangeListener(ICheckedChangeListener *pListener);
 
 protected:
-	ZKCheckBox(HWND hParentWnd, ZKBasePrivate *pBP);
+	ZKCheckBox(ZKBase *pParent, ZKBasePrivate *pBP);
 
 	virtual void onBeforeCreateWindow(const Json::Value &json);
 	virtual const char* getClassName() const { return ZK_CHECKBOX; }
 
-	virtual BOOL onTouchEvent(const MotionEvent &ev);
+	virtual bool onTouchEvent(const MotionEvent &ev);
 
 private:
 	void parseCheckBoxAttributeFromJson(const Json::Value &json);
-
-private:
-	ICheckedChangeListener *mCheckedChangeListenerPtr;
 };
 
 #endif /* _CONTROL_ZKCHECKBOX_H_ */

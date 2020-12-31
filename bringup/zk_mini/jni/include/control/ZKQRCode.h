@@ -19,7 +19,7 @@ class ZKQRCode : public ZKBase {
 	ZK_DECLARE_PRIVATE(ZKQRCode)
 
 public:
-	ZKQRCode(HWND hParentWnd);
+	ZKQRCode(ZKBase *pParent);
 	virtual ~ZKQRCode();
 
 	/**
@@ -28,20 +28,14 @@ public:
 	bool loadQRCode(const char *pStr);
 
 protected:
-	ZKQRCode(HWND hParentWnd, ZKBasePrivate *pBP);
+	ZKQRCode(ZKBase *pParent, ZKBasePrivate *pBP);
 
 	virtual void onBeforeCreateWindow(const Json::Value &json);
 	virtual const char* getClassName() const { return ZK_QRCODE; }
-	virtual void onDraw(HDC hdc);
-
-	void drawQRCode(HDC hdc);
+	virtual void onDraw(ZKCanvas *pCanvas);
 
 private:
 	void parseQRCodeAttributeFromJson(const Json::Value &json);
-	void deleteQRCodeDC();
-
-private:
-	HDC mQRCodeDC;
 };
 
 #endif /* _CONTROL_ZKQRCODE_H_ */

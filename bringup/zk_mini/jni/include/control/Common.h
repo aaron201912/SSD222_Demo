@@ -8,13 +8,14 @@
 #ifndef _CONTROL_COMMON_H_
 #define _CONTROL_COMMON_H_
 
+#include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 
-#ifdef USE_ENCRYPT
-#define _section_(S) __attribute__ ((__section__(".text"#S)))
-#else
-#define _section_(S)
-#endif
+typedef long ret_t;
+
+struct _bitmap_t;
+struct _message_t;
 
 #define ZK_DECLARE_PRIVATE(Class) \
 	inline Class##Private* d_func() { return reinterpret_cast<Class##Private *>(d_ptr); } \
@@ -53,32 +54,14 @@
 #define ZK_PAINTER		"zk_painter"
 /**************************************************/
 
-#define TOUCH_SLOP		5
-
-/********************Timer id**********************/
-#define ID_TIMER_FIRST						100
-#define ID_LONG_CLICK_TIME_OUT_TIMER		(ID_TIMER_FIRST)
-#define ID_LONG_CLICK_INTERVAL_TIMER		(ID_TIMER_FIRST+1)
-#define ID_SLIDEWINDOW_ROLL_TIMER			(ID_TIMER_FIRST+2)
-#define ID_ROTATE_POINTER_TIMER				(ID_TIMER_FIRST+3)
-#define ID_LISTVIEW_ROLL_TIMER				(ID_TIMER_FIRST+4)
-#define ID_LISTVIEW_ROLLBACK_TIMER			(ID_TIMER_FIRST+5)
-#define ID_CLOCK_TIMER						(ID_TIMER_FIRST+6)
-#define ID_HIDE_WND_TIME_OUT_TIMER			(ID_TIMER_FIRST+7)
-#define ID_ROLL_TEXT_TIMER					(ID_TIMER_FIRST+8)
-#define ID_SLIDETEXT_ROLL_TIMER				(ID_TIMER_FIRST+9)
-#define ID_SCROLLBAR_SINK_TIMER				(ID_TIMER_FIRST+10)
-#define ID_SCROLLWINDOW_ROLL_TIMER			(ID_TIMER_FIRST+11)
-#define ID_ANIMATIONVIEW_PLAY_TIMER			(ID_TIMER_FIRST+12)
-#define ID_TIMER_LAST						200
-/**************************************************/
-
-/******************User Message********************/
-#define MSG_USER_INVALIDATE			(MSG_USER + 1)
-#define MSG_USER_SHOW_WND			(MSG_USER + 2)
-#define MSG_USER_START_TIMER		(MSG_USER + 3)
-#define MSG_USER_STOP_TIMER			(MSG_USER + 4)
-#define MSG_USER_RESET_TIMER		(MSG_USER + 5)
+/**********************控件状态*********************/
+#define ZK_CONTROL_STATUS_NORMAL          0x00000000
+#define ZK_CONTROL_STATUS_PRESSED         0x00000001
+#define ZK_CONTROL_STATUS_SELECTED        0x00000002
+#define ZK_CONTROL_STATUS_INVALID         0x00000004
+#define ZK_CONTROL_STATUS_VISIBLE         0x00000008
+#define ZK_CONTROL_STATUS_TOUCHABLE       0x00000010
+#define ZK_CONTROL_STATUS_TOUCH_PASS      0x00000020
 /**************************************************/
 
 class MotionEvent {
@@ -208,5 +191,10 @@ public:
 	int mPaddingRight;
 	int mPaddingBottom;
 };
+
+typedef struct {
+	float x;
+	float y;
+} SZKPoint;
 
 #endif /* _CONTROL_COMMON_H_ */

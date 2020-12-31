@@ -32,15 +32,15 @@
 
 // 波形数据存储区
 #define DIAGRAM_SIZE 100
-static MPPOINT sPoints[DIAGRAM_SIZE];
-static MPPOINT sPoints1[DIAGRAM_SIZE];
+static SZKPoint sPoints[DIAGRAM_SIZE];
+static SZKPoint sPoints1[DIAGRAM_SIZE];
 // 波形图测试用的数据
 
 //取波形数据里面的偏移值
 static int mpointindex = 0;
 static float latestValue = 0;
 
-static void movePoints(MPPOINT* p,int size){
+static void movePoints(SZKPoint* p,int size){
 	for(int i =0;i < size-1;i++){
 		p[i].y = p[i+1].y;
 	}

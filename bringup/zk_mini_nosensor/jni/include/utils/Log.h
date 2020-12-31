@@ -15,6 +15,8 @@
 #define LOGD(fmt,...) 	fprintf(stderr, fmt, ##__VA_ARGS__)
 #endif
 
+#if 0
+
 #define ZKSWE_DEBUG_EASYGUI
 #ifdef ZKSWE_DEBUG_EASYGUI
 #include <sys/time.h>
@@ -36,6 +38,8 @@
 #define TIME_ELAPSED(codeToTime) do { \
 	{ codeToTime; } \
 } while (0)
+#endif
+
 #endif
 
 #endif /* _UTILS_LOG_H_ */

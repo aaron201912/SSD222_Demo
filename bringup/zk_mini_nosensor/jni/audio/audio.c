@@ -452,6 +452,7 @@ static int SSTAR_AO_StopPlayFile(MI_AUDIO_DEV aoDevId)
 
 	MI_AO_DisableChn(aoDevId, 0);
 	MI_AO_Disable(aoDevId);
+	MI_AO_DeInitDev();
 
 	return 0;
 }

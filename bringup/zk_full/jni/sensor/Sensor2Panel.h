@@ -22,6 +22,9 @@ extern "C"{
 #include "mi_divp.h"
 //#include <mi_vdisp_datatype.h>
 #include <mi_vdisp.h>
+#include "mi_isp.h"
+#include "mi_iqserver.h"
+#include "isp_cus3a_if.h"
 
 #include <st_common.h>
 #include <st_vif.h>

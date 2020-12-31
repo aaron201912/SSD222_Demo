@@ -19,20 +19,20 @@ class ZKPainter : public ZKBase {
 	ZK_DECLARE_PRIVATE(ZKPainter)
 
 public:
-	ZKPainter(HWND hParentWnd);
+	ZKPainter(ZKBase *pParent);
 	virtual ~ZKPainter();
 
 	/**
 	 * @brief 设置线宽
 	 * @param width 线宽
 	 */
-	void setLineWidth(int width);
+	void setLineWidth(uint32_t width);
 
 	/**
 	 * @brief 设置颜色值
 	 * @param color 颜色值为0x RGB
 	 */
-	void setSourceColor(int color);
+	void setSourceColor(uint32_t color);
 
 	/**
 	 * @brief 画三角形
@@ -51,10 +51,9 @@ public:
 	 * @param top 左上角Y坐标
 	 * @param width 矩形宽度
 	 * @param height 矩形高度
-	 * @param radiusX X轴方向圆角半径，默认值为：0，为不带圆角矩形
-	 * @param radiusY Y轴方向圆角半径，默认值为：0，为不带圆角矩形
+	 * @param radius 圆角半径，默认值为：0，为不带圆角矩形
 	 */
-	void drawRect(int left, int top, int width, int height, int radiusX = 0, int radiusY = 0);
+	void drawRect(int left, int top, int width, int height, int radius = 0);
 
 	/**
 	 * @brief 画圆弧
@@ -84,10 +83,9 @@ public:
 	 * @param top 左上角Y坐标
 	 * @param width 矩形宽度
 	 * @param height 矩形高度
-	 * @param radiusX X轴方向圆角半径，默认值为：0，为不带圆角矩形
-	 * @param radiusY Y轴方向圆角半径，默认值为：0，为不带圆角矩形
+	 * @param radius 圆角半径，默认值为：0，为不带圆角矩形
 	 */
-	void fillRect(int left, int top, int width, int height, int radiusX = 0, int radiusY = 0);
+	void fillRect(int left, int top, int width, int height, int radius = 0);
 
 	/**
 	 * @brief 填充圆弧
@@ -105,28 +103,27 @@ public:
 	 * @param pPoints 坐标数组
 	 * @param count 数组长度
 	 */
-	void drawLines(const MPPOINT *pPoints, int count);
+	void drawLines(const SZKPoint *pPoints, int count);
 
 	/**
 	 * @brief 画曲线
 	 * @param pPoints 坐标数组
 	 * @param count 数组长度
 	 */
-	void drawCurve(const MPPOINT *pPoints, int count);
+	void drawCurve(const SZKPoint *pPoints, int count);
 
 	/**
 	 * @brief 擦除
-	 * @param pRect 区域位置，默认值为：NULL，表示擦除整个控件
 	 */
-	void erase(const RECT *pRect = NULL);
+	void erase(int x, int y, int w, int h);
 
 protected:
-	ZKPainter(HWND hParentWnd, ZKBasePrivate *pBP);
+	ZKPainter(ZKBase *pParent, ZKBasePrivate *pBP);
 
 	virtual void onBeforeCreateWindow(const Json::Value &json);
 	virtual const char* getClassName() const { return ZK_PAINTER; }
 
-	virtual void onDraw(HDC hdc);
+	virtual void onDraw(ZKCanvas *pCanvas);
 
 private:
 	void parsePainterAttributeFromJson(const Json::Value &json);
