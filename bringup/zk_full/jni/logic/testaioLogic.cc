@@ -227,7 +227,6 @@ static void obtainListItemData_Listview_samplerate(ZKListView *pListView,ZKListV
 	if (index == g_curSampleRateIdx)
 	{
 		pListItem->setSelected(true);
-		mButton_sampleratePtr->setText(g_stSampleRateInfo[index].name);
 		SSTAR_AI_SetSampleRate(g_stSampleRateInfo[index].eSampleRate);
 	}
 	else
@@ -238,6 +237,7 @@ static void onListItemClick_Listview_samplerate(ZKListView *pListView, int index
     //LOGD(" onListItemClick_ Listview_samplerate  !!!\n");
 	g_curSampleRateIdx = index;
 	pListView->setVisible(false);
+	mButton_sampleratePtr->setText(g_stSampleRateInfo[index].name);
 }
 
 static bool onButtonClick_Button_record(ZKButton *pButton) {
@@ -284,7 +284,6 @@ static void obtainListItemData_Listview_recordfile(ZKListView *pListView,ZKListV
 	if (index == g_curRecordIdx)
 	{
 		pListItem->setSelected(true);
-		mButton_recordfilePtr->setText(g_stRecordInfo[index].name);
 	}
 	else
 		pListItem->setSelected(false);
@@ -294,6 +293,7 @@ static void onListItemClick_Listview_recordfile(ZKListView *pListView, int index
     //LOGD(" onListItemClick_ Listview_recordfile  !!!\n");
 	g_curRecordIdx = index;
 	pListView->setVisible(false);
+	mButton_recordfilePtr->setText(g_stRecordInfo[index].name);
 }
 
 static bool onButtonClick_Button_playrecord(ZKButton *pButton) {
