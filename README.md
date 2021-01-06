@@ -22,15 +22,6 @@ UI demo on ssd222.
 ### zk_mini_nosensor
 <p style="text-indent:2em">不带sensor case的精简版本。</p>
 
-### zk_mini_str
-<p style="text-indent:2em">zk_mini的str版本。</p>
-
-### zk_full_str
-<p style="text-indent:2em">zk_full的str版本。</p>
-
-### zk_mini_nosensor_str
-<p style="text-indent:2em">zk_mini_nosensor的str版本。</p>
-
 ### 编译方法：
 1. 使用FlyThings IDE导入工程；
 2. 选中项目，点击右键选择清空项目，构建项目；
