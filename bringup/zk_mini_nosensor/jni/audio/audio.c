@@ -25,7 +25,7 @@
 
 #define AUDIO_IN_RECORD_PREFIX	AUDIO_IN_RECORD_DIR"/AudioIn_record_"
 #define AUDIO_IN_RECORD(idx)	AUDIO_IN_RECORD_PREFIX#idx
-#define AUDIO_OUT_MONO_FILE		"/customer/res/8K_16bit_MONO_30s.wav"
+#define AUDIO_OUT_MONO_FILE		"/customer/res/8K_16bit_MONO.wav"
 #define AUDIO_OUT_STEREO_FILE	"/customer/res/8K_16bit_STERO_30s.wav"
 
 typedef enum
