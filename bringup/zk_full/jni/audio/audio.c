@@ -482,7 +482,7 @@ int SSTAR_AO_StopTestStereo()
 
 int SSTAR_AO_StartTestHeadPhone()
 {
-	return SSTAR_AO_StartPlayFile(AO_DEV_HEADPHONE, AUDIO_OUT_STEREO_FILE, -5);
+	return SSTAR_AO_StartPlayFile(AO_DEV_HEADPHONE, AUDIO_OUT_MONO_FILE, -5);
 }
 
 int SSTAR_AO_StopTestHeadPhone()
