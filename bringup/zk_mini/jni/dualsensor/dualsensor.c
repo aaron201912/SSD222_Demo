@@ -11,8 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "dualsensor.h"
-#include "mi_isp.h"
-#include "mi_iqserver.h"
+#include "sstar_dynamic_load.h"
 
 #define DISP_INPUT_WIDTH    1024
 #define DISP_INPUT_HEIGHT   600
@@ -72,6 +71,15 @@ MI_BOOL g_bSTFuncTrace = 0;
 MI_U32 g_u32CapWidth = 0;
 MI_U32 g_u32CapHeight = 0;
 static MI_BOOL g_bExit = FALSE;
+
+static SensorAssembly_t g_stSensorAssembly;
+static VifAssembly_t g_stVifAssembly;
+static VpeAssembly_t g_stVpeAssembly;
+static IspAssembly_t g_stIspAssembly;
+static IqServerAssembly_t g_stIqServerAssembly;
+static VdispAssembly_t g_stVdispAssembly;
+
+
 
 void ST_Flush(void)
 {
@@ -166,14 +174,14 @@ MI_S32 ST_Vif_EnableDev(MI_VIF_DEV VifDev, MI_VIF_WorkMode_e eWorkMode, MI_VIF_H
 
     stDevAttr.eBitOrder = E_MI_VIF_BITORDER_NORMAL;
 
-    STCHECKRESULT(MI_VIF_SetDevAttr(VifDev, &stDevAttr));
-    STCHECKRESULT(MI_VIF_EnableDev(VifDev));
+    STCHECKRESULT(g_stVifAssembly.pfnVifSetDevAttr(VifDev, &stDevAttr));
+    STCHECKRESULT(g_stVifAssembly.pfnVifEnableDev(VifDev));
 
     return MI_SUCCESS;
 }
 MI_S32 ST_Vif_DisableDev(MI_VIF_DEV VifDev)
 {
-    STCHECKRESULT(MI_VIF_DisableDev(VifDev));
+    STCHECKRESULT(g_stVifAssembly.pfnVifDisableDev(VifDev));
 	
     return MI_SUCCESS;
 }
@@ -200,7 +208,7 @@ MI_S32 ST_Vif_CreatePort(MI_VIF_CHN VifChn, MI_VIF_PORT VifPort, ST_VIF_PortInfo
     }
     stChnPortAttr.ePixFormat = pstPortInfoInfo->ePixFormat;//E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
     stChnPortAttr.eFrameRate = pstPortInfoInfo->eFrameRate;
-    STCHECKRESULT(MI_VIF_SetChnPortAttr(VifChn, VifPort, &stChnPortAttr));
+    STCHECKRESULT(g_stVifAssembly.pfnVifSetChnPortAttr(VifChn, VifPort, &stChnPortAttr));
 
     return MI_SUCCESS;
 }
@@ -217,12 +225,12 @@ MI_S32 ST_Vif_StartPort(MI_VIF_DEV VifDev, MI_VIF_CHN VifChn, MI_VIF_PORT VifPor
 
     //MI_SYS_SetChnOutputPortDepth(&stChnPort, 0, 6);
 
-    STCHECKRESULT(MI_VIF_EnableChnPort(VifChn, VifPort));
+    STCHECKRESULT(g_stVifAssembly.pfnVifEnableChnPort(VifChn, VifPort));
     return MI_SUCCESS;
 }
 MI_S32 ST_Vif_StopPort(MI_VIF_CHN VifChn, MI_VIF_PORT VifPort)
 {
-    STCHECKRESULT(MI_VIF_DisableChnPort(VifChn, VifPort));
+    STCHECKRESULT(g_stVifAssembly.pfnVifDisableChnPort(VifChn, VifPort));
 
     return MI_SUCCESS;
 }
@@ -238,7 +246,7 @@ MI_S32 ST_Vpe_CreateChannel(MI_VPE_CHANNEL VpeChannel, ST_VPE_ChannelInfo_T *pst
 
     stChannelVpeParam.eHDRType = pstChannelInfo->eHDRtype;
     stChannelVpeParam.e3DNRLevel = pstChannelInfo->e3DNRLevel;
-    MI_VPE_SetChannelParam(VpeChannel, &stChannelVpeParam);
+    g_stVpeAssembly.pfnVpeSetChannelParam(VpeChannel, &stChannelVpeParam);
 
     stChannelVpeAttr.u16MaxW = pstChannelInfo->u16VpeMaxW;
     stChannelVpeAttr.u16MaxH = pstChannelInfo->u16VpeMaxH;
@@ -253,7 +261,7 @@ MI_S32 ST_Vpe_CreateChannel(MI_VPE_CHANNEL VpeChannel, ST_VPE_ChannelInfo_T *pst
     stChannelVpeAttr.eHDRType  = pstChannelInfo->eHDRtype;
     stChannelVpeAttr.eSensorBindId = pstChannelInfo->eBindSensorId;
     //DBG_INFO("beal.......mode %d %d  .....\n", E_MI_VPE_RUN_REALTIME_MODE, pstChannelInfo->eRunningMode);
-    STCHECKRESULT(MI_VPE_CreateChannel(VpeChannel, &stChannelVpeAttr));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeCreateChannel(VpeChannel, &stChannelVpeAttr));
 
     return MI_SUCCESS;
 }
@@ -265,21 +273,21 @@ MI_VPE_RunningMode_e ST_Vpe_GetRunModeByVIFMode(VIF_WORK_MODE_E enWorkMode)
 
 MI_S32 ST_Vpe_StartChannel(MI_VPE_CHANNEL VpeChannel)
 {
-    STCHECKRESULT(MI_VPE_StartChannel (VpeChannel));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeStartChannel(VpeChannel));
 
     return MI_SUCCESS;
 }
 
 MI_S32 ST_Vpe_StopChannel(MI_VPE_CHANNEL VpeChannel)
 {
-    STCHECKRESULT(MI_VPE_StopChannel(VpeChannel));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeStopChannel(VpeChannel));
 
     return MI_SUCCESS;
 }
 
 MI_S32 ST_Vpe_DestroyChannel(MI_VPE_CHANNEL VpeChannel)
 {
-    STCHECKRESULT(MI_VPE_DestroyChannel(VpeChannel));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeDestroyChannel(VpeChannel));
 	
     return MI_SUCCESS;
 }
@@ -291,12 +299,12 @@ MI_S32 ST_Vpe_StartPort(MI_VPE_PORT VpePort, ST_VPE_PortInfo_T *pstPortInfo)
     DBG_INFO("ST_Vpe_StartPort ch:%d port %d,w %d h %d\n", pstPortInfo->DepVpeChannel, VpePort,pstPortInfo->u16OutputWidth, pstPortInfo->u16OutputHeight);
 
     memset(&stVpeMode, 0, sizeof(stVpeMode));
-    STCHECKRESULT(MI_VPE_GetPortMode(pstPortInfo->DepVpeChannel, VpePort, &stVpeMode));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeGetPortMode(pstPortInfo->DepVpeChannel, VpePort, &stVpeMode));
     stVpeMode.eCompressMode = E_MI_SYS_COMPRESS_MODE_NONE;
     stVpeMode.ePixelFormat = pstPortInfo->ePixelFormat;
     stVpeMode.u16Width = pstPortInfo->u16OutputWidth;
     stVpeMode.u16Height= pstPortInfo->u16OutputHeight;
-    STCHECKRESULT(MI_VPE_SetPortMode(pstPortInfo->DepVpeChannel, VpePort, &stVpeMode));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeSetPortMode(pstPortInfo->DepVpeChannel, VpePort, &stVpeMode));
 
     memset(&stChnPort, 0, sizeof(MI_SYS_ChnPort_t));
     stChnPort.eModId = E_MI_MODULE_ID_VPE;
@@ -305,14 +313,14 @@ MI_S32 ST_Vpe_StartPort(MI_VPE_PORT VpePort, ST_VPE_PortInfo_T *pstPortInfo)
     stChnPort.u32PortId = VpePort;
     //ExecFunc(MI_SYS_SetChnOutputPortDepth(&stChnPort, 0, 5), 0);
 
-    STCHECKRESULT(MI_VPE_EnablePort(pstPortInfo->DepVpeChannel, VpePort));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeEnablePort(pstPortInfo->DepVpeChannel, VpePort));
 
     return MI_SUCCESS;
 }
 
 MI_S32 ST_Vpe_StopPort(MI_VPE_CHANNEL VpeChannel, MI_VPE_PORT VpePort)
 {
-    STCHECKRESULT(MI_VPE_DisablePort(VpeChannel, VpePort));
+    STCHECKRESULT(g_stVpeAssembly.pfnVpeDisablePort(VpeChannel, VpePort));
 
     return MI_SUCCESS;
 }
@@ -338,12 +346,12 @@ MI_S32 ST_Vdisp_Init(void)
     /*
     *初始化vdisp模块
     */
-    STCHECKRESULT(MI_VDISP_Init());
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispInit());
 	
     /*
     *打开一个vdisp虚拟设备,以便开始对这个设备进行配置
     */
-    STCHECKRESULT(MI_VDISP_OpenDevice(DevId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispOpenDevice(DevId));
 
     /*
     *为了满足vdisp缩略图窗口的对齐要求，对x坐标做16向下对齐
@@ -364,7 +372,7 @@ MI_S32 ST_Vdisp_Init(void)
     /*
     *为input channel VDISP_OVERLAYINPUTCHNID 设置参数
     */
-    STCHECKRESULT(MI_VDISP_SetInputChannelAttr(DevId, ChnId, &stInputChnAttr));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispSetInputChannelAttr(DevId, ChnId, &stInputChnAttr));
 
     /*
     *为了满足vdisp缩略图窗口的对齐要求，对x坐标做16向下对齐
@@ -385,7 +393,7 @@ MI_S32 ST_Vdisp_Init(void)
     /*
     *为input channel 1 设置参数
     */
-    STCHECKRESULT(MI_VDISP_SetInputChannelAttr(DevId, ChnId, &stInputChnAttr));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispSetInputChannelAttr(DevId, ChnId, &stInputChnAttr));
 
     memset(&stOutputPortAttr, 0x0, sizeof(MI_VDISP_OutputPortAttr_t));
     //设置输出的颜色格式
@@ -403,22 +411,22 @@ MI_S32 ST_Vdisp_Init(void)
     /*
     *为output port 0 设置参数
     */
-    STCHECKRESULT(MI_VDISP_SetOutputPortAttr(DevId,0,&stOutputPortAttr));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispSetOutputPortAttr(DevId,0,&stOutputPortAttr));
     
     /*
     *在设置完input channel 参数之后，
     *激活对应的channel，以供使用
     */
     ChnId = 0;
-    STCHECKRESULT(MI_VDISP_EnableInputChannel(DevId, ChnId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispEnableInputChannel(DevId, ChnId));
     ChnId = 1;
-    STCHECKRESULT(MI_VDISP_EnableInputChannel(DevId, ChnId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispEnableInputChannel(DevId, ChnId));
 
     /*
     *在vdisp 的input channel&output port 都配置完参数之后，
     *让vdisp的这个设备开始工作
     */
-    STCHECKRESULT(MI_VDISP_StartDev(DevId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispStartDev(DevId));
     
     return MI_SUCCESS;
 }
@@ -440,23 +448,23 @@ MI_S32 ST_Vdisp_Deinit(void)
     * <0,1>
     */
     ChnId = 0;
-    STCHECKRESULT(MI_VDISP_DisableInputChannel(DevId, ChnId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispDisableInputChannel(DevId, ChnId));
     ChnId = 1;
-    STCHECKRESULT(MI_VDISP_DisableInputChannel(DevId, ChnId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispDisableInputChannel(DevId, ChnId));
 
     /*
     *停止已经打开的vdisp设备
     */
-    STCHECKRESULT(MI_VDISP_StopDev(DevId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispStopDev(DevId));
     /*
     *关闭已经打开的vdisp设备
     */
-    STCHECKRESULT(MI_VDISP_CloseDevice(DevId));
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispCloseDevice(DevId));
     /*
     *退出vdisp模块
     */
-    STCHECKRESULT(MI_VDISP_Exit());
-	STCHECKRESULT(MI_VDISP_DeInitDev());
+    STCHECKRESULT(g_stVdispAssembly.pfnVdispExit());
+	STCHECKRESULT(g_stVdispAssembly.pfnVdispDeInitDev());
 	    
     return MI_SUCCESS;
 }
@@ -593,7 +601,7 @@ MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
             break;
         }
 
-        MI_ISP_IQ_GetParaInitStatus(Vpechn, &status);
+        g_stIspAssembly.pfnIspIqGetParaInitStatus(Vpechn, &status);
         if(status.stParaAPI.bFlag != 1)
         {
             usleep(300*1000);
@@ -604,7 +612,7 @@ MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
         u8ispreadycnt = 0;
 
         printf("loading api bin...path:%s\n",pConfigPath);
-        MI_ISP_API_CmdLoadBinFile(Vpechn, (char *)pConfigPath, 1234);
+        g_stIspAssembly.pfnIspApiCmdLoadBinFile(Vpechn, (char *)pConfigPath, 1234);
 
         usleep(10*1000);
     }while(!status.stParaAPI.bFlag);
@@ -612,6 +620,82 @@ MI_BOOL ST_DoSetIqBin(MI_VPE_CHANNEL Vpechn,char *pConfigPath)
     return 0;
 }
 
+int SSTAR_DualSensor_OpenLibrary()
+{
+	memset(&g_stSensorAssembly, 0, sizeof(SensorAssembly_t));
+	memset(&g_stVifAssembly, 0, sizeof(VifAssembly_t));
+	memset(&g_stVpeAssembly, 0, sizeof(VpeAssembly_t));
+//	memset(&g_stDivpAssembly, 0, sizeof(DivpAssembly_t));
+	memset(&g_stIspAssembly, 0, sizeof(IspAssembly_t));
+	memset(&g_stIqServerAssembly, 0, sizeof(IqServerAssembly_t));
+	memset(&g_stVdispAssembly, 0, sizeof(VdispAssembly_t));
+
+	if (SSTAR_SNR_OpenLibrary(&g_stSensorAssembly))
+	{
+		printf("open libmi_sensor failed\n");
+		goto exit;
+	}
+
+	if (SSTAR_VIF_OpenLibrary(&g_stVifAssembly))
+	{
+		printf("open libmi_vif failed\n");
+		goto close_snr_lib;
+	}
+
+	if (SSTAR_VPE_OpenLibrary(&g_stVpeAssembly))
+	{
+		printf("open libmi_vpe failed\n");
+		goto close_vif_lib;
+	}
+
+	if (SSTAR_ISP_OpenLibrary(&g_stIspAssembly))
+	{
+		printf("open libmi_isp failed\n");
+		goto close_vpe_lib;
+	}
+
+	if (SSTAR_IQSERVER_OpenLibrary(&g_stIqServerAssembly))
+	{
+		printf("open libmi_iqserver failed\n");
+		goto close_isp_lib;
+	}
+
+	if (SSTAR_VDISP_OpenLibrary(&g_stVdispAssembly))
+	{
+		printf("open libmi_vdisp failed\n");
+		goto close_iqserver_lib;
+	}
+
+	return 0;
+
+close_iqserver_lib:
+	SSTAR_IQSERVER_CloseLibrary(&g_stIqServerAssembly);
+
+close_isp_lib:
+	SSTAR_ISP_CloseLibrary(&g_stIspAssembly);
+
+close_vpe_lib:
+	SSTAR_VPE_CloseLibrary(&g_stVpeAssembly);
+
+close_vif_lib:
+	SSTAR_VIF_CloseLibrary(&g_stVifAssembly);
+
+close_snr_lib:
+	SSTAR_SNR_CloseLibrary(&g_stSensorAssembly);
+
+exit:
+	return 0;
+}
+
+void SSTAR_DualSensor_CloseLibrary()
+{
+	SSTAR_VDISP_CloseLibrary(&g_stVdispAssembly);
+	SSTAR_IQSERVER_CloseLibrary(&g_stIqServerAssembly);
+	SSTAR_ISP_CloseLibrary(&g_stIspAssembly);
+	SSTAR_VPE_CloseLibrary(&g_stVpeAssembly);
+	SSTAR_VIF_CloseLibrary(&g_stVifAssembly);
+	SSTAR_SNR_CloseLibrary(&g_stSensorAssembly);
+}
 
 MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
 {
@@ -661,6 +745,12 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     memset(&stVpePortInfo, 0x0, sizeof(ST_VPE_PortInfo_T));
     memset(&stRect, 0x0, sizeof(MI_SYS_WindowRect_t));
 
+    if (SSTAR_DualSensor_OpenLibrary())
+    {
+    	printf("dlopen mi libs error\n");
+    	return -1;
+    }
+
     /************************************************
      init SYS and Sensor
     *************************************************/
@@ -673,17 +763,17 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         eSNRPad = (MI_SNR_PAD_ID_e)i;
         if(pstConfig->s32HDRtype > 0)
         {
-            STCHECKRESULT(MI_SNR_SetPlaneMode(eSNRPad, TRUE));
+            STCHECKRESULT(g_stSensorAssembly.pfnSnrSetPlaneMode(eSNRPad, TRUE));
         }
         else
         {
-            STCHECKRESULT(MI_SNR_SetPlaneMode(eSNRPad, FALSE));
+            STCHECKRESULT(g_stSensorAssembly.pfnSnrSetPlaneMode(eSNRPad, FALSE));
         }
         
-        STCHECKRESULT(MI_SNR_QueryResCount(eSNRPad, &u32ResCount));
+        STCHECKRESULT(g_stSensorAssembly.pfnSnrQueryResCount(eSNRPad, &u32ResCount));
         for(u8ResIndex = 0; u8ResIndex < u32ResCount; u8ResIndex++)
         {
-            MI_SNR_GetRes(eSNRPad, u8ResIndex, &stRes);
+            g_stSensorAssembly.pfnSnrGetRes(eSNRPad, u8ResIndex, &stRes);
             DBG_INFO("eSNRPad[%d], index[%d], Crop(%d,%d,%d,%d), outputsize(%d,%d), maxfps[%d], minfps[%d], ResDesc[%s] \n",
             eSNRPad,
             u8ResIndex,
@@ -698,13 +788,13 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         //gc1054 default set mirror/flip = 1
         if(ST_Sensor_Type_GC1054 == pstConfig->enSensorType)
         {
-            STCHECKRESULT(MI_SNR_SetOrien(eSNRPad, 1, 1));
+            STCHECKRESULT(g_stSensorAssembly.pfnSnrSetOrien(eSNRPad, 1, 1));
         }
-        STCHECKRESULT(MI_SNR_SetRes(eSNRPad,u32ChocieRes));
-        STCHECKRESULT(MI_SNR_Enable(eSNRPad));
-
-        STCHECKRESULT(MI_SNR_GetPadInfo(eSNRPad, &stPadInfo));
-        STCHECKRESULT(MI_SNR_GetPlaneInfo(eSNRPad, 0, &stSnrPlaneInfo));
+		
+        STCHECKRESULT(g_stSensorAssembly.pfnSnrSetRes(eSNRPad,u32ChocieRes));
+        STCHECKRESULT(g_stSensorAssembly.pfnSnrEnable(eSNRPad));
+        STCHECKRESULT(g_stSensorAssembly.pfnSnrGetPadInfo(eSNRPad, &stPadInfo));
+        STCHECKRESULT(g_stSensorAssembly.pfnSnrGetPlaneInfo(eSNRPad, 0, &stSnrPlaneInfo));
 
         g_u32CapWidth = stSnrPlaneInfo.stCapRect.u16Width;
         g_u32CapHeight = stSnrPlaneInfo.stCapRect.u16Height;
@@ -794,7 +884,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
             stRect.u16Y = pstConfig->stVPEPortCrop.u16Y; 
             stRect.u16Width = pstConfig->stVPEPortCrop.u16Width;
             stRect.u16Height = pstConfig->stVPEPortCrop.u16Height;
-            STCHECKRESULT(MI_VPE_SetPortCrop(u32VpeChnId, u32VpePortId, &stRect));
+            STCHECKRESULT(g_stVpeAssembly.pfnVpeSetPortCrop(u32VpeChnId, u32VpePortId, &stRect));
         }
         STCHECKRESULT(ST_Vpe_StartPort(u32VpePortId, &stVpePortInfo));
 
@@ -813,7 +903,7 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     }
     else
     {
-        // bind VPE to divp
+        // bind VPE to disp
         memset(&stBindInfo, 0x0, sizeof(ST_Sys_BindInfo_T));
         stBindInfo.stSrcChnPort.eModId = E_MI_MODULE_ID_VPE;
         stBindInfo.stSrcChnPort.u32DevId = 0;
@@ -835,8 +925,8 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
         u32VpePortId = 0;
         //open ip server
         memset(&stVifPortInfo, 0, sizeof(MI_VIF_ChnPortAttr_t));
-        STCHECKRESULT(MI_VIF_GetChnPortAttr(u32VpeChnId, u32VpePortId, &stVifPortInfo));
-        STCHECKRESULT(MI_IQSERVER_Open(stVifPortInfo.stDestSize.u16Width, stVifPortInfo.stDestSize.u16Height, u32VpeChnId));
+        STCHECKRESULT(g_stVifAssembly.pfnVifGetChnPortAttr(u32VpeChnId, u32VpePortId, &stVifPortInfo));
+        STCHECKRESULT(g_stIqServerAssembly.pfnIqServerOpen(stVifPortInfo.stDestSize.u16Width, stVifPortInfo.stDestSize.u16Height, u32VpeChnId));
 
         //Load IQ bin
         memset(acharIqApiPath, 0x0, sizeof(acharIqApiPath));
@@ -926,17 +1016,16 @@ MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
         /************************************************
         Step5:  destory SENSOR
         *************************************************/
-        STCHECKRESULT(MI_SNR_Disable(eSNRPad));
+        STCHECKRESULT(g_stSensorAssembly.pfnSnrDisable(eSNRPad));
     }
 
-	STCHECKRESULT(MI_VPE_DeInitDev());
-	STCHECKRESULT(MI_VIF_DeInitDev());
-	STCHECKRESULT(MI_SNR_DeInitDev());
+	STCHECKRESULT(g_stVpeAssembly.pfnVpeDeInitDev());
+	STCHECKRESULT(g_stVifAssembly.pfnVifDeInitDev());
+	STCHECKRESULT(g_stSensorAssembly.pfnSnrDeInitDev());
+	STCHECKRESULT(g_stIqServerAssembly.pfnIqServerClose());
 	STCHECKRESULT(MI_DISP_DeInitDev());
-	
-	STCHECKRESULT(MI_IQSERVER_Close());
-
     STCHECKRESULT(ST_Sys_Exit());
+    SSTAR_DualSensor_CloseLibrary();
 	
     return MI_SUCCESS;
 }

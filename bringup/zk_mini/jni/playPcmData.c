@@ -1,10 +1,3 @@
-#include "mi_ao.h"
-//#include "mi_vdec.h"
-#include "mi_disp.h"
-#include "mi_sys.h"
-//#include "mi_vdec_datatype.h"
-#include "mi_disp_datatype.h"
-#include "mi_sys_datatype.h"
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -12,7 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include "panelconfig.h"
+#include "sstar_dynamic_load.h"
 
 //========================== Add play audui file ============================
 #define MI_AUDIO_SAMPLE_PER_FRAME 	256
@@ -20,9 +13,6 @@
 #define DMA_BUF_SIZE_16K    		(16000)
 #define DMA_BUF_SIZE_32K    		(32000)
 #define DMA_BUF_SIZE_48K    		(48000)
-
-//static int g_VdecRun = FALSE;
-//static pthread_t g_VdeStream_tid = 0;
 
 #define MI_U32VALUE(pu8Data, index) (pu8Data[index]<<24)|(pu8Data[index+1]<<16)|(pu8Data[index+2]<<8)|(pu8Data[index+3])
 #define ST_DBG printf
@@ -75,6 +65,7 @@ static MI_S32 g_s32NeedSize = 0;
 static pthread_t tid_playaudio;
 static MI_BOOL bAoExit;
 MI_U8 u8TempBuf[MI_AUDIO_SAMPLE_PER_FRAME * 2];
+static AudioOutAssembly_t g_stAudioOutAssembly;
 
 #ifdef __cplusplus
 extern "C"{
@@ -109,7 +100,7 @@ void* SSTAR_aoSendFrame(void* data)
         stAoSendFrame.apVirAddr[1] = NULL;
 
         do{
-            s32Ret = MI_AO_SendFrame(g_AoDevId, g_AoChn, &stAoSendFrame, -1);
+            s32Ret = g_stAudioOutAssembly.pfnAoSendFrame(g_AoDevId, g_AoChn, &stAoSendFrame, -1);
         }while(s32Ret == MI_AO_ERR_NOBUF);
 
         if(s32Ret != MI_SUCCESS)
@@ -134,9 +125,9 @@ MI_S32 SSTAR_StopPlayAudioFile(void)
     	tid_playaudio = 0;
     }
 
-    ExecFunc(MI_AO_DisableChn(g_AoDevId, g_AoChn), MI_SUCCESS);
-    ExecFunc(MI_AO_Disable(g_AoDevId), MI_SUCCESS);
-	ExecFunc(MI_AO_DeInitDev(),MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoDisableChn(g_AoDevId, g_AoChn), MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoDisable(g_AoDevId), MI_SUCCESS);
+	ExecFunc(g_stAudioOutAssembly.pfnAoDeInitDev(),MI_SUCCESS);
 	
     return 0;
 }
@@ -185,12 +176,12 @@ MI_S32 SSTAR_StartPlayAudioFile(const char *WavAudioFile, MI_S32 s32AoVolume)
     stAoSetAttr.eSamplerate = (MI_AUDIO_SampleRate_e)g_stWavHeaderInput.wave.dwSamplesPerSec;
     stAoSetAttr.u32PtNumPerFrm = (int)stAoSetAttr.eSamplerate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME;
 
-    ExecFunc(MI_AO_SetPubAttr(g_AoDevId, &stAoSetAttr), MI_SUCCESS);
-    ExecFunc(MI_AO_GetPubAttr(g_AoDevId, &stAoGetAttr), MI_SUCCESS);
-    ExecFunc(MI_AO_Enable(g_AoDevId), MI_SUCCESS);
-    ExecFunc(MI_AO_EnableChn(g_AoDevId, g_AoChn), MI_SUCCESS);
-    ExecFunc(MI_AO_SetVolume(g_AoDevId, g_AoChn, s32AoVolume, E_MI_AO_GAIN_FADING_OFF), MI_SUCCESS);
-    ExecFunc(MI_AO_GetVolume(g_AoDevId, g_AoChn, &s32AoGetVolume), MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoSetPubAttr(g_AoDevId, &stAoSetAttr), MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoGetPubAttr(g_AoDevId, &stAoGetAttr), MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoEnable(g_AoDevId), MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoEnableChn(g_AoDevId, g_AoChn), MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoSetVolume(g_AoDevId, g_AoChn, s32AoVolume, E_MI_AO_GAIN_FADING_OFF), MI_SUCCESS);
+    ExecFunc(g_stAudioOutAssembly.pfnAoGetVolume(g_AoDevId, g_AoChn, &s32AoGetVolume), MI_SUCCESS);
 
     g_s32NeedSize = stAoSetAttr.u32PtNumPerFrm * 2 * stAoSetAttr.u32ChnCnt * g_stWavHeaderInput.wave.wChannels;
     g_s32NeedSize = g_s32NeedSize / (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels) * (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels);
@@ -254,17 +245,30 @@ void SSTAR_LocalCameraDisp(MI_S32 s32Disp)
 //void SSTAR_playVideo()
 void SSTAR_PlayAudio()
 {
+	memset(&g_stAudioOutAssembly, 0, sizeof(AudioOutAssembly_t));
+
+	if (SSTAR_AO_OpenLibrary(&g_stAudioOutAssembly))
+	{
+		printf("open libmi_ao failed\n");
+		return;
+	}
+
     SSTAR_LocalCameraDisp(1);
 }
 
 //void SSTAR_stopVideo()
 void SSTAR_StopAudio()
 {
+	if (!g_stAudioOutAssembly.pHandle)
+		return;
+
     SSTAR_LocalCameraDisp(0);
+
+    SSTAR_AO_CloseLibrary(&g_stAudioOutAssembly);
 }
 
 void SSTAR_SetVolume(int vol) {
-    MI_AO_SetVolume(0, 0, vol - 60, E_MI_AO_GAIN_FADING_OFF);
+    g_stAudioOutAssembly.pfnAoSetVolume(0, 0, vol - 60, E_MI_AO_GAIN_FADING_OFF);
 }
 #ifdef __cplusplus
 }

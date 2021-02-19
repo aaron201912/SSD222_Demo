@@ -40,6 +40,7 @@ INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
 					-I$(ZKSW_PREBUILT_INCLUDE_PATH) \
 					-I. \
 					-I$(ZKSW_PREBUILT_INCLUDE_PATH)/mgeff \
+					-I ../jni/sdkdir \
 					-I ../jni/sdkdir/include \
 					-I ../jni/voicedetect	\
 					-I ../jni/dualsensor \
@@ -49,8 +50,13 @@ INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
 					-I ../jni/uvc/v4l2/inc \
 					-I ../jni/uvc/v4l2/src
 
-LDFLAGS = -leasyui -pthread -lmi_sys -lmi_disp -lmi_divp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
-		  -lmi_vif -lmi_vpe -lmi_isp -lmi_iqserver -lfbc_decode -lcus3a -lispalgo -lmi_sensor -lmi_vdisp -lcam_os_wrapper -ldl -lrt -fPIC -shared \
+#LDFLAGS = -leasyui -pthread -lmi_sys -lmi_disp -lmi_divp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
+#		  -lmi_vif -lmi_vpe -lmi_isp -lmi_iqserver -lfbc_decode -lcus3a -lispalgo -lmi_sensor -lmi_vdisp -lcam_os_wrapper -ldl -lrt -fPIC -shared \
+#		  -lrt -lyuv -lturbojpeg -ljpeg 
+
+LDFLAGS = -leasyui -pthread -lmi_sys -lmi_disp -lmi_divp -lmi_panel -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ \
+		  -lcus3a -lcam_os_wrapper	\
+		  -lmi_vif -lmi_vpe -lmi_isp -lmi_iqserver -lmi_sensor -lmi_vdisp -ldl -lrt -fPIC -shared \
 		  -lrt -lyuv -lturbojpeg -ljpeg 
 LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib -L ../jni/uvc/libjpeg/lib -L ../jni/uvc/libyuv/lib
 INCLUDE_DIR += -I ../jni/hotplugdetect -I ../jni/hotplugdetect/common -I ../jni/hotplugdetect/usbdetect -I ../jni/hotplugdetect/wifidetect \

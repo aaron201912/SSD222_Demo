@@ -7,23 +7,19 @@
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include "mi_sys.h"
-#include "mi_ai.h"
 #include "list.h"
 #include "base_types.h"
 #include "DSpotterApi.h"
 #include "DSpotterApi_Const.h"
 #include "appconfig.h"
 #include "voicedetect.h"
+#include "sstar_dynamic_load.h"
 #include <dlfcn.h>
 
 
 #define AUDIO_SAMPLE_PER_FRAME 		(256)
 #define AUDIO_SAMPLE_RATE 			(E_MI_AUDIO_SAMPLE_RATE_16000)
 #define AUDIO_SOUND_MODE 			(E_MI_AUDIO_SOUND_MODE_MONO)
-
-#define AUDIO_AO_DEV_ID_LINE_OUT 	0
-#define AUDIO_AO_DEV_ID_I2S_OUT  	1
 
 #define AUDIO_AI_DEV_ID_AMIC_IN   	0
 #define AUDIO_AI_DEV_ID_DMIC_IN   	1
@@ -34,7 +30,6 @@
 #else
 #define AI_DEV_ID (AUDIO_AI_DEV_ID_DMIC_IN)
 #endif
-#define AO_DEV_ID (AUDIO_AO_DEV_ID_LINE_OUT)
 
 #ifndef ExecFunc
 #define ExecFunc(_func_, _ret_) \
@@ -147,6 +142,7 @@ static UsrData_t* g_pstUsrData = NULL;
 //static int g_nSampleRate = SAMPLE_RATE;
 
 static DSpotterAssembly_t g_stDSpotterAssembly;
+static AudioInAssembly_t g_stAudioInAssembly;
 
 // libDSpotter interface
 static int OpenDSpotterLibrary()
@@ -487,7 +483,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pdata)
         {
             if(FD_ISSET(s32Fd, &read_fds))
             {
-                MI_AI_GetFrame(AiDevId, AiChn, &stAudioFrame, &stAecFrame, AUDIO_SAMPLE_PER_FRAME*1000/E_MI_AUDIO_SAMPLE_RATE_8000);//1024 / 8000 = 128ms
+                g_stAudioInAssembly.pfnAiGetFrame(AiDevId, AiChn, &stAudioFrame, &stAecFrame, 1000 / 16);
                 if (0 == stAudioFrame.u32Len)
                 {
                     usleep(10 * 1000);
@@ -496,7 +492,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pdata)
 
                 PutVoiceFrameToQueue(&stAudioFrame);		// save
 
-                MI_AI_ReleaseFrame(AiDevId,  AiChn, &stAudioFrame, &stAecFrame);
+                g_stAudioInAssembly.pfnAiReleaseFrame(AiDevId,  AiChn, &stAudioFrame, &stAecFrame);
             }
         }
     }
@@ -519,6 +515,14 @@ static MI_S32 SSTAR_AudioInStart()
     MI_SYS_ChnPort_t stAiChn0OutputPort0;
     MI_AI_ChnParam_t stAiChnParam;
 
+    memset(&g_stAudioInAssembly, 0, sizeof(AudioInAssembly_t));
+
+    if (SSTAR_AI_OpenLibrary(&g_stAudioInAssembly))
+	{
+		printf("open libmi_ai failed\n");
+		return -1;
+	}
+
     //set ai attr
     memset(&stAiSetAttr, 0, sizeof(MI_AUDIO_Attr_t));
     stAiSetAttr.eBitwidth = E_MI_AUDIO_BIT_WIDTH_16;
@@ -526,14 +530,14 @@ static MI_S32 SSTAR_AudioInStart()
     stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
     stAiSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_MASTER;
     stAiSetAttr.u32ChnCnt = 1;
-    stAiSetAttr.u32PtNumPerFrm = (int)stAiSetAttr.eSamplerate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * AUDIO_SAMPLE_PER_FRAME;
+    stAiSetAttr.u32PtNumPerFrm = (int)stAiSetAttr.eSamplerate / 16;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = 1;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.u32TdmSlots = 0;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eI2sBitWidth = E_MI_AUDIO_BIT_WIDTH_32;
-	ExecFunc(MI_AI_SetPubAttr(AiDevId, &stAiSetAttr), MI_SUCCESS);
-    ExecFunc(MI_AI_Enable(AiDevId), MI_SUCCESS);
+	ExecFunc(g_stAudioInAssembly.pfnAiSetPubAttr(AiDevId, &stAiSetAttr), MI_SUCCESS);
+    ExecFunc(g_stAudioInAssembly.pfnAiEnable(AiDevId), MI_SUCCESS);
 	
     //set ai output port depth
     memset(&stAiChn0OutputPort0, 0, sizeof(MI_SYS_ChnPort_t));
@@ -548,8 +552,8 @@ static MI_S32 SSTAR_AudioInStart()
 	stAiChnParam.stChnGain.bEnableGainSet = TRUE;
 	stAiChnParam.stChnGain.s16FrontGain = 15;
 	stAiChnParam.stChnGain.s16RearGain = 0;
-	ExecFunc(MI_AI_SetChnParam(AiDevId, AiChn, &stAiChnParam), MI_SUCCESS);
-    ExecFunc(MI_AI_EnableChn(AiDevId, AiChn), MI_SUCCESS);
+	ExecFunc(g_stAudioInAssembly.pfnAiSetChnParam(AiDevId, AiChn, &stAiChnParam), MI_SUCCESS);
+    ExecFunc(g_stAudioInAssembly.pfnAiEnableChn(AiDevId, AiChn), MI_SUCCESS);
 
     g_stAudioInThreadData.bExit = false;
     s32Ret = pthread_create(&g_stAudioInThreadData.pt, NULL, _SSTAR_AudioInGetDataProc_, NULL);
@@ -567,12 +571,15 @@ static MI_S32 SSTAR_AudioInStop()
     MI_AUDIO_DEV AiDevId = AI_DEV_ID;
     MI_AI_CHN AiChn = 0;
 
+	if (!g_stAudioInAssembly.pHandle)
+    	return MI_SUCCESS;
     g_stAudioInThreadData.bExit = true;
     pthread_join(g_stAudioInThreadData.pt, NULL);
 
-    ExecFunc(MI_AI_DisableChn(AiDevId, AiChn), MI_SUCCESS);
-    ExecFunc(MI_AI_Disable(AiDevId), MI_SUCCESS);
-    ExecFunc(MI_AI_DeInitDev(),MI_SUCCESS);
+    ExecFunc(g_stAudioInAssembly.pfnAiDisableChn(AiDevId, AiChn), MI_SUCCESS);
+    ExecFunc(g_stAudioInAssembly.pfnAiDisable(AiDevId), MI_SUCCESS);
+    ExecFunc(g_stAudioInAssembly.pfnAiDeInitDev(),MI_SUCCESS);
+    SSTAR_AI_CloseLibrary(&g_stAudioInAssembly);
 
     return MI_SUCCESS;
 }
@@ -842,8 +849,17 @@ int SSTAR_VoiceDetectInit(TrainedWord_t **ppTriggerCmdList, int *pnTriggerCmdCnt
 	return 0;
 
 exit_init:
-	g_stDSpotterAssembly.pfnDSpotterRelease(hDSpotter[0]);
-	g_stDSpotterAssembly.pfnDSpotterRelease(hDSpotter[1]);
+	if (hDSpotter[0])
+	{
+		g_stDSpotterAssembly.pfnDSpotterRelease(hDSpotter[0]);
+		hDSpotter[0] = NULL;
+	}
+	if (hDSpotter[1])
+	{
+		g_stDSpotterAssembly.pfnDSpotterRelease(hDSpotter[1]);
+		hDSpotter[1] = NULL;
+	}
+	CloseDSpotterLibrary();
 	SAFE_FREE(g_pstUsrData);
 	ReleaseConfigSettingData();
 	SAFE_FREE(pbEnableGroup);
