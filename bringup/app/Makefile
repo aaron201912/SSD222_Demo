@@ -20,7 +20,8 @@ LOCAL_CFLAGS = -rdynamic
 ifeq ($(USE_BOOTUP), 1)
 LOCAL_LDFLAGS = -leasyui -lnanovg -lpng12 -ljpeg -lpthread -lfreetype -ldl -lts -lz -lmi_common -lmi_gfx -lmi_sys -lmi_disp -lmi_panel -Wl,--hash-style=gnu
 else
-LOCAL_LDFLAGS = -leasyui -lnanovg -lpng12 -ljpeg -lpthread -lfreetype -ldl -lts -lz -lmi_common -lmi_gfx -lmi_sys -lmi_disp -lmi_panel -lmi_ai -lmi_ao -lcam_os_wrapper -Wl,--hash-style=gnu
+#LOCAL_LDFLAGS = -leasyui -lnanovg -lpng12 -ljpeg -lpthread -lfreetype -ldl -lts -lz -lmi_common -lmi_gfx -lmi_sys -lmi_disp -lmi_panel -lmi_ai -lmi_ao -lcam_os_wrapper -Wl,--hash-style=gnu
+LOCAL_LDFLAGS = -leasyui -lnanovg -lpng12 -ljpeg -lpthread -lfreetype -ldl -lts -lz -lmi_common -lmi_gfx -lmi_sys -lmi_disp -lmi_panel -lcam_os_wrapper -Wl,--hash-style=gnu
 endif
 
 CPPSRCS += ${wildcard *.cpp}
