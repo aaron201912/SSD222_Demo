@@ -55,9 +55,10 @@ INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
 #		  -lrt -lyuv -lturbojpeg -ljpeg 
 
 LDFLAGS = -leasyui -pthread -lmi_sys -lmi_disp -lmi_divp -lmi_panel -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ \
-		  -lcus3a -lcam_os_wrapper	\
-		  -lmi_vif -lmi_vpe -lmi_isp -lmi_iqserver -lmi_sensor -lmi_vdisp -ldl -lrt -fPIC -shared \
-		  -lrt -lyuv -lturbojpeg -ljpeg 
+		  -lcam_os_wrapper	\
+		  -ldl -lrt -fPIC -shared \
+		  -lrt -lyuv -lturbojpeg -ljpeg
+
 LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib -L ../jni/uvc/libjpeg/lib -L ../jni/uvc/libyuv/lib
 INCLUDE_DIR += -I ../jni/hotplugdetect -I ../jni/hotplugdetect/common -I ../jni/hotplugdetect/usbdetect -I ../jni/hotplugdetect/wifidetect \
 			   -I ../jni/hotplugdetect/wirednetworkdetect
