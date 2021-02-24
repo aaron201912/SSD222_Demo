@@ -1031,6 +1031,7 @@ int mid_hchdfd_Initial()
     sad_ctrl.u8MinVal = 0;
     sad_ctrl.u8MaxVal = 255;
 
+    Set_Input_Min_Max_Area(ntwk_handle, 128*128, 228*160);
     g_hchdfdExit = FALSE;
     pthread_create(&g_pthread_hchdfd, NULL, mid_hchdfd_Task, NULL);
     pthread_setname_np(g_pthread_hchdfd , "mid_hchdfd_Task");

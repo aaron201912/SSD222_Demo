@@ -152,7 +152,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
 	int totalSize = 0;
 	MI_AUDIO_SampleRate_e eSampleRate = g_eSampleRate;
 	//int waitTime = 1000 * (int)g_eSampleRate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME / (int)g_eSampleRate;
-	int waitTime = 1000 * MI_AUDIO_SAMPLE_PER_FRAME / (int)E_MI_AUDIO_SAMPLE_RATE_8000;
+	int waitTime = 1000 / 16;
 
 	memset(&stAudioFrame, 0, sizeof(MI_AUDIO_Frame_t));
     memset(&stAecFrame, 0, sizeof(MI_AUDIO_AecFrame_t));
@@ -250,7 +250,7 @@ int SSTAR_AI_StartRecord()
 	stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
 	stAiSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_MASTER;
 	stAiSetAttr.u32ChnCnt = 4;
-	stAiSetAttr.u32PtNumPerFrm = (int)g_eSampleRate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME;
+	stAiSetAttr.u32PtNumPerFrm = (int)g_eSampleRate / 16;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = 1;
