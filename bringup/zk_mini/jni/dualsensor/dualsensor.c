@@ -726,13 +726,6 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     MI_U32 u32VpeDevId = 0;
     MI_U32 u32VpeChnId = 0;
     MI_U32 u32VpePortId = 0;
-    MI_DISP_PubAttr_t stPubAttr;
-    MI_DISP_VideoLayerAttr_t stLayerAttr;
-    MI_DISP_RotateConfig_t stRotateConfig;
-    MI_DISP_InputPortAttr_t stInputPortAttr;
-    MI_DISP_VidWinRect_t stWinRect;
-    MI_PANEL_IntfType_e eIntfType;
-    MI_PANEL_ParamConfig_t pstParamCfg;
     MI_U32 u32DispDevId = 0;
     //MI_U32 u32DispChnId = 0;
     MI_U32 u32DispPortId = 0;
@@ -892,9 +885,19 @@ MI_S32 ST_BaseModuleInit(ST_Config_S* pstConfig)
     /************************************************
      init DISP
     *************************************************/
-
-    
-    memset(&stWinRect, 0, sizeof(MI_DISP_VidWinRect_t));
+    // set disp inputport attr
+	MI_DISP_InputPortAttr_t stDispInputAttr;
+	MI_DISP_GetInputPortAttr(0, 0, &stDispInputAttr);
+	stDispInputAttr.stDispWin.u16X = 0;
+	stDispInputAttr.stDispWin.u16Y = 0;
+	stDispInputAttr.stDispWin.u16Width = DISP_INPUT_WIDTH;
+	stDispInputAttr.stDispWin.u16Height = DISP_INPUT_HEIGHT;
+	stDispInputAttr.u16SrcWidth = stDispInputAttr.stDispWin.u16Width;
+	stDispInputAttr.u16SrcHeight = stDispInputAttr.stDispWin.u16Height;
+	MI_DISP_DisableInputPort(0, 0);
+	MI_DISP_SetInputPortAttr(0, 0, &stDispInputAttr);
+	MI_DISP_EnableInputPort(0, 0);
+	MI_DISP_SetInputPortSyncMode(0, 0, E_MI_DISP_SYNC_MODE_FREE_RUN);
     
     if(u32SensorNum > 1)
     {
