@@ -1026,6 +1026,7 @@ MI_S32 ST_BaseModuleUnInit(ST_Config_S* pstConfig)
 	STCHECKRESULT(g_stVifAssembly.pfnVifDeInitDev());
 	STCHECKRESULT(g_stSensorAssembly.pfnSnrDeInitDev());
 	STCHECKRESULT(g_stIqServerAssembly.pfnIqServerClose());
+	STCHECKRESULT(MI_DISP_DisableInputPort(0, 0));
 	STCHECKRESULT(MI_DISP_DeInitDev());
     STCHECKRESULT(ST_Sys_Exit());
     SSTAR_DualSensor_CloseLibrary();

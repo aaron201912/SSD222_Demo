@@ -333,6 +333,7 @@ int display_deinit()
 	// unload libmi_divp
 	SSTAR_DIVP_CloseLibrary(&g_stDivpAssembly);
 #endif
+	MI_DISP_DisableInputPort(0, 0);
 	MI_DISP_DeInitDev();
 
     return 0;
