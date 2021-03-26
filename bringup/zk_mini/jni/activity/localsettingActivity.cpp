@@ -1,23 +1,24 @@
 /***********************************************
 /gen auto by zuitools
 ***********************************************/
-#include "usbCameraActivity.h"
+#include "localsettingActivity.h"
 
 /*TAG:GlobalVariable全局变量*/
-static ZKTextView* mTextView_open_failPtr;
-static ZKVideoView* mVideoview1Ptr;
+static ZKButton* mButton1Ptr;
 static ZKButton* msys_backPtr;
-static usbCameraActivity* mActivityPtr;
+static ZKTextView* mTextview1Ptr;
+static ZKTextView* mTextView_statusPtr;
+static localsettingActivity* mActivityPtr;
 
 /*register activity*/
-REGISTER_ACTIVITY(usbCameraActivity);
+REGISTER_ACTIVITY(localsettingActivity);
 
 typedef struct {
 	int id; // 定时器ID ， 不能重复
 	int time; // 定时器  时间间隔  单位 毫秒
 }S_ACTIVITY_TIMEER;
 
-#include "logic/usbCameraLogic.cc"
+#include "logic/localsettingLogic.cc"
 
 /***********/
 typedef struct {
@@ -44,7 +45,8 @@ typedef struct {
 
 /*TAG:ButtonCallbackTab按键映射表*/
 static S_ButtonCallback sButtonCallbackTab[] = {
-    ID_USBCAMERA_sys_back, onButtonClick_sys_back,
+    ID_LOCALSETTING_Button1, onButtonClick_Button1,
+    ID_LOCALSETTING_sys_back, onButtonClick_sys_back,
 };
 /***************/
 
@@ -101,17 +103,16 @@ typedef struct {
 }S_VideoViewCallback;
 /*TAG:VideoViewCallback*/
 static S_VideoViewCallback SVideoViewCallbackTab[] = {
-    ID_USBCAMERA_Videoview1, true, 5, NULL,
 };
 
 
-usbCameraActivity::usbCameraActivity() {
+localsettingActivity::localsettingActivity() {
 	//todo add init code here
-	mVideoLoopIndex = 0;
+	mVideoLoopIndex = -1;
 	mVideoLoopErrorCount = 0;
 }
 
-usbCameraActivity::~usbCameraActivity() {
+localsettingActivity::~localsettingActivity() {
   //todo add init file here
   // 退出应用时需要反注册
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
@@ -119,23 +120,24 @@ usbCameraActivity::~usbCameraActivity() {
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
 }
 
-const char* usbCameraActivity::getAppName() const{
-	return "usbCamera.ftu";
+const char* localsettingActivity::getAppName() const{
+	return "localsetting.ftu";
 }
 
 //TAG:onCreate
-void usbCameraActivity::onCreate() {
+void localsettingActivity::onCreate() {
 	Activity::onCreate();
-    mTextView_open_failPtr = (ZKTextView*)findControlByID(ID_USBCAMERA_TextView_open_fail);
-    mVideoview1Ptr = (ZKVideoView*)findControlByID(ID_USBCAMERA_Videoview1);if(mVideoview1Ptr!= NULL){mVideoview1Ptr->setVideoPlayerMessageListener(this);}
-    msys_backPtr = (ZKButton*)findControlByID(ID_USBCAMERA_sys_back);
+    mButton1Ptr = (ZKButton*)findControlByID(ID_LOCALSETTING_Button1);
+    msys_backPtr = (ZKButton*)findControlByID(ID_LOCALSETTING_sys_back);
+    mTextview1Ptr = (ZKTextView*)findControlByID(ID_LOCALSETTING_Textview1);
+    mTextView_statusPtr = (ZKTextView*)findControlByID(ID_LOCALSETTING_TextView_status);
 	mActivityPtr = this;
 	onUI_init();
     registerProtocolDataUpdateListener(onProtocolDataUpdate); 
     rigesterActivityTimer();
 }
 
-void usbCameraActivity::onClick(ZKBase *pBase) {
+void localsettingActivity::onClick(ZKBase *pBase) {
 	//TODO: add widget onClik code 
     int buttonTablen = sizeof(sButtonCallbackTab) / sizeof(S_ButtonCallback);
     for (int i = 0; i < buttonTablen; ++i) {
@@ -159,30 +161,30 @@ void usbCameraActivity::onClick(ZKBase *pBase) {
 	Activity::onClick(pBase);
 }
 
-void usbCameraActivity::onResume() {
+void localsettingActivity::onResume() {
 	Activity::onResume();
 	EASYUICONTEXT->registerGlobalTouchListener(this);
 	startVideoLoopPlayback();
 	onUI_show();
 }
 
-void usbCameraActivity::onPause() {
+void localsettingActivity::onPause() {
 	Activity::onPause();
 	EASYUICONTEXT->unregisterGlobalTouchListener(this);
 	stopVideoLoopPlayback();
 	onUI_hide();
 }
 
-void usbCameraActivity::onIntent(const Intent *intentPtr) {
+void localsettingActivity::onIntent(const Intent *intentPtr) {
 	Activity::onIntent(intentPtr);
 	onUI_intent(intentPtr);
 }
 
-bool usbCameraActivity::onTimer(int id) {
+bool localsettingActivity::onTimer(int id) {
 	return onUI_Timer(id);
 }
 
-void usbCameraActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
+void localsettingActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
 
     int seekBarTablen = sizeof(SZKSeekBarCallbackTab) / sizeof(S_ZKSeekBarCallback);
     for (int i = 0; i < seekBarTablen; ++i) {
@@ -193,7 +195,7 @@ void usbCameraActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
     }
 }
 
-int usbCameraActivity::getListItemCount(const ZKListView *pListView) const{
+int localsettingActivity::getListItemCount(const ZKListView *pListView) const{
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -204,7 +206,7 @@ int usbCameraActivity::getListItemCount(const ZKListView *pListView) const{
     return 0;
 }
 
-void usbCameraActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
+void localsettingActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -214,7 +216,7 @@ void usbCameraActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKL
     }
 }
 
-void usbCameraActivity::onItemClick(ZKListView *pListView, int index, int id){
+void localsettingActivity::onItemClick(ZKListView *pListView, int index, int id){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -224,7 +226,7 @@ void usbCameraActivity::onItemClick(ZKListView *pListView, int index, int id){
     }
 }
 
-void usbCameraActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
+void localsettingActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
     int tablen = sizeof(SSlideWindowItemClickCallbackTab) / sizeof(S_SlideWindowItemClickCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SSlideWindowItemClickCallbackTab[i].id == pSlideWindow->getID()) {
@@ -234,11 +236,11 @@ void usbCameraActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index)
     }
 }
 
-bool usbCameraActivity::onTouchEvent(const MotionEvent &ev) {
-    return onusbCameraActivityTouchEvent(ev);
+bool localsettingActivity::onTouchEvent(const MotionEvent &ev) {
+    return onlocalsettingActivityTouchEvent(ev);
 }
 
-void usbCameraActivity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
+void localsettingActivity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
     int tablen = sizeof(SEditTextInputCallbackTab) / sizeof(S_EditTextInputCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SEditTextInputCallbackTab[i].id == pTextView->getID()) {
@@ -248,7 +250,7 @@ void usbCameraActivity::onTextChanged(ZKTextView *pTextView, const std::string &
     }
 }
 
-void usbCameraActivity::rigesterActivityTimer() {
+void localsettingActivity::rigesterActivityTimer() {
     int tablen = sizeof(REGISTER_ACTIVITY_TIMER_TAB) / sizeof(S_ACTIVITY_TIMEER);
     for (int i = 0; i < tablen; ++i) {
         S_ACTIVITY_TIMEER temp = REGISTER_ACTIVITY_TIMER_TAB[i];
@@ -257,7 +259,7 @@ void usbCameraActivity::rigesterActivityTimer() {
 }
 
 
-void usbCameraActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
+void localsettingActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SVideoViewCallbackTab[i].id == pVideoView->getID()) {
@@ -272,7 +274,7 @@ void usbCameraActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
     }
 }
 
-void usbCameraActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, size_t callbackTabIndex) {
+void localsettingActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, size_t callbackTabIndex) {
 
 	switch (msg) {
 	case ZKVideoView::E_MSGTYPE_VIDEO_PLAY_STARTED:
@@ -312,7 +314,7 @@ void usbCameraActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, size
 	}
 }
 
-void usbCameraActivity::startVideoLoopPlayback() {
+void localsettingActivity::startVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -327,7 +329,7 @@ void usbCameraActivity::startVideoLoopPlayback() {
     }
 }
 
-void usbCameraActivity::stopVideoLoopPlayback() {
+void localsettingActivity::stopVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -343,7 +345,7 @@ void usbCameraActivity::stopVideoLoopPlayback() {
     }
 }
 
-bool usbCameraActivity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
+bool localsettingActivity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
 	mediaFileList.clear();
 	if (NULL == pFileListPath || 0 == strlen(pFileListPath)) {
         LOGD("video file list is null!");
@@ -375,7 +377,7 @@ bool usbCameraActivity::parseVideoFileList(const char *pFileListPath, std::vecto
 	return true;
 }
 
-int usbCameraActivity::removeCharFromString(string& nString, char c) {
+int localsettingActivity::removeCharFromString(string& nString, char c) {
     string::size_type   pos;
     while(1) {
         pos = nString.find(c);
@@ -388,14 +390,14 @@ int usbCameraActivity::removeCharFromString(string& nString, char c) {
     return (int)nString.size();
 }
 
-void usbCameraActivity::registerUserTimer(int id, int time) {
+void localsettingActivity::registerUserTimer(int id, int time) {
 	registerTimer(id, time);
 }
 
-void usbCameraActivity::unregisterUserTimer(int id) {
+void localsettingActivity::unregisterUserTimer(int id) {
 	unregisterTimer(id);
 }
 
-void usbCameraActivity::resetUserTimer(int id, int time) {
+void localsettingActivity::resetUserTimer(int id, int time) {
 	resetTimer(id, time);
 }

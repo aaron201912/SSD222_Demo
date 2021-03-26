@@ -241,7 +241,7 @@ int display_init(int x, int y, int width, int height)
     u16Height = VMIN(DISP_OUT_MAX_HEIGHT, height);
 
     MI_DISP_DisableInputPort(0, 0);
-    MI_DISP_SetInputPortAttr(0, 0, &stInputPortAttr);
+    MI_DISP_GetInputPortAttr(0, 0, &stInputPortAttr);
     stInputPortAttr.u16SrcWidth         = u16Width;
     stInputPortAttr.u16SrcHeight        = u16Height;
     stInputPortAttr.stDispWin.u16X      = x;
@@ -624,6 +624,7 @@ static void onUI_init(){
     if (0 != v4l2_read_header(ctx))
     {
         printf("Can't find usb camera\n");
+        mTextView_open_failPtr->setVisible(true);
         return;
     }
 

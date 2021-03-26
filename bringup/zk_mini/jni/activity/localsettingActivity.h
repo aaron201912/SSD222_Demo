@@ -1,8 +1,8 @@
 /***********************************************
 /gen auto by zuitools
 ***********************************************/
-#ifndef __USBCAMERAACTIVITY_H__
-#define __USBCAMERAACTIVITY_H__
+#ifndef __LOCALSETTINGACTIVITY_H__
+#define __LOCALSETTINGACTIVITY_H__
 
 
 #include "app/Activity.h"
@@ -26,12 +26,13 @@
 #include "window/ZKSlideWindow.h"
 
 /*TAG:Macro宏ID*/
-#define ID_USBCAMERA_TextView_open_fail    50001
-#define ID_USBCAMERA_Videoview1    95001
-#define ID_USBCAMERA_sys_back   100
+#define ID_LOCALSETTING_Button1    20001
+#define ID_LOCALSETTING_sys_back   100
+#define ID_LOCALSETTING_Textview1    50001
+#define ID_LOCALSETTING_TextView_status    50003
 /*TAG:Macro宏ID END*/
 
-class usbCameraActivity : public Activity, 
+class localsettingActivity : public Activity, 
                      public ZKSeekBar::ISeekBarChangeListener, 
                      public ZKListView::IItemClickListener,
                      public ZKListView::AbsListAdapter,
@@ -41,8 +42,8 @@ class usbCameraActivity : public Activity,
                      public ZKVideoView::IVideoPlayerMessageListener
 {
 public:
-    usbCameraActivity();
-    virtual ~usbCameraActivity();
+    localsettingActivity();
+    virtual ~localsettingActivity();
 
     /**
      * 注册定时器

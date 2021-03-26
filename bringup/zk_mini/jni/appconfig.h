@@ -19,4 +19,14 @@
 #define CREADER_LIB_PATH			"/customer/lib"
 #define CREADER_DATA_PATH			"/customer/res/CReader/data"
 
+typedef enum
+{
+	E_LANGUAGE_CHINESE = 0,
+	E_LANGUAGE_ENGLISH,
+	E_LANGUAGE_BUTT
+} LanguageCode_e;
+
+LanguageCode_e SSTAR_GetLocalLanguageCode();
+void SSTAR_SetLocalLanguageCode(LanguageCode_e languageCode);
+
 #endif /* JNI_APPCONFIG_H_ */

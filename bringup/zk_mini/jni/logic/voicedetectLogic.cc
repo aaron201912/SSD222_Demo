@@ -63,7 +63,7 @@ static void* onVoiceAnalyzeCallback(CommandType_e eType, int commandID) {
 			g_pTriggerCmdSelectList[commandID] = true;
 			//mListView_triggerPtr->refreshListView();
 			mButtonswPtr->setSelected(1);
-			mTextView_statusPtr->setText("已激活");
+			mTextView_statusPtr->setTextTr("voicedetect_active");
 			mListView_commonPtr->refreshListView();
 		}
 		else
@@ -75,7 +75,7 @@ static void* onVoiceAnalyzeCallback(CommandType_e eType, int commandID) {
 				memset(g_pCommonCmdSelectList, 0, sizeof(int)*g_nCommonCmdCnt);
 
 			mButtonswPtr->setSelected(0);
-			mTextView_statusPtr->setText("未激活");
+			mTextView_statusPtr->setTextTr("voicedetect_inactive");
 			mListView_commonPtr->refreshListView();
 		}
 	}
