@@ -14,22 +14,24 @@
 ## 3. 运行方法；
    a. 插入usb摄像头, 确认板子生成/dev/video0后再运行UvcPlayer
    b. 将libjpeg/lib下的动态库,以及libyuv/lib下的动态库拷贝到板子/customer/lib下, 导出库 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/customer/lib
-   c. 将UvcPlayer拷贝到板子/customer目录下, 运行./UvcPlayer
+   c. 将UvcPlayer拷贝到板子/customer目录下, 运行./UvcPlayer 1024 600 0
 
 ## 4. 注意事项
    a. 运行demo前必须先插上uvc摄像头, 确认板子生成/dev/video0后再运行demo. 如果没有生成video0节点, 需要在kernel中开启相关驱动.
    > Device Drivers
      > Multimedia support
-	   > Cameras/video grabbers support
-	   > Media USB Adapters
-	     > USB Video Class (UVC)
+       > Cameras/video grabbers support
+       > Media USB Adapters
+         > USB Video Class (UVC)
      > USB support
-	   > Support for Host-side USB
+       > Support for Host-side USB
 
-   b. 使能旋转功能需要在main.c中开启相关的宏, 默认是失能的.
-   #define ENABLE_V4L2     1	//0: 本地图片播放, 1: 使能usb cam功能
-   #define ENABLE_ROTATE   0    //0: 不旋转, 1：使能旋转
+   b. 是否旋转通过运行命令控制
+   ./UvcPlayer 1024 600 0   //不旋转图像
+   ./UvcPlayer 1024 600 1   //旋转图像
 
    本demo也可播放本地jpg格式图片, 要求图片是yuv422编码.
-   1. 将宏ENABLE_V4L2赋为0, 重新编译UvcPlayer
-   2. 运行./UvcPlayer sigmastar.jpg
+   1. 是否使用UsbCam通过宏控制
+      #define ENABLE_V4L2 //0: 本地图片播放, 1: 使能usb cam功能
+   2. 将ENABLE_V4L2赋为0, 重新编译UvcPlayer
+   3. 运行./UvcPlayer sigmastar.jpg 1024 600 [0/1]

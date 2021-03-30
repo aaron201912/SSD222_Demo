@@ -16,7 +16,6 @@
 #include "platform.h"
 
 #define ENABLE_V4L2     1
-#define ENABLE_ROTATE   0
 
 #define YUV420      3/2
 #define YUV422      2
@@ -29,13 +28,8 @@
 #define DIVP_CAP_MAX_WIDTH          1920
 #define DIVP_CAP_MAX_HEIGHT         1080
 
-#if ENABLE_ROTATE
-#define DISP_OUT_MAX_WIDTH          PANEL_MAX_H
-#define DISP_OUT_MAX_HEIGHT         PANEL_MAX_H * PANEL_MAX_H / PANEL_MAX_W
-#else
 #define DISP_OUT_MAX_WIDTH          PANEL_MAX_W
 #define DISP_OUT_MAX_HEIGHT         PANEL_MAX_H
-#endif
 
 #define CAMERA_VIDEO_WIDTH_MJPEG    1280
 #define CAMERA_VIDEO_HEIGHT_MJPEG   720
@@ -70,6 +64,8 @@ int find_marker_index(char* buf, long buf_size);
 int parse_marker(char* buf, long buf_size, int *image_width, int *image_height);
 
 static int  Jpg_Fd;
+static bool bIsRotate;
+static uint32_t u32DispOutWidth, u32DispOutHeight;
 
 static int _OpenFile(const char *pFilePath)
 {
@@ -223,246 +219,160 @@ int display_init(int x, int y, int width, int height)
     MI_DISP_InputPortAttr_t stInputPortAttr;
     float ratio = 0.0;
 
-    if (width > DISP_OUT_MAX_WIDTH || height > DISP_OUT_MAX_HEIGHT)
+    if (width > u32DispOutWidth || height > u32DispOutHeight)
     {
-        ST_WARN("Input W/H = [%u %u] Over Display Size [%u %u]\n", width, height, DISP_OUT_MAX_WIDTH, DISP_OUT_MAX_HEIGHT);
+        ST_WARN("Input W/H = [%u %u] Over Display Size [%u %u]\n", width, height, u32DispOutWidth, u32DispOutHeight);
     }
 
-    u16Width  = ALIGN_DOWN(VMIN(DISP_OUT_MAX_WIDTH , width ), 32);
-    u16Height = ALIGN_DOWN(VMIN(DISP_OUT_MAX_HEIGHT, height), 32);
+    u16Width  = ALIGN_DOWN(VMIN(u32DispOutWidth , width ), 32);
+    u16Height = ALIGN_DOWN(VMIN(u32DispOutHeight, height), 32);
     ST_WARN("Divp Output W/H = [%u %u]\n", u16Width, u16Height);
 
-#if ENABLE_ROTATE
-    //yuv -> vpe(scaling down/up) -> divp(rotate) -> disp
-    //Init Vpe Module
-    MI_VPE_ChannelAttr_t stChannelVpeAttr;
-    MI_VPE_CHANNEL VpeChannel = 0;
-    MI_VPE_PORT VpePort = 0;
-    MI_VPE_ChannelPara_t stChannelVpeParam;
-    MI_VPE_PortMode_t stVpeMode;
-
-    MI_SYS_WindowRect_t stChnCropWin;
-    MI_SYS_Rotate_e eRot = E_MI_SYS_ROTATE_NONE;
-    MI_SYS_WindowRect_t  stPortCropWin;
-
-    MI_U16 u16CapWidth = width, u16CapHeight = height;
-    MI_S32 s32Ret = MI_SUCCESS;
-
-    memset(&stChannelVpeAttr, 0x0, sizeof(MI_VPE_ChannelAttr_t));
-    memset(&stChannelVpeParam, 0x0, sizeof(MI_VPE_ChannelPara_t));
-    memset(&stPortCropWin, 0x0, sizeof(MI_SYS_WindowRect_t));
-    memset(&stChnCropWin, 0x0, sizeof(MI_SYS_WindowRect_t));
-
-    stChannelVpeAttr.u16MaxW      = u16CapWidth;
-    stChannelVpeAttr.u16MaxH      = u16CapHeight;
-    stChannelVpeAttr.bNrEn        = FALSE;
-    stChannelVpeAttr.bEdgeEn      = FALSE;
-    stChannelVpeAttr.bEsEn        = FALSE;
-    stChannelVpeAttr.bContrastEn  = FALSE;
-    stChannelVpeAttr.bUvInvert    = FALSE;
-    stChannelVpeAttr.bEnLdc       = FALSE;
-    stChannelVpeAttr.ePixFmt      = E_MI_SYS_PIXEL_FRAME_YUV422_YUYV;//vpe input only 422_yuyv
-    stChannelVpeAttr.eRunningMode = E_MI_VPE_RUN_DVR_MODE;
-    stChannelVpeAttr.eSensorBindId= E_MI_VPE_SENSOR_INVALID;
-
-    s32Ret = MI_VPE_CreateChannel(VpeChannel, &stChannelVpeAttr);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    s32Ret = MI_VPE_GetChannelAttr(VpeChannel, &stChannelVpeAttr);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    stChannelVpeParam.eHDRType   = E_MI_VPE_HDR_TYPE_OFF;
-    stChannelVpeParam.e3DNRLevel = E_MI_VPE_SENSOR1;
-    stChannelVpeParam.bMirror    = FALSE;
-    stChannelVpeParam.bFlip      = FALSE;
-    s32Ret =MI_VPE_SetChannelParam(VpeChannel, &stChannelVpeParam);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    s32Ret =MI_VPE_SetChannelRotation(VpeChannel, E_MI_SYS_ROTATE_NONE);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    s32Ret = MI_VPE_GetChannelCrop(VpeChannel, &stChnCropWin);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    stChnCropWin .u16X = 0;
-    stChnCropWin .u16Y = 0;
-    stChnCropWin .u16Width  = 0;
-    stChnCropWin .u16Height = 0;
-    s32Ret = MI_VPE_SetChannelCrop(VpeChannel, &stChnCropWin);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    s32Ret = MI_VPE_StartChannel (VpeChannel);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    stPortCropWin.u16X = 0;
-    stPortCropWin.u16Y = 0;
-    stPortCropWin.u16Width  = 0;
-    stPortCropWin.u16Height = 0;
-    s32Ret=MI_VPE_SetPortCrop(VpeChannel, VpePort, &stPortCropWin);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    stVpeMode.u16Width  = u16Width;
-    stVpeMode.u16Height = u16Height;
-    stVpeMode.ePixelFormat  = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
-    stVpeMode.eCompressMode = E_MI_SYS_COMPRESS_MODE_NONE;
-    stVpeMode.bMirror = FALSE;
-    stVpeMode.bFlip   = FALSE;
-    s32Ret =MI_VPE_SetPortMode(VpeChannel, VpePort, &stVpeMode);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    s32Ret = MI_VPE_EnablePort(VpeChannel, VpePort);
-    if(s32Ret != MI_SUCCESS)
-    {
-        return s32Ret;
-    }
-
-    //Init Divp Module
     MI_DIVP_CHN u32ChnId = 0, u32SecChnId = 1;
     MI_SYS_ChnPort_t stDivpSrcPort;
     MI_SYS_ChnPort_t stDispDstPort;
     MI_DIVP_ChnAttr_t stDivpChnAttr;
     MI_DIVP_OutputPortAttr_t stDivpOutputPortAttr;
+    if (bIsRotate)
+    {
+        //yuv -> divp chn0(scaling down/up) -> divp chn1(rotate) -> disp
+        memset(&stDivpChnAttr, 0, sizeof(stDivpChnAttr));
+        memset(&stDivpOutputPortAttr, 0, sizeof(stDivpOutputPortAttr));
 
-    memset(&stDivpChnAttr, 0, sizeof(stDivpChnAttr));
-    memset(&stDivpOutputPortAttr, 0, sizeof(stDivpOutputPortAttr));
+        stDivpChnAttr.bHorMirror            = FALSE;
+        stDivpChnAttr.bVerMirror            = FALSE;
+        stDivpChnAttr.eDiType               = E_MI_DIVP_DI_TYPE_OFF;
+        stDivpChnAttr.eRotateType           = E_MI_SYS_ROTATE_NONE;
+        stDivpChnAttr.eTnrLevel             = E_MI_DIVP_TNR_LEVEL_OFF;
+        stDivpChnAttr.stCropRect.u16X       = 0;
+        stDivpChnAttr.stCropRect.u16Y       = 0;
+        stDivpChnAttr.stCropRect.u16Width   = 0;
+        stDivpChnAttr.stCropRect.u16Height  = 0;
+        stDivpChnAttr.u32MaxWidth           = DIVP_CAP_MAX_WIDTH;
+        stDivpChnAttr.u32MaxHeight          = DIVP_CAP_MAX_HEIGHT;
 
-    stDivpChnAttr.bHorMirror            = FALSE;
-    stDivpChnAttr.bVerMirror            = FALSE;
-    stDivpChnAttr.eDiType               = E_MI_DIVP_DI_TYPE_OFF;
-    stDivpChnAttr.eRotateType           = E_MI_SYS_ROTATE_90;//rotate 90/180/270
-    stDivpChnAttr.eTnrLevel             = E_MI_DIVP_TNR_LEVEL_OFF;
-    stDivpChnAttr.stCropRect.u16X       = 0;
-    stDivpChnAttr.stCropRect.u16Y       = 0;
-    stDivpChnAttr.stCropRect.u16Width   = 0;
-    stDivpChnAttr.stCropRect.u16Height  = 0;
-    stDivpChnAttr.u32MaxWidth           = DIVP_CAP_MAX_WIDTH;
-    stDivpChnAttr.u32MaxHeight          = DIVP_CAP_MAX_HEIGHT;
+        stDivpOutputPortAttr.eCompMode      = E_MI_SYS_COMPRESS_MODE_NONE;
+        stDivpOutputPortAttr.ePixelFormat   = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
+        stDivpOutputPortAttr.u32Width       = u16Width;
+        stDivpOutputPortAttr.u32Height      = u16Height;
 
-    stDivpOutputPortAttr.eCompMode      = E_MI_SYS_COMPRESS_MODE_NONE;
-    stDivpOutputPortAttr.ePixelFormat   = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
-    stDivpOutputPortAttr.u32Width       = u16Height;
-    stDivpOutputPortAttr.u32Height      = u16Width;//attention!!! if set roatet, the width and height is exchange
+        MI_DIVP_CreateChn(u32ChnId, &stDivpChnAttr);
+        MI_DIVP_SetChnAttr(u32ChnId, &stDivpChnAttr);
+        MI_DIVP_SetOutputPortAttr(u32ChnId, &stDivpOutputPortAttr);
+        MI_DIVP_StartChn(u32ChnId);
 
-    MI_DIVP_CreateChn(u32ChnId, &stDivpChnAttr);
-    MI_DIVP_SetChnAttr(u32ChnId, &stDivpChnAttr);
-    MI_DIVP_SetOutputPortAttr(u32ChnId, &stDivpOutputPortAttr);
-    MI_DIVP_StartChn(u32ChnId);
-#else
-    //yuv -> divp(scaling down/up) -> disp
-    //Init Divp Module
-    MI_DIVP_CHN u32ChnId = 0, u32SecChnId = 1;
-    MI_SYS_ChnPort_t stDivpSrcPort;
-    MI_SYS_ChnPort_t stDispDstPort;
-    MI_DIVP_ChnAttr_t stDivpChnAttr;
-    MI_DIVP_OutputPortAttr_t stDivpOutputPortAttr;
+        memset(&stDivpChnAttr, 0, sizeof(stDivpChnAttr));
+        memset(&stDivpOutputPortAttr, 0, sizeof(stDivpOutputPortAttr));
 
-    memset(&stDivpChnAttr, 0, sizeof(stDivpChnAttr));
-    memset(&stDivpOutputPortAttr, 0, sizeof(stDivpOutputPortAttr));
+        stDivpChnAttr.bHorMirror            = FALSE;
+        stDivpChnAttr.bVerMirror            = FALSE;
+        stDivpChnAttr.eDiType               = E_MI_DIVP_DI_TYPE_OFF;
+        stDivpChnAttr.eRotateType           = E_MI_SYS_ROTATE_90;//rotate 90/180/270
+        stDivpChnAttr.eTnrLevel             = E_MI_DIVP_TNR_LEVEL_OFF;
+        stDivpChnAttr.stCropRect.u16X       = 0;
+        stDivpChnAttr.stCropRect.u16Y       = 0;
+        stDivpChnAttr.stCropRect.u16Width   = 0;
+        stDivpChnAttr.stCropRect.u16Height  = 0;
+        stDivpChnAttr.u32MaxWidth           = DIVP_CAP_MAX_WIDTH;
+        stDivpChnAttr.u32MaxHeight          = DIVP_CAP_MAX_HEIGHT;
 
-    stDivpChnAttr.bHorMirror            = FALSE;
-    stDivpChnAttr.bVerMirror            = FALSE;
-    stDivpChnAttr.eDiType               = E_MI_DIVP_DI_TYPE_OFF;
-    stDivpChnAttr.eRotateType           = E_MI_SYS_ROTATE_NONE;
-    stDivpChnAttr.eTnrLevel             = E_MI_DIVP_TNR_LEVEL_OFF;
-    stDivpChnAttr.stCropRect.u16X       = 0;
-    stDivpChnAttr.stCropRect.u16Y       = 0;
-    stDivpChnAttr.stCropRect.u16Width   = 0;
-    stDivpChnAttr.stCropRect.u16Height  = 0;
-    stDivpChnAttr.u32MaxWidth           = DIVP_CAP_MAX_WIDTH;
-    stDivpChnAttr.u32MaxHeight          = DIVP_CAP_MAX_HEIGHT;
+        stDivpOutputPortAttr.eCompMode      = E_MI_SYS_COMPRESS_MODE_NONE;
+        stDivpOutputPortAttr.ePixelFormat   = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
+        stDivpOutputPortAttr.u32Width       = u16Height;
+        stDivpOutputPortAttr.u32Height      = u16Width;//attention!!! if set roatet, the width and height is exchange
 
-    stDivpOutputPortAttr.eCompMode      = E_MI_SYS_COMPRESS_MODE_NONE;
-    stDivpOutputPortAttr.ePixelFormat   = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
-    stDivpOutputPortAttr.u32Width       = u16Width;
-    stDivpOutputPortAttr.u32Height      = u16Height;
+        MI_DIVP_CreateChn(u32SecChnId, &stDivpChnAttr);
+        MI_DIVP_SetChnAttr(u32SecChnId, &stDivpChnAttr);
+        MI_DIVP_SetOutputPortAttr(u32SecChnId, &stDivpOutputPortAttr);
+        MI_DIVP_StartChn(u32SecChnId);
+    }
+    else
+    {
+        //yuv -> divp(scaling down/up) -> disp
+        memset(&stDivpChnAttr, 0, sizeof(stDivpChnAttr));
+        memset(&stDivpOutputPortAttr, 0, sizeof(stDivpOutputPortAttr));
 
-    MI_DIVP_CreateChn(u32ChnId, &stDivpChnAttr);
-    MI_DIVP_SetChnAttr(u32ChnId, &stDivpChnAttr);
-    MI_DIVP_SetOutputPortAttr(u32ChnId, &stDivpOutputPortAttr);
-    MI_DIVP_StartChn(u32ChnId);
-#endif
+        stDivpChnAttr.bHorMirror            = FALSE;
+        stDivpChnAttr.bVerMirror            = FALSE;
+        stDivpChnAttr.eDiType               = E_MI_DIVP_DI_TYPE_OFF;
+        stDivpChnAttr.eRotateType           = E_MI_SYS_ROTATE_NONE;
+        stDivpChnAttr.eTnrLevel             = E_MI_DIVP_TNR_LEVEL_OFF;
+        stDivpChnAttr.stCropRect.u16X       = 0;
+        stDivpChnAttr.stCropRect.u16Y       = 0;
+        stDivpChnAttr.stCropRect.u16Width   = 0;
+        stDivpChnAttr.stCropRect.u16Height  = 0;
+        stDivpChnAttr.u32MaxWidth           = DIVP_CAP_MAX_WIDTH;
+        stDivpChnAttr.u32MaxHeight          = DIVP_CAP_MAX_HEIGHT;
+
+        stDivpOutputPortAttr.eCompMode      = E_MI_SYS_COMPRESS_MODE_NONE;
+        stDivpOutputPortAttr.ePixelFormat   = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
+        stDivpOutputPortAttr.u32Width       = u16Width;
+        stDivpOutputPortAttr.u32Height      = u16Height;
+
+        MI_DIVP_CreateChn(u32ChnId, &stDivpChnAttr);
+        MI_DIVP_SetChnAttr(u32ChnId, &stDivpChnAttr);
+        MI_DIVP_SetOutputPortAttr(u32ChnId, &stDivpOutputPortAttr);
+        MI_DIVP_StartChn(u32ChnId);
+    }
 
     //Init Disp Module
     MI_DISP_DisableInputPort(0, 0);
     MI_DISP_SetInputPortAttr(0, 0, &stInputPortAttr);
-
-#if ENABLE_ROTATE
-    stInputPortAttr.u16SrcWidth         = u16Height;
-    stInputPortAttr.u16SrcHeight        = u16Width;
-    stInputPortAttr.stDispWin.u16X      = x;
-    stInputPortAttr.stDispWin.u16Y      = y;
-    stInputPortAttr.stDispWin.u16Width  = DISP_OUT_MAX_HEIGHT;
-    stInputPortAttr.stDispWin.u16Height = DISP_OUT_MAX_WIDTH;
-#else
-    stInputPortAttr.u16SrcWidth         = u16Width;
-    stInputPortAttr.u16SrcHeight        = u16Height;
-    stInputPortAttr.stDispWin.u16X      = x;
-    stInputPortAttr.stDispWin.u16Y      = y;
-    stInputPortAttr.stDispWin.u16Width  = DISP_OUT_MAX_WIDTH;
-    stInputPortAttr.stDispWin.u16Height = DISP_OUT_MAX_HEIGHT;
-#endif
+    stInputPortAttr.stDispWin.u16X          = x;
+    stInputPortAttr.stDispWin.u16Y          = y;
+    if (bIsRotate)
+    {
+        stInputPortAttr.u16SrcWidth         = u16Height;
+        stInputPortAttr.u16SrcHeight        = u16Width;
+        stInputPortAttr.stDispWin.u16Width  = u32DispOutHeight;
+        stInputPortAttr.stDispWin.u16Height = u32DispOutWidth;
+    }
+    else
+    {
+        stInputPortAttr.u16SrcWidth         = u16Width;
+        stInputPortAttr.u16SrcHeight        = u16Height;
+        stInputPortAttr.stDispWin.u16Width  = u32DispOutWidth;
+        stInputPortAttr.stDispWin.u16Height = u32DispOutHeight;
+    }
     MI_DISP_SetInputPortAttr(0, 0, &stInputPortAttr);
     MI_DISP_EnableInputPort(0, 0);
     MI_DISP_SetInputPortSyncMode(0, 0, E_MI_DISP_SYNC_MODE_FREE_RUN);
 
-    //Bind Vpe/Divp/Disp Modules
-    MI_SYS_ChnPort_t stChnVpePort;
-    MI_SYS_ChnPort_t stChnDivpPort;
+    //Bind Divp0/Divp1/Disp Modules
+    MI_SYS_ChnPort_t stChnDivpPort, stChnDivp2Port;
     MI_SYS_ChnPort_t stChnDispPort;
 
-    memset(&stChnVpePort, 0, sizeof(MI_SYS_ChnPort_t));
     memset(&stChnDivpPort, 0, sizeof(MI_SYS_ChnPort_t));
+    memset(&stChnDivp2Port, 0, sizeof(MI_SYS_ChnPort_t));
     memset(&stChnDispPort, 0, sizeof(MI_SYS_ChnPort_t));
 
-    stChnVpePort.eModId    = E_MI_MODULE_ID_VPE;
-    stChnVpePort.u32DevId  = 0;
-    stChnVpePort.u32ChnId  = 0;
-    stChnVpePort.u32PortId = 0;
+    stChnDivpPort.eModId     = E_MI_MODULE_ID_DIVP;
+    stChnDivpPort.u32DevId   = 0;
+    stChnDivpPort.u32ChnId   = u32ChnId;
+    stChnDivpPort.u32PortId  = 0;
 
-    stChnDivpPort.eModId    = E_MI_MODULE_ID_DIVP;
-    stChnDivpPort.u32DevId  = 0;
-    stChnDivpPort.u32ChnId  = 0;
-    stChnDivpPort.u32PortId = 0;
+    stChnDivp2Port.eModId    = E_MI_MODULE_ID_DIVP;
+    stChnDivp2Port.u32DevId  = 0;
+    stChnDivp2Port.u32ChnId  = u32SecChnId;
+    stChnDivp2Port.u32PortId = 0;
 
-    stChnDispPort.eModId    = E_MI_MODULE_ID_DISP;
-    stChnDispPort.u32DevId  = 0;
-    stChnDispPort.u32ChnId  = 0;
-    stChnDispPort.u32PortId = 0;
+    stChnDispPort.eModId     = E_MI_MODULE_ID_DISP;
+    stChnDispPort.u32DevId   = 0;
+    stChnDispPort.u32ChnId   = 0;
+    stChnDispPort.u32PortId  = 0;
 
-#if ENABLE_ROTATE
-    MI_SYS_BindChnPort2(&stChnVpePort, &stChnDivpPort, 30, 30, 1, 0);
-    MI_SYS_SetChnOutputPortDepth(&stChnVpePort, 1, 3);
-#endif
-
-    MI_SYS_BindChnPort(&stChnDivpPort, &stChnDispPort, 30, 30);
-    MI_SYS_SetChnOutputPortDepth(&stChnDivpPort, 1, 3);
+    if (bIsRotate)
+    {
+        MI_SYS_BindChnPort2(&stChnDivpPort, &stChnDivp2Port, 30, 30, 1, 0);
+        MI_SYS_SetChnOutputPortDepth(&stChnDivpPort, 1, 3);
+        MI_SYS_BindChnPort(&stChnDivp2Port, &stChnDispPort, 30, 30);
+        MI_SYS_SetChnOutputPortDepth(&stChnDivp2Port, 1, 3);
+    }
+    else
+    {
+        MI_SYS_BindChnPort(&stChnDivpPort, &stChnDispPort, 30, 30);
+        MI_SYS_SetChnOutputPortDepth(&stChnDivpPort, 1, 3);
+    }
 
     return 0;
 }
@@ -471,42 +381,44 @@ int display_deinit()
 {
     //UnBind Vpe/Divp/Disp Modules
     MI_DIVP_CHN u32ChnId = 0, u32SecChnId = 1;
-    MI_VPE_CHANNEL VpeChannel = 0;
-    MI_VPE_PORT VpePort = 0;
-
-    MI_SYS_ChnPort_t stChnVpePort;
     MI_SYS_ChnPort_t stChnDivpPort;
+    MI_SYS_ChnPort_t stChnDivp2Port;
     MI_SYS_ChnPort_t stChnDispPort;
 
-    memset(&stChnVpePort, 0, sizeof(MI_SYS_ChnPort_t));
     memset(&stChnDivpPort, 0, sizeof(MI_SYS_ChnPort_t));
+    memset(&stChnDivp2Port, 0, sizeof(MI_SYS_ChnPort_t));
     memset(&stChnDispPort, 0, sizeof(MI_SYS_ChnPort_t));
-
-    stChnVpePort.eModId    = E_MI_MODULE_ID_VPE;
-    stChnVpePort.u32DevId  = 0;
-    stChnVpePort.u32ChnId  = 0;
-    stChnVpePort.u32PortId = 0;
 
     stChnDivpPort.eModId    = E_MI_MODULE_ID_DIVP;
     stChnDivpPort.u32DevId  = 0;
-    stChnDivpPort.u32ChnId  = 0;
+    stChnDivpPort.u32ChnId  = u32ChnId;
     stChnDivpPort.u32PortId = 0;
+
+    stChnDivp2Port.eModId    = E_MI_MODULE_ID_DIVP;
+    stChnDivp2Port.u32DevId  = 0;
+    stChnDivp2Port.u32ChnId  = u32SecChnId;
+    stChnDivp2Port.u32PortId = 0;
 
     stChnDispPort.eModId    = E_MI_MODULE_ID_DISP;
     stChnDispPort.u32DevId  = 0;
     stChnDispPort.u32ChnId  = 0;
     stChnDispPort.u32PortId = 0;
 
-    MI_SYS_UnBindChnPort(&stChnDivpPort, &stChnDispPort);
-    MI_DIVP_StopChn(u32ChnId);
-    MI_DIVP_DestroyChn(u32ChnId);
-
-#if ENABLE_ROTATE
-    MI_SYS_UnBindChnPort(&stChnVpePort, &stChnDivpPort);
-    MI_VPE_StopChannel(VpeChannel);
-    MI_VPE_DisablePort(VpeChannel, VpePort);
-    MI_VPE_DestroyChannel(VpeChannel);
-#endif
+    if (bIsRotate)
+    {
+        MI_SYS_UnBindChnPort(&stChnDivp2Port, &stChnDispPort);
+        MI_SYS_UnBindChnPort(&stChnDivpPort, &stChnDivp2Port);
+        MI_DIVP_StopChn(u32SecChnId);
+        MI_DIVP_DestroyChn(u32SecChnId);
+        MI_DIVP_StopChn(u32ChnId);
+        MI_DIVP_DestroyChn(u32ChnId);
+    }
+    else
+    {
+        MI_SYS_UnBindChnPort(&stChnDivpPort, &stChnDispPort);
+        MI_DIVP_StopChn(u32ChnId);
+        MI_DIVP_DestroyChn(u32ChnId);
+    }
 
 return 0;
 }
@@ -617,12 +529,8 @@ int send_yuv_to_display(jdecIMAGE *pImage)
     memset(&stInputChnPort, 0, sizeof(MI_SYS_ChnPort_t));
     memset(&stBufHandle, 0, sizeof(MI_SYS_BUF_HANDLE));
 
-#if ENABLE_ROTATE
-    stInputChnPort.eModId    = E_MI_MODULE_ID_VPE;
-#else
-    stInputChnPort.eModId    = E_MI_MODULE_ID_DIVP;
-#endif
 
+    stInputChnPort.eModId    = E_MI_MODULE_ID_DIVP;
     stInputChnPort.u32ChnId  = 0;
     stInputChnPort.u32DevId  = 0;
     stInputChnPort.u32PortId = 0;
@@ -840,7 +748,7 @@ static void * jpeg_decoding_thread(void * args)
         //gettimeofday(&time_start, NULL);
 
         //读取内存数据解码得到yuv图像
-        yuv_size = jdec_decode_yuv_from_buf(tmp_jpeg_buf, one_jepg_size, &image0, TANSFORM_NONE, SAMP_420);
+        yuv_size = jdec_decode_yuv_from_buf(tmp_jpeg_buf, one_jepg_size, &image0, TANSFORM_NONE, SAMP_422);
         if(yuv_size < 0)
         {
             ST_ERR("Decode done, yuv_size=%d, image w/h=[%d %d], decode_cnt=%d \n", yuv_size, image0.width, image0.height, decode_cnt);
@@ -914,12 +822,40 @@ int main(int argc, char* argv[])
     void *args = NULL;
 
 #if (!ENABLE_V4L2)
-    if(argc < 2)
+    if(argc < 5)
     {
-        ST_ERR("please input a file path\n");
+        ST_ERR("please input valid parameter,eg: ./UvcPlayer sigmastar.jpg width height rotate\n");
         return 0;
     }
+    u32DispOutWidth  = atoi(argv[2]);
+    u32DispOutHeight = atoi(argv[3]);
+    bIsRotate = atoi(argv[4]);
+#else
+    if(argc < 4)
+    {
+        ST_ERR("please input valid parameter,eg: ./UvcPlayer width height rotate\n");
+        return 0;
+    }
+    u32DispOutWidth  = atoi(argv[1]);
+    u32DispOutHeight = atoi(argv[2]);
+    bIsRotate = atoi(argv[3]);
 #endif
+
+    if (u32DispOutWidth < 16 || u32DispOutHeight < 16)
+    {
+        ST_ERR("invalid width or height [%d %d]\n", u32DispOutWidth, u32DispOutHeight);
+        return 0;
+    }
+    if (bIsRotate)
+    {
+        u32DispOutWidth  = VMIN(PANEL_MAX_H, u32DispOutWidth);
+        u32DispOutHeight = VMIN(PANEL_MAX_W, u32DispOutHeight);
+    }
+    else
+    {
+        u32DispOutWidth  = VMIN(PANEL_MAX_W, u32DispOutWidth);
+        u32DispOutHeight = VMIN(PANEL_MAX_H, u32DispOutHeight);
+    }
 
     ST_INFO("welcome to mjpeg_player!\n");
 
