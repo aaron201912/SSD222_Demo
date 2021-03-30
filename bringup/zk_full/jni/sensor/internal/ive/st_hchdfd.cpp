@@ -25,14 +25,11 @@
 #include "mi_sys.h"
 #include "st_hchdfd.h"
 #include "ssnn.h"
-
+#include "sstar_dynamic_load.h"
 #include "st_rgn.h"
 
-#define USE_IVE     1 //0 CLOSE 1 OPEN
-#define USE_HC_HD_FD 3
-//#define ALIGN_UP(value, align)    ((value+align-1) / align * align)
-//#define ALIGN_DOWN(value, align)  (value / align * align)
-
+#define USE_IVE     	1 //0 CLOSE 1 OPEN
+#define USE_HC_HD_FD 	3
 
 static network_config cfg = {0};
 static NetworkHandle *ntwk_handle = NULL;
@@ -51,6 +48,7 @@ static ROI roi = {MD_ROI_MAX, 0, {0}};
         .u8MinVal  = 0,
         .u8MaxVal  = 255
  };
+
  static MI_IVE_Image_t YUV_image;
  static MI_IVE_SrcImage_t Y_image0, Y_image1;
  static MI_IVE_DstImage_t SadResult, ThdResult;
@@ -58,6 +56,8 @@ static ROI roi = {MD_ROI_MAX, 0, {0}};
  static SAD_METHOD_handle SAD_handle={0};
  MI_IVE_HANDLE ive_handle = 2;
  
+ static IveAssembly_t g_stIveAssembly;
+
  MI_U32 MI_OS_GetTime(void)
  {
      struct timespec t1;
@@ -77,13 +77,13 @@ MI_S32 MI_SYS_AllocateMemory(int size, MI_PHY * phys_addr, MI_U8 **virt_addr)
     ret = MI_SYS_MMA_Alloc((MI_U8*)heap_name, size , &phys);
     if (ret != MI_SUCCESS)
     {
-        DBG_ERR("can't allocate from MI SYS (size: %d, ret: %d)\n", size, ret);
+        printf("can't allocate from MI SYS (size: %d, ret: %d)\n", size, ret);
         return ret;
     }
     ret = MI_SYS_Mmap(phys, size , (void **)virt_addr , 1);
     if (ret != MI_SUCCESS)
     {
-        DBG_ERR("can't map memory from MI SYS (phys: 0x%llx, size: %d, ret: %d)\n", phys, size, ret);
+        printf("can't map memory from MI SYS (phys: 0x%llx, size: %d, ret: %d)\n", phys, size, ret);
         MI_SYS_MMA_Free(phys);
         return ret;
     }
@@ -106,7 +106,7 @@ MI_S32 MI_SYS_FreeMemory(MI_PHY phys_addr, MI_U8 *virt_addr, MI_S32 size)
 
     if (ret != MI_SUCCESS)
     {
-        DBG_ERR("error occurs when free buffer to MI SYS\n");
+        printf("error occurs when free buffer to MI SYS\n");
         return ret;
     }
 
@@ -297,7 +297,7 @@ MI_S32 ModuleTest_AllocateImage(MI_IVE_Image_t      *pstImage,
             break;
 
         default:
-            DBG_ERR("Format is not support!!\n");
+            printf("Format is not support!!\n");
             return MI_IVE_ERR_ILLEGAL_PARAM;
     }
 
@@ -384,7 +384,7 @@ MI_S32 ModuleTest_FreeImage(MI_IVE_Image_t *pstImage)
             break;
 
         default:
-            DBG_ERR("Format is not support!!\n");
+            printf("Format is not support!!\n");
             ret = MI_IVE_ERR_ILLEGAL_PARAM;
     }
 
@@ -425,7 +425,7 @@ MI_S32 ModuleTest_FreeImage(MI_IVE_Image_t *pstImage)
             break;
 
         default:
-            DBG_ERR("Format is not support!!\n");
+            printf("Format is not support!!\n");
             ret = MI_IVE_ERR_ILLEGAL_PARAM;
     }
 
@@ -444,15 +444,15 @@ MI_S32 Module_SAD()
     memset(&ThdResult, 0, sizeof(ThdResult));
 
     // Init IVE
-    ret = MI_IVE_Create(ive_handle);
+    ret = g_stIveAssembly.pfnIveCreate(ive_handle);
     if (ret != MI_SUCCESS)
     {
-        DBG_ERR("Could not create IVE handle\n");
+        printf("Could not create IVE handle\n");
         return ret;
     }
    if (ModuleTest_AllocateImage(&RGB_image1, E_MI_IVE_IMAGE_TYPE_U8C3_PACKAGE, HCFD_RAW_W, HCFD_RAW_W, ALIGN_UP(HCFD_RAW_H, 32)))
     {
-        DBG_ERR("[%s %d] Could not allocate MVE image\n",__func__,__LINE__);
+        printf("[%s %d] Could not allocate MVE image\n",__func__,__LINE__);
         goto RETURN_3;
     }
     memcpy(&RGB_image1_bak, &RGB_image1, sizeof(MI_IVE_Image_t));
@@ -460,7 +460,7 @@ MI_S32 Module_SAD()
     ret = ModuleTest_AllocateImage(&SadResult, E_MI_IVE_IMAGE_TYPE_U16C1, HCFD_RAW_W/SAD_BLOCK_SIZE, HCFD_RAW_W/SAD_BLOCK_SIZE, ALIGN_DOWN(HCFD_RAW_H, 32)/SAD_BLOCK_SIZE);
     if (ret != MI_SUCCESS)
     {
-        DBG_ERR("Can't allocate output buffer 0\n");
+        printf("Can't allocate output buffer 0\n");
         goto RETURN_2;
     }
 
@@ -468,7 +468,7 @@ MI_S32 Module_SAD()
     ret = ModuleTest_AllocateImage(&ThdResult, E_MI_IVE_IMAGE_TYPE_U8C1, HCFD_RAW_W/SAD_BLOCK_SIZE, HCFD_RAW_W/SAD_BLOCK_SIZE, ALIGN_DOWN(HCFD_RAW_H, 32)/SAD_BLOCK_SIZE);
     if (ret != MI_SUCCESS)
     {
-        DBG_ERR("Can't allocate output buffer 1\n");
+        printf("Can't allocate output buffer 1\n");
         goto RETURN_1;
     }
     return ret;
@@ -477,7 +477,7 @@ RETURN_1:
 RETURN_2:
     ModuleTest_FreeImage(&RGB_image1);
 RETURN_3:
-    MI_IVE_Destroy(ive_handle);
+	g_stIveAssembly.pfnIveDestroy(ive_handle);
 
     return -1;
 }
@@ -488,10 +488,10 @@ static int MD_frame_difference(/*SAD_METHOD_0_Handle*/SAD_METHOD_handle *handle,
     MI_S32 ret = 0;
     int x_min, x_max, y_min, y_max, sad_sum;
 
-    ret = MI_IVE_Sad(handle->ive_handle,handle->Y_image0 , handle->Y_image1, handle->SadResult, handle->ThdResult,handle->sad_ctrl, 0);
+    ret = g_stIveAssembly.pfnIveSad(handle->ive_handle,handle->Y_image0 , handle->Y_image1, handle->SadResult, handle->ThdResult,handle->sad_ctrl, 0);
     if (ret != MI_SUCCESS)
     {
-        DBG_ERR("MI_IVE_Sad() return ERROR 0x%X\n", ret);
+        printf("MI_IVE_Sad() return ERROR 0x%X\n", ret);
         return ret;
     }
     //printf("MI_IVE_Sad is run ok!\n");
@@ -618,7 +618,7 @@ static int MD_preprocess()
     ret = MD_frame_difference(&SAD_handle, &roi);
     if(MI_SUCCESS != ret)
     {
-      DBG_ERR("MD_frame_difference is failed!\n");
+      printf("MD_frame_difference is failed!\n");
       return ret;
     }
     sad_x_min = roi.box[0].x_min;
@@ -703,7 +703,7 @@ void* mid_hchdfd_Task(void *argu)
         ret= MI_SYS_ChnOutputPortGetBuf(&stDivpChnOutputPort , &stBufInfo, &hHandle_buffer0);
         usleep(20*1000);
     }
-    DBG_INFO("mid_hchdfd_Task get buf success\n");
+    printf("mid_hchdfd_Task get buf success\n");
     Y_image0.eType = E_MI_IVE_IMAGE_TYPE_U8C1;
     Y_image0.apu8VirAddr[0] = (unsigned char*)stBufInfo.stFrameData.pVirAddr[0];
     Y_image0.aphyPhyAddr[0] = (MI_PHY)stBufInfo.stFrameData.phyAddr[0];
@@ -712,7 +712,7 @@ void* mid_hchdfd_Task(void *argu)
     Y_image0.azu16Stride[0] = HCFD_RAW_W;
     nHC_keepYuv_count=1;
 /****************************************************************/
-    DBG_INFO("g_hchdfdExit: %d\n",g_hchdfdExit);
+    printf("g_hchdfdExit: %d\n",g_hchdfdExit);
     while(!g_hchdfdExit)
     {
         tmpTimeStamp = MI_OS_GetTime();
@@ -848,10 +848,10 @@ void* mid_hchdfd_Task(void *argu)
             RGB_image1.azu16Stride[0] = sad_width;  
             csc_ctrl.eMode = E_MI_IVE_CSC_MODE_PIC_BT601_YUV2RGB;
 
-            ret = MI_IVE_Csc(ive_handle,&YUV_image,&RGB_image1,&csc_ctrl,1);
+            ret = g_stIveAssembly.pfnIveCsc(ive_handle,&YUV_image,&RGB_image1,&csc_ctrl,1);
             if(0 != ret)
             {
-              DBG_ERR("[MVE] MI_IVE_CSC error!!! ret[0x%x]\n",ret);
+              printf("[MVE] MI_IVE_CSC error!!! ret[0x%x]\n",ret);
             }
             
             if(nHC_option_mode_count==10)
@@ -871,7 +871,7 @@ void* mid_hchdfd_Task(void *argu)
             
             if (Forward_Network(ntwk_handle, RGB_image1.apu8VirAddr[0], sad_height, sad_width, 3))
             {
-                DBG_ERR("[HD] Forward error!!!\n");
+                printf("[HD] Forward error!!!\n");
             }
             if(USE_HC_HD_FD == 1) //HC
             {
@@ -881,7 +881,7 @@ void* mid_hchdfd_Task(void *argu)
             else {              //HD or FD
                 human_cnt = Get_Detection(ntwk_handle, sad_height, sad_width);
             }
-            //DBG_INFO("human_cnt: %d\n",human_cnt);
+            //printf("human_cnt: %d\n",human_cnt);
         }
         else if(USE_HC_HD_FD==2 || USE_HC_HD_FD==3)
         {
@@ -899,14 +899,14 @@ void* mid_hchdfd_Task(void *argu)
                     drawRect[0].u16Width=sad_width - 10;
                 if((sad_height - 10) > 0)
                     drawRect[0].u16Height=sad_height-10;
-                DBG_INFO("human_cnt score=%d: %d %d %d %d \n\n",human_cnt,sad_x_min,sad_x_max,sad_y_min,sad_y_max);
+                printf("human_cnt score=%d: %d %d %d %d \n\n",human_cnt,sad_x_min,sad_x_max,sad_y_min,sad_y_max);
             }
             else {
                 drawRect[0].u16Width=0;
                 drawRect[0].u16Height=0;
                 drawRect[0].u16X=0;
                 drawRect[0].u16Y=0;
-                DBG_INFO("human count is 0!\n");
+                printf("human count is 0!\n");
             }
         }
         else {  //HD  or FD
@@ -933,7 +933,7 @@ void* mid_hchdfd_Task(void *argu)
                     drawRect[i].u16Y = (ntwk_handle->boxes[i].y_min + sad_y_min);
                     drawRect[i].u16Width = (ntwk_handle->boxes[i].x_max - ntwk_handle->boxes[i].x_min) - 1;
                     drawRect[i].u16Height = (ntwk_handle->boxes[i].y_max - ntwk_handle->boxes[i].y_min) - 1;
-                    //DBG_INFO("number of face %d :%d %d %d %d\n",human_cnt,drawRect[i].u16X,drawRect[i].u16Y,drawRect[i].u16Width,drawRect[i].u16Height);
+                    //printf("number of face %d :%d %d %d %d\n",human_cnt,drawRect[i].u16X,drawRect[i].u16Y,drawRect[i].u16Width,drawRect[i].u16Height);
                     stSrcRGNDrawRect.u16LeftTopX = drawRect[i].u16X;
                     stSrcRGNDrawRect.u16LeftTopY = drawRect[i].u16Y;
                     stSrcRGNDrawRect.u16RightBottomX = drawRect[i].u16X + drawRect[i].u16Width;
@@ -945,7 +945,7 @@ void* mid_hchdfd_Task(void *argu)
                     {
                         u32FdDetectCount++;
                     }
-                    //DBG_INFO("human_cnt: %d,u32FdDetectCount: %d\n",human_cnt, u32FdDetectCount);
+                    //printf("human_cnt: %d,u32FdDetectCount: %d\n",human_cnt, u32FdDetectCount);
                 }
                 ST_RGN_DrawRect(0, astRGNDrawRect, human_cnt);
             }
@@ -961,7 +961,7 @@ void* mid_hchdfd_Task(void *argu)
                 if(u32FdDetectCount > 0)
                 {
                     u32FdDetectCount--;
-                    //DBG_INFO("clean DetectCount: %d\n", u32FdDetectCount);
+                    //printf("clean DetectCount: %d\n", u32FdDetectCount);
                     if(!u32FdDetectCount)
                     {
                         ST_RGN_ClearRect(0);
@@ -973,14 +973,14 @@ void* mid_hchdfd_Task(void *argu)
         {
             if(MI_SUCCESS != MI_SYS_ChnOutputPortPutBuf(hHandle_buffer0))
             {
-                DBG_ERR("%s %d MI_SYS_ChnOutputPortPutBuf 0 is error!\n",__func__,__LINE__);
+                printf("%s %d MI_SYS_ChnOutputPortPutBuf 0 is error!\n",__func__,__LINE__);
             }
         }
         else if(nHC_keepYuv_count == 1)
         {
             if(MI_SUCCESS != MI_SYS_ChnOutputPortPutBuf(hHandle_buffer1))
             {
-                DBG_ERR("%s %d MI_SYS_ChnOutputPortPutBuf 1 is error!\n",__func__,__LINE__);
+                printf("%s %d MI_SYS_ChnOutputPortPutBuf 1 is error!\n",__func__,__LINE__);
             }
         }
     }
@@ -996,6 +996,12 @@ void* mid_hchdfd_Task(void *argu)
 }
 int mid_hchdfd_Initial()
 {   
+	if (SSTAR_IVE_OpenLibrary(&g_stIveAssembly))
+	{
+		printf("load mi_ive lib failed\n");
+		return -1;
+	}
+
     Module_SAD();
     cfg.target_height = ALIGN_UP(HCFD_RAW_H, 32);   //align 32
     cfg.target_width = HCFD_RAW_W;                  //align 32
@@ -1003,12 +1009,13 @@ int mid_hchdfd_Initial()
     cfg.nms_thresh = 0.5;
     cfg.prob_thresh = HCHD_PROBABILITY;
     cfg.num_threads = 1;
+
     if (Init_Network(&ntwk_handle, &cfg))
     {
-        DBG_ERR("[HD] Could not create Network handle\n");
+        printf("[HD] Could not create Network handle\n");
         return -1;
     }
-    DBG_INFO("mid_hchdfd_Initial\n");
+    printf("mid_hchdfd_Initial\n");
     /*if(USE_HC_FD==1)Change_Model(ntwk_handle, 1);//切换hc。
     else if(USE_HC_FD==2)Change_Model(ntwk_handle, 0);          //切换FD。
     //only libFD_HC_XS_ARM.a
@@ -1047,18 +1054,20 @@ int mid_hchdfd_Uninitial()
 
     ret = ModuleTest_FreeImage(&RGB_image1);
     memset(&RGB_image1_bak,0,sizeof(MI_IVE_Image_t));
-    DBG_INFO("line[%d] ret=%d\n",__LINE__,ret);
+    printf("line[%d] ret=%d\n",__LINE__,ret);
 
     ret = ModuleTest_FreeImage(&SadResult);
-    DBG_INFO("line[%d] ret=%d\n",__LINE__,ret);
+    printf("line[%d] ret=%d\n",__LINE__,ret);
 
     ret = ModuleTest_FreeImage(&ThdResult);
-    DBG_INFO("line[%d] ret=%d\n",__LINE__,ret);
+    printf("line[%d] ret=%d\n",__LINE__,ret);
 
     Release_Network(&ntwk_handle);
-    ret = MI_IVE_Destroy(ive_handle);
-    DBG_INFO("line[%d] ret=%d\n",__LINE__,ret);
+    ret = g_stIveAssembly.pfnIveDestroy(ive_handle);
+    printf("line[%d] ret=%d\n",__LINE__,ret);
     ive_handle = NULL;
+
+    SSTAR_IVE_CloseLibrary(&g_stIveAssembly);
 
     return 0;
 }

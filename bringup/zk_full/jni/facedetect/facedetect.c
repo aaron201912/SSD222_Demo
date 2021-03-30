@@ -11,16 +11,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "Sensor2Panel.h"
+#include "Sensor2Disp.h"
 #include "facedetect.h"
 
-static ST_Config_S g_stConfig =
+static SSTar_SensorConfig_t g_stConfig =
 {
     .s32UseOnvif = 0,
     .s32UseVdf = 0,
     .s32UseAudio = 0,
     .s32LoadIQ = 0,
-    .s32UsePanel = 0,
+//    .s32UsePanel = 0,
     .u8SensorNum = 1,
     .u8FaceDetect = 1,
     .enPixelFormat = E_MI_SYS_PIXEL_FRAME_FORMAT_MAX,
@@ -46,10 +46,10 @@ static ST_Config_S g_stConfig =
 
 int SSTAR_FaceDetectInit()
 {
-	return ST_Sensor2PanelInit(&g_stConfig);
+	return SSTAR_SensorFlow_Init(&g_stConfig);
 }
 
 void SSTAR_FaceDetectDeinit()
 {
-	ST_Sensor2PanelDeinit(&g_stConfig);
+	SSTAR_SensorFlow_Deinit(&g_stConfig);
 }

@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
+#include <dlfcn.h>
 #include <pthread.h>
 #include <errno.h>
 #include "audio.h"
@@ -73,12 +74,14 @@ typedef struct
 // Ai
 static ThreadData_t g_stAudioInThreadData[AI_MAX_CHN_CNT];
 static MI_AUDIO_SampleRate_e g_eSampleRate = E_MI_AUDIO_SAMPLE_RATE_8000;
+static AudioInAssembly_t g_stAudioInAssembly;
 
 // Ao
 static MI_S32 g_AoReadFd = -1;
 static WaveFileHeader_t g_stWavHeaderInput;
 static MI_S32 g_s32NeedSize = 0;
 static ThreadData_t g_stAudioOutPlayFile;
+static AudioOutAssembly_t g_stAudioOutAssembly;
 
 static int addWaveHeader(WaveFileHeader_t *pWaveHeader,
 						AencType_e eAencType,
@@ -201,7 +204,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
         {
             if(FD_ISSET(s32Fd, &read_fds))
             {
-                MI_AI_GetFrame(pThreadData->devId, pThreadData->chnId, &stAudioFrame, &stAecFrame, waitTime);//1024 / 8000 = 128ms
+            	g_stAudioInAssembly.pfnAiGetFrame(pThreadData->devId, pThreadData->chnId, &stAudioFrame, &stAecFrame, waitTime);//1024 / 8000 = 128ms
                 if (0 == stAudioFrame.u32Len)
                 {
                     usleep(10 * 1000);
@@ -213,9 +216,9 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
                 {
                 	write(pThreadData->fd, stAudioFrame.apVirAddr[0], stAudioFrame.u32Len[0]);
                 }
-                totalSize += stAudioFrame.u32Len[0];
 
-                MI_AI_ReleaseFrame(pThreadData->devId,  pThreadData->chnId, &stAudioFrame, &stAecFrame);
+                totalSize += stAudioFrame.u32Len[0];
+                g_stAudioInAssembly.pfnAiReleaseFrame(pThreadData->devId,  pThreadData->chnId, &stAudioFrame, &stAecFrame);
             }
         }
     }
@@ -241,6 +244,12 @@ int SSTAR_AI_StartRecord()
 	MI_AI_ChnParam_t stAiChnParam;
 	int i = 0;
 
+	if (SSTAR_AI_OpenLibrary(&g_stAudioInAssembly))
+	{
+		printf("open libmi_ai failed\n");
+		return -1;
+	}
+
 	memset(g_stAudioInThreadData, 0, sizeof(g_stAudioInThreadData));
 
 	//set ai attr
@@ -256,8 +265,8 @@ int SSTAR_AI_StartRecord()
 	stAiSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = 1;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.u32TdmSlots = 0;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eI2sBitWidth = E_MI_AUDIO_BIT_WIDTH_32;
-	MI_AI_SetPubAttr(AiDevId, &stAiSetAttr);
-	MI_AI_Enable(AiDevId);
+	g_stAudioInAssembly.pfnAiSetPubAttr(AiDevId, &stAiSetAttr);
+	g_stAudioInAssembly.pfnAiEnable(AiDevId);
 
 	for (i = 0; i < stAiSetAttr.u32ChnCnt; i++)
     {
@@ -273,8 +282,8 @@ int SSTAR_AI_StartRecord()
 		stAiChnParam.stChnGain.bEnableGainSet = TRUE;
 		stAiChnParam.stChnGain.s16FrontGain = 15;
 		stAiChnParam.stChnGain.s16RearGain = 0;
-		MI_AI_SetChnParam(AiDevId, i, &stAiChnParam);
-		MI_AI_EnableChn(AiDevId, i);
+		g_stAudioInAssembly.pfnAiSetChnParam(AiDevId, i, &stAiChnParam);
+		g_stAudioInAssembly.pfnAiEnableChn(AiDevId, i);
 
 		g_stAudioInThreadData[i].bExit = false;
 		g_stAudioInThreadData[i].devId = AiDevId;
@@ -296,6 +305,9 @@ int SSTAR_AI_StopRecord()
 {
 	MI_AUDIO_DEV AiDevId = AI_DEV_ID;
 
+	if (!g_stAudioInAssembly.pHandle)
+		return 0;
+
 	for (int i = 0; i < AI_MAX_CHN_CNT; i++)
 	{
 		g_stAudioInThreadData[i].bExit = true;
@@ -304,12 +316,14 @@ int SSTAR_AI_StopRecord()
 		{
 			pthread_join(g_stAudioInThreadData[i].pt, NULL);
 			g_stAudioInThreadData[i].pt = 0;
-			MI_AI_DisableChn(AiDevId, i);
+			g_stAudioInAssembly.pfnAiDisableChn(AiDevId, i);
 		}
 	}
 
-	MI_AI_Disable(AiDevId);
-	MI_AI_DeInitDev();
+	g_stAudioInAssembly.pfnAiDisable(AiDevId);
+	g_stAudioInAssembly.pfnAiDeInitDev();
+
+	SSTAR_AI_CloseLibrary(&g_stAudioInAssembly);
 
 	return 0;
 }
@@ -356,7 +370,7 @@ static void* SSTAR_aoSendFrame(void* pData)
         stAoSendFrame.apVirAddr[1] = NULL;
 
         do{
-            s32Ret = MI_AO_SendFrame(pThreadData->devId, pThreadData->chnId, &stAoSendFrame, 30);
+        	s32Ret = g_stAudioOutAssembly.pfnAoSendFrame(pThreadData->devId, pThreadData->chnId, &stAoSendFrame, 30);
         }while((s32Ret == MI_AO_ERR_NOBUF) && (FALSE == g_stAudioOutPlayFile.bExit));
 
         if(s32Ret != MI_SUCCESS)
@@ -380,6 +394,12 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 	MI_AUDIO_Attr_t stAoSetAttr, stAoGetAttr;
 	MI_S32 s32AoGetVolume;
 	MI_AO_ChnParam_t stAoChnParam;
+
+	if (SSTAR_AO_OpenLibrary(&g_stAudioOutAssembly))
+	{
+		printf("open libmi_ao failed\n");
+		return -1;
+	}
 
 	g_AoReadFd = open((const char *)pPcmFile, O_RDONLY, 0666);
 	if(g_AoReadFd < 0)
@@ -415,12 +435,12 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 		stAoSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
 	}
 
-	MI_AO_SetPubAttr(aoDevId, &stAoSetAttr);
-	MI_AO_GetPubAttr(aoDevId, &stAoGetAttr);
-	MI_AO_Enable(aoDevId);
-	MI_AO_EnableChn(aoDevId, 0);
-	MI_AO_SetVolume(aoDevId, 0, volume, E_MI_AO_GAIN_FADING_OFF);
-	MI_AO_GetVolume(aoDevId, 0, &s32AoGetVolume);
+	g_stAudioOutAssembly.pfnAoSetPubAttr(aoDevId, &stAoSetAttr);
+	g_stAudioOutAssembly.pfnAoGetPubAttr(aoDevId, &stAoGetAttr);
+	g_stAudioOutAssembly.pfnAoEnable(aoDevId);
+	g_stAudioOutAssembly.pfnAoEnableChn(aoDevId, 0);
+	g_stAudioOutAssembly.pfnAoSetVolume(aoDevId, 0, volume, E_MI_AO_GAIN_FADING_OFF);
+	g_stAudioOutAssembly.pfnAoGetVolume(aoDevId, 0, &s32AoGetVolume);
 
 	g_s32NeedSize = stAoSetAttr.u32PtNumPerFrm * 2 * stAoSetAttr.u32ChnCnt * g_stWavHeaderInput.wave.wChannels;
 	g_s32NeedSize = g_s32NeedSize / (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels) * (stAoSetAttr.u32ChnCnt * 2 * g_stWavHeaderInput.wave.wChannels);
@@ -438,6 +458,9 @@ static int SSTAR_AO_StopPlayFile(MI_AUDIO_DEV aoDevId)
 {
 	g_stAudioOutPlayFile.bExit = TRUE;
 
+	if (!g_stAudioOutAssembly.pHandle)
+		return 0;
+
 	if (g_stAudioOutPlayFile.pt)
 	{
 		pthread_join(g_stAudioOutPlayFile.pt, NULL);
@@ -450,9 +473,11 @@ static int SSTAR_AO_StopPlayFile(MI_AUDIO_DEV aoDevId)
 		g_AoReadFd = -1;
 	}
 
-	MI_AO_DisableChn(aoDevId, 0);
-	MI_AO_Disable(aoDevId);
-	MI_AO_DeInitDev();
+	g_stAudioOutAssembly.pfnAoDisableChn(aoDevId, 0);
+	g_stAudioOutAssembly.pfnAoDisable(aoDevId);
+	g_stAudioOutAssembly.pfnAoDeInitDev();
+
+	SSTAR_AO_CloseLibrary(&g_stAudioOutAssembly);
 
 	return 0;
 }

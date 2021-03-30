@@ -315,6 +315,8 @@ static void Enter_STR_SuspendMode()
 	stBackLightCfg.u32Duty = 0;
 	MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
 	MI_PANEL_DeInitDev();
+
+	MI_DISP_DeInitDev();
 #endif
 
     MI_GFX_DeInitDev();
@@ -360,7 +362,9 @@ static void Enter_STR_SuspendMode()
 		g_getIpThread = NULL;
 	}
 
+	printf("begin to rmmod wifi ko\n");
 	system("rmmod ssw102b_wifi_sdio");
+	printf("rmmod wifi ko success\n");
 }
 
 static void Enter_STR_ResumeMode()
@@ -405,8 +409,9 @@ static void Enter_STR_ResumeMode()
 	}
 
 	MI_GFX_Open();
+	MI_DISP_EnableInputPort(0, 0);
 
-	usleep(30*1000);
+//	usleep(30*1000);
 #if TRIGLE_BY_GPIO
 	setOutputGpio(BACKLIGHT_GPIO, 1);
 #endif
@@ -427,6 +432,11 @@ static void onUI_init(){
     //Tips :添加 UI初始化的显示代码到这里,如:mText1->setText("123");
 	MI_GFX_Open();
 	ShowStatusBar(1, 0, 0);
+
+	printf("begin to clear disp inputport buf\n");
+	MI_DISP_EnableInputPort(0, 0);
+	MI_DISP_ClearInputPortBuffer(0, 0, TRUE);
+	printf("clear disp inputport buf done\n");
 }
 
 static void onUI_quit() {
@@ -492,7 +502,9 @@ const char* IconTab[]={
 	"playPcmFileActivity",
 	"facedetectActivity",
 	"dualsensorActivity",
-	"usbCameraActivity"
+	"usbCameraActivity",
+	"scannerActivity",
+	"localsettingActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
@@ -502,7 +514,7 @@ static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index
 }
 
 static void onSlidePageChange_Slidewindow1(ZKSlideWindow *pSlideWindow, int page) {
-	int totalPage = pSlideWindow->getPageSize();
+	//int totalPage = pSlideWindow->getPageSize();
 	g_curPageIdx = pSlideWindow->getCurrentPage();
 	//printf("Logic: param page is %d, total page is %d, cur page is %d\n", page, totalPage, g_curPageIdx);
 	mListview_indicatorPtr->refreshListView();
@@ -510,7 +522,8 @@ static void onSlidePageChange_Slidewindow1(ZKSlideWindow *pSlideWindow, int page
 
 static int getListItemCount_Listview_indicator(const ZKListView *pListView) {
     //LOGD("getListItemCount_Listview_indicator !\n");
-    return 2;
+	int totalPage = mSlidewindow1Ptr->getPageSize();
+    return totalPage;
 }
 
 static void obtainListItemData_Listview_indicator(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index) {

@@ -13,9 +13,7 @@ extern "C"
 {
 #endif
 
-#include "mi_sys.h"
-#include "mi_ai.h"
-#include "mi_ao.h"
+#include "sstar_dynamic_load.h"
 
 #define AUDIO_IN_RECORD_DIR		"/customer/res/record"
 

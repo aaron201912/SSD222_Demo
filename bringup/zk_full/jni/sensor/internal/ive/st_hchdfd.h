@@ -19,21 +19,24 @@ extern "C"{
 #endif // __cplusplus
 
 #include "mi_ive.h"
-#include "st_common.h"
 
-#define HCFD_DIVP_CHN	1
-#define HCFD_FRMRATE	5
+#define HCFD_DIVP_CHN		1
+#define HCFD_FRMRATE		5
 #define HCFD_RAW_W		    352 //384
 #define HCFD_RAW_H		    288
-#define USE_HC_FD 	1 //1:HC 2:HD
+#define USE_HC_FD 			1 //1:HC 2:HD
 
 #define SAD_BLOCK_SIZE          8
 #define MD_ROI_MAX              50
 #define MD_PIXEL_DIFF           15
 #define HCHD_DETECT_MAX         3//6
-#define HCHD_PROBABILITY          0.7
+#define HCHD_PROBABILITY        0.7
 #define ALIGN_UP(x, align)      (((x) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_BACK(x, a)        (((x) / (a)) * (a))
+
+#ifndef ALIGN_DOWN
+#define ALIGN_DOWN(val, alignment) (((val)/(alignment))*(alignment))
+#endif
 
 typedef struct ive_methon{
 	int width;

@@ -4,6 +4,7 @@
 #include "usbCameraActivity.h"
 
 /*TAG:GlobalVariable全局变量*/
+static ZKTextView* mTextView_open_failPtr;
 static ZKVideoView* mVideoview1Ptr;
 static ZKButton* msys_backPtr;
 static usbCameraActivity* mActivityPtr;
@@ -125,6 +126,7 @@ const char* usbCameraActivity::getAppName() const{
 //TAG:onCreate
 void usbCameraActivity::onCreate() {
 	Activity::onCreate();
+    mTextView_open_failPtr = (ZKTextView*)findControlByID(ID_USBCAMERA_TextView_open_fail);
     mVideoview1Ptr = (ZKVideoView*)findControlByID(ID_USBCAMERA_Videoview1);if(mVideoview1Ptr!= NULL){mVideoview1Ptr->setVideoPlayerMessageListener(this);}
     msys_backPtr = (ZKButton*)findControlByID(ID_USBCAMERA_sys_back);
 	mActivityPtr = this;

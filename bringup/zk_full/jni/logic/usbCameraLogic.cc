@@ -41,12 +41,30 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <signal.h>
-
+#include <fcntl.h>
+#include <sys/syscall.h>
+#include <dlfcn.h>
+#include "mi_disp.h"
+#include "panelconfig.h"
 #include "jdec.h"
 #include "v4l2.h"
 #include "libyuv.h"
-#include "platform.h"
+#include "sstar_dynamic_load.h"
 #include "statusbarconfig.h"
+
+#define VMAX(a,b) ((a) > (b) ? (a) : (b))
+#define VMIN(a,b) ((a) < (b) ? (a) : (b))
+
+#define STCHECKRESULT(result)\
+    if (result != MI_SUCCESS)\
+    {\
+        printf("[%s %d]exec function failed\n", __FUNCTION__, __LINE__);\
+        return;\
+    }\
+    else\
+    {\
+        printf("(%s %d)exec function pass\n", __FUNCTION__,__LINE__);\
+    }
 
 #define ENABLE_DIVP 1
 
@@ -60,25 +78,112 @@
 
 #define DIVP_CAP_MAX_WIDTH          1920
 #define DIVP_CAP_MAX_HEIGHT         1080
-#define DISP_OUT_MAX_WIDTH          PANEL_MAX_W
-#define DISP_OUT_MAX_HEIGHT         PANEL_MAX_H
+#define DISP_OUT_MAX_WIDTH          PANEL_WIDTH
+#define DISP_OUT_MAX_HEIGHT         PANEL_HEIGHT
 
 #define CAMERA_VIDEO_WIDTH_MJPEG    1280
 #define CAMERA_VIDEO_HEIGHT_MJPEG   720
 
 #define SIZE_BUFFER_YUV             CAMERA_VIDEO_WIDTH_MJPEG * CAMERA_VIDEO_HEIGHT_MJPEG * YUV_TYPE
 
+typedef struct
+{
+	void *pHandle;
+	int (*pfnLibyuvI422ToYUY2)(const uint8_t* src_y,
+							  int src_stride_y,
+							  const uint8_t* src_u,
+							  int src_stride_u,
+							  const uint8_t* src_v,
+							  int src_stride_v,
+							  uint8_t* dst_yuy2,
+							  int dst_stride_yuy2,
+							  int width,
+							  int height);
+	int (*pfnLibyuvI420ToNV12)(const uint8_t* src_y,
+							  int src_stride_y,
+							  const uint8_t* src_u,
+							  int src_stride_u,
+							  const uint8_t* src_v,
+							  int src_stride_v,
+							  uint8_t* dst_y,
+							  int dst_stride_y,
+							  uint8_t* dst_uv,
+							  int dst_stride_uv,
+							  int width,
+							  int height);
+} LibyuvAssembly_t;
+
+static DivpAssembly_t g_stDivpAssembly;
+static LibyuvAssembly_t g_stLibyuvAssembly;
+
+int SSTAR_LIBYUV_OpenLibrary(LibyuvAssembly_t *pstLibyuvAssembly)
+{
+	pstLibyuvAssembly->pHandle = dlopen("libyuv.so", RTLD_NOW);		// libcus3a.so  ?
+	if (NULL == pstLibyuvAssembly->pHandle)
+	{
+		printf(" %s: Can not load libyuv.so!\n", __func__);
+		return -1;
+	}
+
+	pstLibyuvAssembly->pfnLibyuvI422ToYUY2 = (int(*)(const uint8_t* src_y,
+													  int src_stride_y,
+													  const uint8_t* src_u,
+													  int src_stride_u,
+													  const uint8_t* src_v,
+													  int src_stride_v,
+													  uint8_t* dst_yuy2,
+													  int dst_stride_yuy2,
+													  int width,
+													  int height))dlsym(pstLibyuvAssembly->pHandle, "I422ToYUY2");	// "libyuv::I422ToYUY2"
+	if(NULL == pstLibyuvAssembly->pfnLibyuvI422ToYUY2)
+	{
+		printf(" %s: dlsym libyuv::I422ToYUY2 failed, %s\n", __func__, dlerror());
+		return -1;
+	}
+
+	pstLibyuvAssembly->pfnLibyuvI420ToNV12 = (int(*)(const uint8_t* src_y,
+											  int src_stride_y,
+											  const uint8_t* src_u,
+											  int src_stride_u,
+											  const uint8_t* src_v,
+											  int src_stride_v,
+											  uint8_t* dst_y,
+											  int dst_stride_y,
+											  uint8_t* dst_uv,
+											  int dst_stride_uv,
+											  int width,
+											  int height))dlsym(pstLibyuvAssembly->pHandle, "I420ToNV12");	// "libyuv::I420ToNV12"
+	if(NULL == pstLibyuvAssembly->pfnLibyuvI420ToNV12)
+	{
+		printf(" %s: dlsym libyuv::I420ToNV12 failed, %s\n", __func__, dlerror());
+		return -1;
+	}
+
+	return 0;
+}
+
+void SSTAR_LIBYUV_CloseLibrary(LibyuvAssembly_t *pstLibyuvAssembly)
+{
+	if(pstLibyuvAssembly->pHandle)
+	{
+		dlclose(pstLibyuvAssembly->pHandle);
+		pstLibyuvAssembly->pHandle = NULL;
+	}
+	memset(pstLibyuvAssembly, 0, sizeof(*pstLibyuvAssembly));
+}
+
+
 int _sys_mma_alloc(jdecIMAGE *pImage, int size)
 {
     if (0 != MI_SYS_MMA_Alloc((unsigned char*)"#jdecI0", size, &(pImage->phyAddr)))
     {
-        ST_ERR("MI_SYS_MMA_Alloc Failed\n");
+        printf("MI_SYS_MMA_Alloc Failed\n");
         return -1;
     }
-    if (0 != MI_SYS_Mmap(pImage->phyAddr, size, (void *)&(pImage->virtAddr), 1))
+    if (0 != MI_SYS_Mmap(pImage->phyAddr, size, (void **)&(pImage->virtAddr), 1))
     {
         MI_SYS_MMA_Free(pImage->phyAddr);
-        ST_ERR("MI_SYS_Mmap Failed\n");
+        printf("MI_SYS_Mmap Failed\n");
         return -1;
     }
 
@@ -92,12 +197,12 @@ int _sys_mma_free(jdecIMAGE *pImage, int size)
 
     if (0 != MI_SYS_Munmap(pImage->virtAddr, size))
     {
-        ST_ERR("MI_SYS_Munmap Failed\n");
+    	printf("MI_SYS_Munmap Failed\n");
         return -1;
     }
     if (0 != MI_SYS_MMA_Free(pImage->phyAddr))
     {
-        ST_ERR("MI_SYS_MMA_Free Failed\n");
+    	printf("MI_SYS_MMA_Free Failed\n");
         return -1;
     }
 
@@ -111,17 +216,27 @@ int display_init(int x, int y, int width, int height)
 
     if (width > DISP_OUT_MAX_WIDTH || height > DISP_OUT_MAX_HEIGHT)
     {
-        ST_WARN("Input W/H = [%u %u] Over Display Size [%u %u]\n", width, height, DISP_OUT_MAX_WIDTH, DISP_OUT_MAX_HEIGHT);
+        printf("Input W/H = [%u %u] Over Display Size [%u %u]\n", width, height, DISP_OUT_MAX_WIDTH, DISP_OUT_MAX_HEIGHT);
 #if (!ENABLE_DIVP)
         return -1;
 #endif
     }
 
+#if ENABLE_DIVP
+    // load libmi_divp
+    memset(&g_stDivpAssembly, 0, sizeof(DivpAssembly_t));
+    if (SSTAR_DIVP_OpenLibrary(&g_stDivpAssembly))
+	{
+		printf("open libmi_divp failed\n");
+		return -1;
+	}
+#endif
+
     u16Width  = VMIN(DISP_OUT_MAX_WIDTH , width);
     u16Height = VMIN(DISP_OUT_MAX_HEIGHT, height);
 
     MI_DISP_DisableInputPort(0, 0);
-    MI_DISP_SetInputPortAttr(0, 0, &stInputPortAttr);
+    MI_DISP_GetInputPortAttr(0, 0, &stInputPortAttr);
     stInputPortAttr.u16SrcWidth         = u16Width;
     stInputPortAttr.u16SrcHeight        = u16Height;
     stInputPortAttr.stDispWin.u16X      = x;
@@ -159,10 +274,10 @@ int display_init(int x, int y, int width, int height)
     stDivpOutputPortAttr.u32Width       = u16Width;
     stDivpOutputPortAttr.u32Height      = u16Height;
 
-    MI_DIVP_CreateChn(u32ChnId, &stDivpChnAttr);
-    MI_DIVP_SetChnAttr(u32ChnId, &stDivpChnAttr);
-    MI_DIVP_SetOutputPortAttr(u32ChnId, &stDivpOutputPortAttr);
-    MI_DIVP_StartChn(u32ChnId);
+    g_stDivpAssembly.pfnDivpCreateChn(u32ChnId, &stDivpChnAttr);
+    g_stDivpAssembly.pfnDivpSetChnAttr(u32ChnId, &stDivpChnAttr);
+    g_stDivpAssembly.pfnDivpSetOutputPortAttr(u32ChnId, &stDivpOutputPortAttr);
+    g_stDivpAssembly.pfnDivpStartChn(u32ChnId);
 
     memset(&stDivpSrcPort, 0, sizeof(MI_SYS_ChnPort_t));
     memset(&stDispDstPort, 0, sizeof(MI_SYS_ChnPort_t));
@@ -190,6 +305,9 @@ int display_deinit()
     MI_SYS_ChnPort_t stDivpSrcPort;
     MI_SYS_ChnPort_t stDispDstPort;
 
+    if (!g_stDivpAssembly.pHandle)
+    	return -1;
+
     memset(&stDivpSrcPort, 0, sizeof(MI_SYS_ChnPort_t));
     memset(&stDispDstPort, 0, sizeof(MI_SYS_ChnPort_t));
     stDivpSrcPort.eModId    = E_MI_MODULE_ID_DIVP;
@@ -203,10 +321,14 @@ int display_deinit()
     stDispDstPort.u32PortId = 0;
     MI_SYS_UnBindChnPort(&stDivpSrcPort, &stDispDstPort);
 
-    MI_DIVP_StopChn(0);
-    MI_DIVP_DestroyChn(0);
-	MI_DIVP_DeInitDev();
+    g_stDivpAssembly.pfnDivpStopChn(0);
+    g_stDivpAssembly.pfnDivpDestroyChn(0);
+    g_stDivpAssembly.pfnDivpDeInitDev();
+
+	// unload libmi_divp
+	SSTAR_DIVP_CloseLibrary(&g_stDivpAssembly);
 #endif
+	MI_DISP_DisableInputPort(0, 0);
 	MI_DISP_DeInitDev();
 
     return 0;
@@ -226,11 +348,11 @@ int jdec_convert_yuv_fotmat(jdecIMAGE *pImage, unsigned char *pBuf[3])
         pu8STSrcU = (unsigned char*)pImage->virtAddr + pImage->width * pImage->height;
         pu8STSrcV = (unsigned char*)pImage->virtAddr + pImage->width * pImage->height + pImage->width * pImage->height / 2;
 
-        libyuv::I422ToYUY2((unsigned char*)pImage->virtAddr, pImage->width,
-                           pu8STSrcU, pImage->width / 2,
-                           pu8STSrcV, pImage->width / 2,
-                           (uint8_t*)pBuf[0], pImage->width * 2,
-                           pImage->width, pImage->height);
+        g_stLibyuvAssembly.pfnLibyuvI422ToYUY2((unsigned char*)pImage->virtAddr, pImage->width,
+							pu8STSrcU, pImage->width / 2,
+							pu8STSrcV, pImage->width / 2,
+							(uint8_t*)pBuf[0], pImage->width * 2,
+							pImage->width, pImage->height);
 
         #if 0
         ST_INFO("YUV Type Is SAMP_422, Image Size = %d\n", pImage->width * pImage->height);
@@ -247,12 +369,12 @@ int jdec_convert_yuv_fotmat(jdecIMAGE *pImage, unsigned char *pBuf[3])
         pu8STSrcU = (unsigned char*)pImage->virtAddr + pImage->width * pImage->height;
         pu8STSrcV = (unsigned char*)pImage->virtAddr + pImage->width * pImage->height + pImage->width * pImage->height / 2 / 2;
 
-        libyuv::I420ToNV12((unsigned char*)pImage->virtAddr, pImage->width,
-                           pu8STSrcU, pImage->width / 2,
-                           pu8STSrcV, pImage->width / 2,
-                           (uint8_t *)pBuf[0], pImage->width,
-                           (uint8_t *)pBuf[1], pImage->width,
-                           pImage->width, pImage->height);
+        g_stLibyuvAssembly.pfnLibyuvI420ToNV12((unsigned char*)pImage->virtAddr, pImage->width,
+							pu8STSrcU, pImage->width / 2,
+							pu8STSrcV, pImage->width / 2,
+							(uint8_t *)pBuf[0], pImage->width,
+							(uint8_t *)pBuf[1], pImage->width,
+							pImage->width, pImage->height);
 
         #if 0
         ST_INFO("YUV Type Is SAMP_420, Image Size = %d\n", pImage->width * pImage->height);
@@ -271,7 +393,7 @@ int jdec_convert_yuv_fotmat(jdecIMAGE *pImage, unsigned char *pBuf[3])
     }
 }
 
-int sned_yuv_to_display(jdecIMAGE *pImage)
+int send_yuv_to_display(jdecIMAGE *pImage)
 {
     MI_SYS_BufInfo_t stBufInfo;
     MI_SYS_BufConf_t stBufConf;
@@ -317,8 +439,8 @@ int sned_yuv_to_display(jdecIMAGE *pImage)
 
         default:
         {
-             ST_WARN("Not Support YUV Yype, Esubsamp [%d]\n", pImage->esubsamp);
-             return -1;
+        	printf("Not Support YUV Yype, Esubsamp [%d]\n", pImage->esubsamp);
+            return -1;
         }
         break;
     }
@@ -336,7 +458,7 @@ int sned_yuv_to_display(jdecIMAGE *pImage)
 
         if (0 != jdec_convert_yuv_fotmat(pImage, &stBufInfo.stFrameData.pVirAddr[0]))
         {
-            ST_ERR("jdec_convert_yuv_fotmat error!\n");
+        	printf("jdec_convert_yuv_fotmat error!\n");
         }
 
         //gettimeofday(&time_end, NULL);
@@ -345,13 +467,13 @@ int sned_yuv_to_display(jdecIMAGE *pImage)
 
         if(MI_SUCCESS != MI_SYS_ChnInputPortPutBuf(stBufHandle, &stBufInfo, 0))
         {
-            ST_ERR("MI_SYS_ChnInputPortPutBuf Failed!\n");
+        	printf("MI_SYS_ChnInputPortPutBuf Failed!\n");
             return -1;
         }
     }
     else
     {
-         ST_ERR("MI_SYS_ChnInputPortGetBuf Failed!\n");
+    	printf("MI_SYS_ChnInputPortGetBuf Failed!\n");
          return -1;
     }
 
@@ -372,9 +494,15 @@ static void * jpeg_decoding_thread(void * args)
     int img_width = 0, img_height = 0;
     jdecIMAGE image0 = {0};
 
+	if (SSTAR_TurboJpeg_OpenLibrary())
+	{
+		printf("open libmi_ao failed\n");
+		return NULL;
+	}
+
     if (0 != _sys_mma_alloc(&image0, SIZE_BUFFER_YUV))
     {
-        ST_ERR("_sys_mma_alloc failed\n");
+    	printf("_sys_mma_alloc failed\n");
         goto error;
     }
 
@@ -390,7 +518,7 @@ static void * jpeg_decoding_thread(void * args)
             }
             else
             {
-                ST_ERR("v4l2_read_packet timeout exit\n");
+            	printf("v4l2_read_packet timeout exit\n");
                 goto error;
             }
         }
@@ -404,7 +532,7 @@ static void * jpeg_decoding_thread(void * args)
         yuv_size = jdec_decode_yuv_from_buf((char *)pkt.data, pkt.size, &image0, TANSFORM_NONE, SAMP_420);
         if(yuv_size < 0)
         {
-            ST_ERR("Decode done, yuv_size=%d, image w/h=[%d %d], decode_cnt=%d \n", yuv_size, image0.width, image0.height, decode_cnt);
+            printf("Decode done, yuv_size=%d, image w/h=[%d %d], decode_cnt=%d \n", yuv_size, image0.width, image0.height, decode_cnt);
             goto try_again;
         }
         else
@@ -421,7 +549,7 @@ static void * jpeg_decoding_thread(void * args)
             }
             else
             {
-                ST_ERR("image w/h=[%d %d] parameter invalid!\n", image0.width, image0.height);
+            	printf("image w/h=[%d %d] parameter invalid!\n", image0.width, image0.height);
                 v4l2_read_packet_end(ctx, &pkt);
                 goto error;
             }
@@ -433,9 +561,9 @@ static void * jpeg_decoding_thread(void * args)
         //ST_WARN("jpeg decoded time = %lld\n", time0);
 
         //将yuv数据送到disp/divp,或放大或缩小显示
-        if(0 != sned_yuv_to_display(&image0))
+        if(0 != send_yuv_to_display(&image0))
         {
-            ST_ERR("sned_yuv_to_display error\n");
+            printf("send_yuv_to_display error\n");
             v4l2_read_packet_end(ctx, &pkt);
             goto error;
         }
@@ -457,6 +585,8 @@ error:
         display_deinit();
     }
 
+    SSTAR_TurbpJpeg_CloseLibrary();
+
     return NULL;
 }
 
@@ -475,21 +605,28 @@ static S_ACTIVITY_TIMEER REGISTER_ACTIVITY_TIMER_TAB[] = {
  */
 static void onUI_init(){
     //Tips :添加 UI初始化的显示代码到这里,如:mText1Ptr->setText("123");
-    ST_INFO("welcome to uvc_player!\n");
+    printf("welcome to uvc_player!\n");
+
+    if (SSTAR_LIBYUV_OpenLibrary(&g_stLibyuvAssembly))
+    {
+    	printf("open libyuv failed\n");
+    	return;
+    }
 
     v4l2_dev_init(&ctx,  (char*)"/dev/video0");
     v4l2_dev_set_fmt(ctx, V4L2_PIX_FMT_MJPEG, CAMERA_VIDEO_WIDTH_MJPEG, CAMERA_VIDEO_HEIGHT_MJPEG);
 
     if (0 != v4l2_read_header(ctx))
     {
-        ST_ERR("Can't find usb camera\n");
+        printf("Can't find usb camera\n");
+        mTextView_open_failPtr->setVisible(true);
         return;
     }
 
     b_exit = false;
     if (0 != pthread_create(&jdec_tid, NULL, jpeg_decoding_thread, NULL))
     {
-        ST_ERR("pthread_create failed\n");
+        printf("pthread_create failed\n");
         return;
     }
 }
@@ -522,6 +659,28 @@ static void onUI_hide() {
  */
 static void onUI_quit() {
     LOGD(" onUI_quit !!!\n");
+    if (!g_stLibyuvAssembly.pHandle)
+    	return;
+
+    b_exit = true;
+	if (jdec_tid)
+	{
+		pthread_join(jdec_tid, NULL);
+		jdec_tid = 0;
+	}
+
+	if (ctx)
+	{
+		v4l2_read_close(ctx);
+		v4l2_dev_deinit(ctx);
+		ctx = NULL;
+	}
+
+	STCHECKRESULT(MI_DISP_DisableInputPort(0, 0));
+	MI_DISP_DeInitDev();
+
+	SSTAR_LIBYUV_CloseLibrary(&g_stLibyuvAssembly);
+
     ShowStatusBar(1, 0, 0);
 }
 
@@ -576,23 +735,5 @@ static bool onusbCameraActivityTouchEvent(const MotionEvent &ev) {
 }
 static bool onButtonClick_sys_back(ZKButton *pButton) {
     LOGD(" ButtonClick sys_back !!!\n");
-    //deinit v4l2
-
-    b_exit = true;
-    if (jdec_tid)
-    {
-        pthread_join(jdec_tid, NULL);
-        jdec_tid = 0;
-    }
-
-    if (ctx)
-    {
-        v4l2_read_close(ctx);
-        v4l2_dev_deinit(ctx);
-        ctx = NULL;
-    }
-
-    STCHECKRESULT(MI_DISP_DisableInputPort(0, 0));
-    MI_DISP_DeInitDev();
     return false;
 }

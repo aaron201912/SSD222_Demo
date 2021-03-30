@@ -218,6 +218,7 @@ typedef struct jdecFILE
    char* fBuf;
    unsigned long size;
 }jdecFILE;
+
 /**
  * decode a jpeg file to jdecIMAGE
  *
@@ -226,6 +227,8 @@ typedef struct jdecFILE
  *        jdecIMAGE.phyAddr=0 use heap memory allocated from linux heap
  *
  **/
+int SSTAR_TurboJpeg_OpenLibrary();
+void SSTAR_TurbpJpeg_CloseLibrary();
 int  jdec_decode(char *fileName, jdecIMAGE* image, TANSFORM eTranOpt, PIXELFMT ePixelFmt);
 int  jdec_decode_yuv(char *fileName, jdecIMAGE *image, TANSFORM eTranOpt, SAMP esubsamp);
 int  jdec_decode_yuv_from_buf(char* jpgBuf,unsigned long jpgSize, jdecIMAGE *image, TANSFORM eTranOpt, SAMP esubsamp);
