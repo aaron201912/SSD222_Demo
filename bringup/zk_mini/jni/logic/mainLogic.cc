@@ -315,6 +315,8 @@ static void Enter_STR_SuspendMode()
 	stBackLightCfg.u32Duty = 0;
 	MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
 	MI_PANEL_DeInitDev();
+
+	MI_DISP_DeInitDev();
 #endif
 
     MI_GFX_DeInitDev();
@@ -407,8 +409,9 @@ static void Enter_STR_ResumeMode()
 	}
 
 	MI_GFX_Open();
+	MI_DISP_EnableInputPort(0, 0);
 
-	usleep(30*1000);
+//	usleep(30*1000);
 #if TRIGLE_BY_GPIO
 	setOutputGpio(BACKLIGHT_GPIO, 1);
 #endif
@@ -484,20 +487,24 @@ static bool onmainActivityTouchEvent(const MotionEvent &ev) {
     return false;
 }
 const char* IconTab[]={
-		"testTextActivity",
-		"testSliderActivity",
-		"testButtonActivity",
-		"inputtextActivity",
-		"tesListActivity",
-		"qrcodeActivity",
-		"animationActivity",
-		"waveViewActivity",
-		"voicedetectActivity",
-		"networkSettingActivity",
-		"playPcmFileActivity",
-		"dualsensorActivity",
-		"usbCameraActivity",
-		"localsettingActivity"
+	"testTextActivity",
+	"testSliderActivity",
+	"testButtonActivity",
+	"inputtextActivity",
+	"tesListActivity",
+	"qrcodeActivity",
+	"animationActivity",
+	"waveViewActivity",
+//	"testmoduleActivity",
+	"voicedetectActivity",
+	"networkSettingActivity",
+//	"airportActivity",
+	"playPcmFileActivity",
+//	"facedetectActivity",
+	"dualsensorActivity",
+//	"usbCameraActivity",
+//	"scannerActivity",
+	"localsettingActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
@@ -515,7 +522,8 @@ static void onSlidePageChange_Slidewindow1(ZKSlideWindow *pSlideWindow, int page
 
 static int getListItemCount_Listview_indicator(const ZKListView *pListView) {
     //LOGD("getListItemCount_Listview_indicator !\n");
-    return 2;
+	int totalPage = mSlidewindow1Ptr->getPageSize();
+    return totalPage;
 }
 
 static void obtainListItemData_Listview_indicator(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index) {

@@ -15,6 +15,10 @@
     <string name="icon_dualsensor">画面拼接</string>
     <string name="icon_usbcamera">摄像头</string>
     <string name="icon_setting">设置</string>
+    <string name="icon_modtest">模块测试</string>
+    <string name="icon_audiotest">音频测试</string>
+    <string name="icon_facedetect">人脸检测</string>
+    <string name="icon_scanner">二维码扫描</string>
     <string name="icon_str">STR</string>
     <string name="text_implement">如何实现？</string>
     <string name="text_content">      我们专注于嵌入式设备终端的人机交互解决方案。为各行业客户提供硬件、系统、HMI开发套件，助力于降低各行业在嵌入式人机交互的投入成本和开发时间。让客户产品可以快速稳定的推向市场是我们一直努力的目标。</string>
@@ -103,6 +107,13 @@
     <string name="wifi3_ap_passwd">密码：</string>
     <string name="wifi3_ap_connect">连接</string>
     <string name="usb_open_faild">打开USB摄像头失败，请确认设备连接状态和设置参数是否正常。</string>
+    <string name="record_sample">录音采样率：</string>
+    <string name="choose_record">选择录音文件：</string>
+    <string name="speaker_test">扬声器测试：</string>
+    <string name="headphone_test">耳机测试：</string>
+    <string name="start_record">开始录音</string>
+    <string name="start_play">开始播放</string>
+    <string name="start_test">开始测试</string>
     <string name="language_setting">语言设置（中/英）：</string>
     <string name="language_cn">中文</string>
     <string name="language_en">英语</string>

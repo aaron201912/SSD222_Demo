@@ -1,22 +1,29 @@
 /***********************************************
 /gen auto by zuitools
 ***********************************************/
-#include "dualsensorActivity.h"
+#include "airportActivity.h"
 
 /*TAG:GlobalVariable全局变量*/
+static ZKButton* mButton_savePtr;
+static ZKTextView* mTextView_inputPasswdPtr;
+static ZKTextView* mTextView_passwdPtr;
+static ZKTextView* mTextView_inputNamePtr;
+static ZKListView* mListview_devInfoPtr;
+static ZKTextView* mTextview_customerListPtr;
+static ZKButton* mButton_airportswPtr;
+static ZKTextView* mTextview_airportPtr;
 static ZKButton* msys_backPtr;
-static ZKVideoView* mVideoview1Ptr;
-static dualsensorActivity* mActivityPtr;
+static airportActivity* mActivityPtr;
 
 /*register activity*/
-REGISTER_ACTIVITY(dualsensorActivity);
+REGISTER_ACTIVITY(airportActivity);
 
 typedef struct {
 	int id; // 定时器ID ， 不能重复
 	int time; // 定时器  时间间隔  单位 毫秒
 }S_ACTIVITY_TIMEER;
 
-#include "logic/dualsensorLogic.cc"
+#include "logic/airportLogic.cc"
 
 /***********/
 typedef struct {
@@ -43,7 +50,9 @@ typedef struct {
 
 /*TAG:ButtonCallbackTab按键映射表*/
 static S_ButtonCallback sButtonCallbackTab[] = {
-    ID_DUALSENSOR_sys_back, onButtonClick_sys_back,
+    ID_AIRPORT_Button_save, onButtonClick_Button_save,
+    ID_AIRPORT_Button_airportsw, onButtonClick_Button_airportsw,
+    ID_AIRPORT_sys_back, onButtonClick_sys_back,
 };
 /***************/
 
@@ -69,6 +78,7 @@ typedef struct {
 }S_ListViewFunctionsCallback;
 /*TAG:ListViewFunctionsCallback*/
 static S_ListViewFunctionsCallback SListViewFunctionsCallbackTab[] = {
+    ID_AIRPORT_Listview_devInfo, getListItemCount_Listview_devInfo, obtainListItemData_Listview_devInfo, onListItemClick_Listview_devInfo,
 };
 
 
@@ -100,17 +110,16 @@ typedef struct {
 }S_VideoViewCallback;
 /*TAG:VideoViewCallback*/
 static S_VideoViewCallback SVideoViewCallbackTab[] = {
-    ID_DUALSENSOR_Videoview1, true, 5, NULL,
 };
 
 
-dualsensorActivity::dualsensorActivity() {
+airportActivity::airportActivity() {
 	//todo add init code here
 	mVideoLoopIndex = -1;
 	mVideoLoopErrorCount = 0;
 }
 
-dualsensorActivity::~dualsensorActivity() {
+airportActivity::~airportActivity() {
   //todo add init file here
   // 退出应用时需要反注册
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
@@ -118,22 +127,29 @@ dualsensorActivity::~dualsensorActivity() {
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
 }
 
-const char* dualsensorActivity::getAppName() const{
-	return "dualsensor.ftu";
+const char* airportActivity::getAppName() const{
+	return "airport.ftu";
 }
 
 //TAG:onCreate
-void dualsensorActivity::onCreate() {
+void airportActivity::onCreate() {
 	Activity::onCreate();
-    msys_backPtr = (ZKButton*)findControlByID(ID_DUALSENSOR_sys_back);
-    mVideoview1Ptr = (ZKVideoView*)findControlByID(ID_DUALSENSOR_Videoview1);if(mVideoview1Ptr!= NULL){mVideoview1Ptr->setVideoPlayerMessageListener(this);}
+    mButton_savePtr = (ZKButton*)findControlByID(ID_AIRPORT_Button_save);
+    mTextView_inputPasswdPtr = (ZKTextView*)findControlByID(ID_AIRPORT_TextView_inputPasswd);
+    mTextView_passwdPtr = (ZKTextView*)findControlByID(ID_AIRPORT_TextView_passwd);
+    mTextView_inputNamePtr = (ZKTextView*)findControlByID(ID_AIRPORT_TextView_inputName);
+    mListview_devInfoPtr = (ZKListView*)findControlByID(ID_AIRPORT_Listview_devInfo);if(mListview_devInfoPtr!= NULL){mListview_devInfoPtr->setListAdapter(this);mListview_devInfoPtr->setItemClickListener(this);}
+    mTextview_customerListPtr = (ZKTextView*)findControlByID(ID_AIRPORT_Textview_customerList);
+    mButton_airportswPtr = (ZKButton*)findControlByID(ID_AIRPORT_Button_airportsw);
+    mTextview_airportPtr = (ZKTextView*)findControlByID(ID_AIRPORT_Textview_airport);
+    msys_backPtr = (ZKButton*)findControlByID(ID_AIRPORT_sys_back);
 	mActivityPtr = this;
 	onUI_init();
     registerProtocolDataUpdateListener(onProtocolDataUpdate); 
     rigesterActivityTimer();
 }
 
-void dualsensorActivity::onClick(ZKBase *pBase) {
+void airportActivity::onClick(ZKBase *pBase) {
 	//TODO: add widget onClik code 
     int buttonTablen = sizeof(sButtonCallbackTab) / sizeof(S_ButtonCallback);
     for (int i = 0; i < buttonTablen; ++i) {
@@ -157,30 +173,30 @@ void dualsensorActivity::onClick(ZKBase *pBase) {
 	Activity::onClick(pBase);
 }
 
-void dualsensorActivity::onResume() {
+void airportActivity::onResume() {
 	Activity::onResume();
 	EASYUICONTEXT->registerGlobalTouchListener(this);
 	startVideoLoopPlayback();
 	onUI_show();
 }
 
-void dualsensorActivity::onPause() {
+void airportActivity::onPause() {
 	Activity::onPause();
 	EASYUICONTEXT->unregisterGlobalTouchListener(this);
 	stopVideoLoopPlayback();
 	onUI_hide();
 }
 
-void dualsensorActivity::onIntent(const Intent *intentPtr) {
+void airportActivity::onIntent(const Intent *intentPtr) {
 	Activity::onIntent(intentPtr);
 	onUI_intent(intentPtr);
 }
 
-bool dualsensorActivity::onTimer(int id) {
+bool airportActivity::onTimer(int id) {
 	return onUI_Timer(id);
 }
 
-void dualsensorActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
+void airportActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
 
     int seekBarTablen = sizeof(SZKSeekBarCallbackTab) / sizeof(S_ZKSeekBarCallback);
     for (int i = 0; i < seekBarTablen; ++i) {
@@ -191,7 +207,7 @@ void dualsensorActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
     }
 }
 
-int dualsensorActivity::getListItemCount(const ZKListView *pListView) const{
+int airportActivity::getListItemCount(const ZKListView *pListView) const{
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -202,7 +218,7 @@ int dualsensorActivity::getListItemCount(const ZKListView *pListView) const{
     return 0;
 }
 
-void dualsensorActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
+void airportActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -212,7 +228,7 @@ void dualsensorActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZK
     }
 }
 
-void dualsensorActivity::onItemClick(ZKListView *pListView, int index, int id){
+void airportActivity::onItemClick(ZKListView *pListView, int index, int id){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -222,7 +238,7 @@ void dualsensorActivity::onItemClick(ZKListView *pListView, int index, int id){
     }
 }
 
-void dualsensorActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
+void airportActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
     int tablen = sizeof(SSlideWindowItemClickCallbackTab) / sizeof(S_SlideWindowItemClickCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SSlideWindowItemClickCallbackTab[i].id == pSlideWindow->getID()) {
@@ -232,11 +248,11 @@ void dualsensorActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index
     }
 }
 
-bool dualsensorActivity::onTouchEvent(const MotionEvent &ev) {
-    return ondualsensorActivityTouchEvent(ev);
+bool airportActivity::onTouchEvent(const MotionEvent &ev) {
+    return onairportActivityTouchEvent(ev);
 }
 
-void dualsensorActivity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
+void airportActivity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
     int tablen = sizeof(SEditTextInputCallbackTab) / sizeof(S_EditTextInputCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SEditTextInputCallbackTab[i].id == pTextView->getID()) {
@@ -246,7 +262,7 @@ void dualsensorActivity::onTextChanged(ZKTextView *pTextView, const std::string 
     }
 }
 
-void dualsensorActivity::rigesterActivityTimer() {
+void airportActivity::rigesterActivityTimer() {
     int tablen = sizeof(REGISTER_ACTIVITY_TIMER_TAB) / sizeof(S_ACTIVITY_TIMEER);
     for (int i = 0; i < tablen; ++i) {
         S_ACTIVITY_TIMEER temp = REGISTER_ACTIVITY_TIMER_TAB[i];
@@ -255,7 +271,7 @@ void dualsensorActivity::rigesterActivityTimer() {
 }
 
 
-void dualsensorActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
+void airportActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SVideoViewCallbackTab[i].id == pVideoView->getID()) {
@@ -270,7 +286,7 @@ void dualsensorActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) 
     }
 }
 
-void dualsensorActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, size_t callbackTabIndex) {
+void airportActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, size_t callbackTabIndex) {
 
 	switch (msg) {
 	case ZKVideoView::E_MSGTYPE_VIDEO_PLAY_STARTED:
@@ -310,7 +326,7 @@ void dualsensorActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, siz
 	}
 }
 
-void dualsensorActivity::startVideoLoopPlayback() {
+void airportActivity::startVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -325,7 +341,7 @@ void dualsensorActivity::startVideoLoopPlayback() {
     }
 }
 
-void dualsensorActivity::stopVideoLoopPlayback() {
+void airportActivity::stopVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -341,7 +357,7 @@ void dualsensorActivity::stopVideoLoopPlayback() {
     }
 }
 
-bool dualsensorActivity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
+bool airportActivity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
 	mediaFileList.clear();
 	if (NULL == pFileListPath || 0 == strlen(pFileListPath)) {
         LOGD("video file list is null!");
@@ -373,7 +389,7 @@ bool dualsensorActivity::parseVideoFileList(const char *pFileListPath, std::vect
 	return true;
 }
 
-int dualsensorActivity::removeCharFromString(string& nString, char c) {
+int airportActivity::removeCharFromString(string& nString, char c) {
     string::size_type   pos;
     while(1) {
         pos = nString.find(c);
@@ -386,14 +402,14 @@ int dualsensorActivity::removeCharFromString(string& nString, char c) {
     return (int)nString.size();
 }
 
-void dualsensorActivity::registerUserTimer(int id, int time) {
+void airportActivity::registerUserTimer(int id, int time) {
 	registerTimer(id, time);
 }
 
-void dualsensorActivity::unregisterUserTimer(int id) {
+void airportActivity::unregisterUserTimer(int id) {
 	unregisterTimer(id);
 }
 
-void dualsensorActivity::resetUserTimer(int id, int time) {
+void airportActivity::resetUserTimer(int id, int time) {
 	resetTimer(id, time);
 }

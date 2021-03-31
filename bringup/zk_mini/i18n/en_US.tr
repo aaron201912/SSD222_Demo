@@ -15,6 +15,10 @@
     <string name="icon_dualsensor">Dual Sensor</string>
     <string name="icon_usbcamera">Usb Camera</string>
     <string name="icon_setting">Local Setting</string>
+    <string name="icon_modtest">Module Test</string>
+    <string name="icon_audiotest">Audio Test</string>
+    <string name="icon_facedetect">Face Detect</string>
+    <string name="icon_scanner">QRCode Scanner</string>
     <string name="icon_str">STR</string>
     <string name="text_implement">How to implement?</string>
     <string name="text_content">We focus on human-computer interaction solutions for embedded device terminals. Provide customers in various industries with hardware, systems, and HMI development kits to help reduce the investment cost and development time of embedded human-computer interaction in various industries. It is our goal that we have been working hard so that our customers' products can be quickly and steadily introduced to the market.</string>
@@ -103,6 +107,13 @@
     <string name="wifi3_ap_passwd">Password:</string>
     <string name="wifi3_ap_connect">Connect</string>
     <string name="usb_open_faild">Failed to open the USB camera, please confirm whether the device connection status and setting parameters are normal.</string>
+    <string name="record_sample">Record Sample:</string>
+    <string name="choose_record">Choose the record file:</string>
+    <string name="speaker_test">Speaker Test:</string>
+    <string name="headphone_test">Headphone Test:</string>
+    <string name="start_record">Start Record</string>
+    <string name="start_play">Start Play</string>
+    <string name="start_test">Start Test</string>
     <string name="language_setting">Language Setting(Chinese/English):</string>
     <string name="language_cn">Chinese</string>
     <string name="language_en">English</string>
