@@ -36,24 +36,28 @@ CFLAGS=-Os -pipe  -fno-caller-saves -Wno-unused-result -Wno-format-truncation -W
 CXXFLAGS=-Os -pipe  -fno-caller-saves -Wno-unused-result -Wno-format-truncation -Wno-write-strings -mfloat-abi=hard -mfpu=vfp -Wformat -Werror=return-type -Werror=format-security -fstack-protector -D_FORTIFY_SOURCE=1 -Wl,-z,now -Wl,-z,relro -Wl,-z,defs 
 CXXFLAGS+= -fexceptions -fpermissive -Wall -O2
 
-INCLUDE_DIR := -I$(EASYUI_COMMON_INCLUDE) \
-					-I$(ZKSW_PREBUILT_INCLUDE_PATH) \
-					-I. \
-					-I$(ZKSW_PREBUILT_INCLUDE_PATH)/mgeff \
-					-I ../jni/sdkdir/include \
-					-I ../jni/voicedetect	\
-					-I ../jni/audio	\
-					-I ../jni/uvc/app \
-					-I ../jni/uvc/libjpeg/include \
-					-I ../jni/uvc/libyuv/include \
-					-I ../jni/uvc/v4l2/inc \
-					-I ../jni/uvc/v4l2/src
+INCLUDE_DIR :=  -I$(EASYUI_COMMON_INCLUDE) \
+                -I$(ZKSW_PREBUILT_INCLUDE_PATH) \
+                -I. \
+                -I$(ZKSW_PREBUILT_INCLUDE_PATH)/mgeff \
+                -I ../jni/sdkdir	\
+                -I ../jni/sdkdir/include \
+                -I ../jni/voicedetect	\
+                -I ../jni/sensor	\
+                -I ../jni/sensor/internal/rgn	\
+                -I ../jni/sensor/internal/ive	\
+                -I ../jni/dualsensor
 
-LDFLAGS =  -leasyui -pthread -lmi_sys -lmi_disp -lmi_divp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
-		-lcam_os_wrapper -ldl -lrt -fPIC -shared -lrt -lyuv -lturbojpeg -ljpeg
-LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib -L ../jni/uvc/libjpeg/lib -L ../jni/uvc/libyuv/lib
+#LDFLAGS = -leasyui -lpthread -lmi_sys -lmi_disp -lmi_panel -lmi_ao -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++ -lmi_ai \
+#          -lmi_vif -lmi_vpe -lmi_isp -lmi_iqserver -lfbc_decode -lcus3a -lispalgo -lmi_sensor -lmi_ive -lmi_divp -lmi_rgn -lcam_os_wrapper -lmi_vdisp -lFD_ARM -ldl -lrt -fPIC -shared \
+#          -lrt -lyuv -lturbojpeg -ljpeg -lZXing
+
+LDFLAGS = -leasyui -lpthread -lmi_sys -lmi_disp -lmi_panel -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++	\
+		 \
+		-ldl -lrt -fPIC -shared
+LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib  
 INCLUDE_DIR += -I ../jni/hotplugdetect -I ../jni/hotplugdetect/common -I ../jni/hotplugdetect/usbdetect -I ../jni/hotplugdetect/wifidetect \
-			   -I ../jni/hotplugdetect/wirednetworkdetect
+               -I ../jni/hotplugdetect/wirednetworkdetect
 
 TARGET=../libs/armeabi/libzkgui.so
 
