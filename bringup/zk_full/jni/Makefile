@@ -58,13 +58,13 @@ INCLUDE_DIR :=  -I$(EASYUI_COMMON_INCLUDE) \
                 -I ../jni/uvc/libjpeg/include \
                 -I ../jni/uvc/libyuv/include	\
                 -I ../jni/scanner	\
-                -I ../jni/scanner/qrcode/include
+                -I ../jni/scanner/include
 
 LDFLAGS = -leasyui -lpthread -lmi_sys -lmi_disp -lmi_panel -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++	\
 		-lmi_vpe -lmi_isp -lmi_iqserver -lfbc_decode -lcus3a -lispalgo -lcam_os_wrapper -lFD_ARM -lm \
 		-ldl -lrt -fPIC -shared \
 		-ljpeg -lZXing
-LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib -L ../jni/uvc/libjpeg/lib -L ../jni/uvc/libyuv/lib -L ../jni/scanner/qrcode/lib
+LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib -L ../jni/uvc/libjpeg/lib -L ../jni/uvc/libyuv/lib -L ../jni/scanner/lib
 INCLUDE_DIR += -I ../jni/hotplugdetect -I ../jni/hotplugdetect/common -I ../jni/hotplugdetect/usbdetect -I ../jni/hotplugdetect/wifidetect \
                -I ../jni/hotplugdetect/wirednetworkdetect
 

@@ -20,8 +20,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <sys/syscall.h>
-#include "ReadBarcode.h"
-#include "TextUtfEncoding.h"
+#include "libCodeSdk.h"
 #include <iostream>
 #include <cstring>
 #include <string>
@@ -36,7 +35,6 @@
 #include <dlfcn.h>
 #include "sstar_dynamic_load.h"
 
-using namespace ZXing;
 
 
 #define USE_SNR_PAD_ID_1  	(1)
@@ -47,6 +45,7 @@ using namespace ZXing;
 
 #define DIVP_CHN_ZXING		0
 #define DIVP_CHN_DISP		2
+#define ZXING_SCAN_CODE		"QR_CODE"
 
 #ifndef STCHECKRESULT
 #define STCHECKRESULT(_func_)\
@@ -556,14 +555,12 @@ MI_U32 SSTAR_VideoInput_Deinit(void)
     return MI_SUCCESS;
 }
 
+static char scanResult[512] = {0};
+static char scanResultCmp[512] = {0};
+
 static volatile int drawonce = 0;
 MI_S32  ST_Do_Barcode(const MI_SYS_BufInfo_t *stBufInfo,MI_SYS_BUF_HANDLE hBufHandle, void* pData)
 {
-	DecodeHints hints;
-	const char *pOsdChar = NULL;
-	char osdChar[2048] = {0};
-	static char osdCharCmp[2048] = {0};
-	std::string osdStr;
 	ScanUsrData_t *pScanUsrData = (ScanUsrData_t*)pData;
 
     if (stBufInfo->eBufType == E_MI_SYS_BUFDATA_RAW)
@@ -572,8 +569,6 @@ MI_S32  ST_Do_Barcode(const MI_SYS_BufInfo_t *stBufInfo,MI_SYS_BUF_HANDLE hBufHa
     }
     else if (stBufInfo->eBufType == E_MI_SYS_BUFDATA_FRAME)
     {
-		ImageView img = ImageView((uint8_t *)(stBufInfo->stFrameData.pVirAddr[0]), BARCODE_IN_WIDTH, BARCODE_IN_HIGH, ImageFormat::BGRX);
-
 		// dump buff
 		static FILE *pFile = fopen("buf", "wr+");
 		if (pFile)
@@ -583,42 +578,25 @@ MI_S32  ST_Do_Barcode(const MI_SYS_BufInfo_t *stBufInfo,MI_SYS_BUF_HANDLE hBufHa
 			pFile = NULL;
 		}
 
-		hints.setTryHarder(FALSE);
+//		printf("beigin to read barcode ...................\n");
 
-		printf("beigin to read barcode ...................\n");
-		auto result = ReadBarcode(img, hints);
+		int ret = CodeDeCode::ImageDecode((const char*)(stBufInfo->stFrameData.pVirAddr[0]), BARCODE_IN_WIDTH, BARCODE_IN_HIGH,
+											ImageFormats::BGRX, /*(char*)ZXING_SCAN_CODE*/"", scanResult, false, false, false);
+//		printf("read barcode done, result: %s\n", scanResult);
 
-		printf("read barcode done, result: %s\n", result.text());
-
-		if(result.status() == DecodeStatus::NoError)
+		if (!ret)
 		{
-			std::cout << "Text-2: 	\"" << TextUtfEncoding::ToUtf8(result.text()) << "\"\n"
-					  << "Format:	" << ToString(result.format()) << "\n"
-					  << "Rotation: " << result.orientation() << " deg\n";
-
-
-	        osdStr = TextUtfEncoding::ToUtf8(result.text());
-			osdStr.copy(osdChar, osdStr.length(), 0);
-			printf("len:%d, DrawText:%s\n", osdStr.length(), osdChar);
-			if(memcmp(osdChar,osdCharCmp, 1024) == 0)
+			if(memcmp(scanResult, scanResultCmp, 512) == 0)
 			{
 				return MI_SUCCESS;
 			}
 
-			memcpy(osdCharCmp, osdChar, 1024);
-			printf("begin to exec callback\n");
+			memcpy(scanResultCmp, scanResult, 512);
+			//printf("begin to exec callback\n");
 			if (pScanUsrData && pScanUsrData->pfnCallback)
-				pScanUsrData->pfnCallback(osdChar);
-			printf("exec callback done\n");
+				pScanUsrData->pfnCallback(scanResult);
+			//printf("exec callback done\n");
 		}
-
-#if 0		
-		std::cout << "Text: 	\"" << TextUtfEncoding::ToUtf8(result.text()) << "\"\n"
-				  << "Format:	" << ToString(result.format()) << "\n"
-				  << "Position: " << result.position() << "\n"
-				  << "Rotation: " << result.orientation() << " deg\n"
-				  << "Error:	" << ToString(result.status()) << "\n";
-#endif
     }
 
     return MI_SUCCESS;
@@ -679,8 +657,8 @@ void *ST_Barcode_thread(void *pData)
 					continue;
 	            }
 
-	            printf("bufInfo: type:%d, w=%d, h=%d, virAddr=%p\n", stBufInfo.eBufType, stBufInfo.stFrameData.u16Width, stBufInfo.stFrameData.u16Height,
-	            		stBufInfo.stFrameData.pVirAddr[0]);
+//	            printf("bufInfo: type:%d, w=%d, h=%d, virAddr=%p\n", stBufInfo.eBufType, stBufInfo.stFrameData.u16Width, stBufInfo.stFrameData.u16Height,
+//	            		stBufInfo.stFrameData.pVirAddr[0]);
 
 				ST_Do_Barcode(&stBufInfo, stBufHandle, (void*)pScanUsrData);
 				MI_SYS_ChnOutputPortPutBuf(stBufHandle);
