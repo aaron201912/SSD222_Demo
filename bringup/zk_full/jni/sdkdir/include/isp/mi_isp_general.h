@@ -66,12 +66,12 @@ extern MI_S32 MI_VPE_SetIspApiData(MI_VPE_IspApiHeader_t *pstIspDataHeader, void
 MI_S32 _MI_ISP_SetIspApiData(MI_VPE_IspApiHeader_t *pstIspDataHeader, void *pVirData);
 MI_S32 _MI_ISP_GetIspApiData(MI_VPE_IspApiHeader_t *pstIspDataHeader, void *pVirData);
 
-#if (DUAL_OS_RUN_ON_LINUX)
+#if (DUAL_OS_RUN_ON_LINUX || DUAL_OS_RUN_ON_RTOS)
 #define MI_GETAPI(Channel, APIFuncID, PARAM_t, PtrData)\
     MI_S32 s32Ret = MI_ISP_OK;\
     MI_VPE_IspApiHeader_t stIspApiHeader;\
     PARAM_t  *pIspBuffer = NULL;\
-    MI_VPE_Alloc_IspDataBuf(sizeof(PARAM_t), &pIspBuffer);\
+    MI_VPE_Alloc_IspDataBuf(sizeof(PARAM_t), (void**)&pIspBuffer);\
     memcpy(pIspBuffer, PtrData, sizeof(PARAM_t));\
     stIspApiHeader.u32HeadSize  = sizeof(MI_VPE_IspApiHeader_t);\
     stIspApiHeader.u32DataLen   = sizeof(PARAM_t);\
@@ -88,7 +88,7 @@ MI_S32 _MI_ISP_GetIspApiData(MI_VPE_IspApiHeader_t *pstIspDataHeader, void *pVir
     MI_S32 s32Ret = MI_ISP_OK;\
     MI_VPE_IspApiHeader_t stIspApiHeader;\
     PARAM_t  *pIspBuffer = NULL;\
-    MI_VPE_Alloc_IspDataBuf(sizeof(PARAM_t), &pIspBuffer);\
+    MI_VPE_Alloc_IspDataBuf(sizeof(PARAM_t), (void**)&pIspBuffer);\
     stIspApiHeader.u32HeadSize  = sizeof(MI_VPE_IspApiHeader_t);\
     stIspApiHeader.u32DataLen   = sizeof(PARAM_t);\
     stIspApiHeader.u32CtrlID    = APIFuncID;\
@@ -103,7 +103,7 @@ MI_S32 _MI_ISP_GetIspApiData(MI_VPE_IspApiHeader_t *pstIspDataHeader, void *pVir
 #define MI_CALI_SETAPI(Channel, APIFuncID, PARAM_t, DataSize, PtrData)\
     MI_VPE_IspApiHeader_t stIspApiHeader;\
     char  *pIspBuffer = NULL;\
-    MI_VPE_Alloc_IspDataBuf(DataSize, &pIspBuffer);\
+    MI_VPE_Alloc_IspDataBuf(DataSize, (void**)&pIspBuffer);\
     stIspApiHeader.u32HeadSize  = sizeof(MI_VPE_IspApiHeader_t);\
     stIspApiHeader.u32DataLen   = DataSize;\
     stIspApiHeader.u32CtrlID    = APIFuncID;\
@@ -148,7 +148,7 @@ MI_S32 _MI_ISP_GetIspApiData(MI_VPE_IspApiHeader_t *pstIspDataHeader, void *pVir
     stIspApiHeader.u32CtrlID    = APIFuncID;\
     stIspApiHeader.u32Channel   = Channel;\
     stIspApiHeader.s32Ret       = 0;\
-    s32Ret = stIspApiHeader.s32Ret = MI_VPE_SetIspApiData(&stIspApiHeader, PtrData);\
+    s32Ret = stIspApiHeader.s32Ret = _MI_ISP_SetIspApiData(&stIspApiHeader, PtrData);\
     MI_ISP_DMSG("[%s] - (Channel,CtrlID, DataLenght, HeadSize) = (%d,%d,%d,%d)\n", __FUNCTION__, stIspApiHeader->u32Channel, stIspApiHeader->u32CtrlID, stIspApiHeader->u32DataLen, stIspApiHeader->u32HeadSize);\
 
 #endif

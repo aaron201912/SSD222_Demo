@@ -107,7 +107,9 @@ extern "C"
 #define ID_API_COMMON_CHANNEL_ID                    ( ID_API_COMMON_BASE + 101 )
 #define ID_API_COMMON_ISPROOT                       ( ID_API_COMMON_BASE + 102 )
 #define ID_API_COMMON_AVAILABLE_MEMINFO             ( ID_API_COMMON_BASE + 103 )
-
+#define ID_API_COMMON_DEVICE_ID                     ( ID_API_COMMON_BASE + 104 )
+#define ID_API_COMMON_REOPEN                        ( ID_API_COMMON_BASE + 105 )//Ispmid reopen
+#define ID_API_COMMON_IMAGE_RESOLUTION_ID           ( ID_API_COMMON_BASE + 106 )
 
 //================================================================
 //  ID Defined : ISP  API

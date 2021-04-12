@@ -153,6 +153,7 @@ typedef enum
     E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420,
     E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420_NV21,
     E_MI_SYS_PIXEL_FRAME_YUV_MST_420,
+    E_MI_SYS_PIXEL_FRAME_YUV_Y,
     E_MI_SYS_PIXEL_FRAME_YUV422_UYVY,
     E_MI_SYS_PIXEL_FRAME_YUV422_YVYU,
     E_MI_SYS_PIXEL_FRAME_YUV422_VYUY,
@@ -377,6 +378,7 @@ typedef  struct  MI_SYS_BufInfo_s
         MI_SYS_MetaData_t stMetaData;
         MI_SYS_FrameDataMultiPlane_t stFrameDataMultiPlane;
     };
+    MI_U8 u8CusFlag;
 } MI_SYS_BufInfo_t;
 
 typedef struct MI_SYS_FrameBufExtraConfig_s
@@ -430,6 +432,7 @@ typedef struct MI_SYS_BufConf_s
         MI_SYS_MetaDataConfig_t stMetaCfg;
         MI_SYS_BufFrameMultiPlaneConfig_t stMultiPlaneCfg;
     };
+    MI_U8 u8CusFlag;
 }MI_SYS_BufConf_t;
 
 typedef struct MI_SYS_Version_s

@@ -19,7 +19,7 @@ rights to any and all damages, losses, costs and expenses resulting therefrom.
 #include "mi_vif_datatype.h"
 
 #define VIF_MAJOR_VERSION 2
-#define VIF_SUB_VERSION 6
+#define VIF_SUB_VERSION 7
 #define MACRO_TO_STR(macro) #macro
 #define VIF_VERSION_STR(major_version,sub_version) ({char *tmp = sub_version/100 ? \
                                     "mi_vif_version_" MACRO_TO_STR(major_version)"." MACRO_TO_STR(sub_version) : sub_version/10 ? \
@@ -43,6 +43,10 @@ MI_S32 MI_VIF_Query(MI_VIF_CHN u32VifChn, MI_VIF_PORT u32ChnPort, MI_VIF_ChnPort
 MI_S32 MI_VIF_SetDev2SnrPadMux(MI_VIF_Dev2SnrPadMuxCfg_t *pstVifDevMap, MI_U8 u8Length);
 MI_S32 MI_VIF_InitDev(MI_VIF_InitParam_t *pstInitParam);
 MI_S32 MI_VIF_DeInitDev(void);
+MI_S32 MI_VIF_CallBackTask_Register(MI_VIF_CHN u32VifChn, MI_VIF_CallBackParam_t *pCallBackParam); 
+MI_S32 MI_VIF_CallBackTask_UnRegister(MI_VIF_CHN u32VifChn, MI_VIF_CallBackParam_t *pCallBackParam); 
+MI_S32 MI_VIF_SetChnPortCustInfo(MI_VIF_CHN u32VifChn, MI_VIF_PORT u32ChnPort, MI_VIF_ChnCustInfo_t *pstCustInfo);
+MI_S32 MI_VIF_GetDevStatus(MI_VIF_DEV u32Vifdev,MI_VIF_DevStatus_t *pstVifDevStatus);
 
 #ifdef __cplusplus
 }

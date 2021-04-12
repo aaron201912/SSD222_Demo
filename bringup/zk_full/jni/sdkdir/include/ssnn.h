@@ -3,7 +3,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif 
 
 // ==================================================================================================
 //                                        Structure Definition
@@ -74,11 +74,11 @@ int Set_Input_Min_Max_Area(NetworkHandle *handle, int min_area, int max_area);
 // -- For advanced usage -- //
 int Forward_Network_Stride(NetworkHandle *handle, unsigned char *data, int height, int width, int color, int stride);
 int Get_Prob_with_Mask(NetworkHandle *handle, unsigned char *mask, int mask_height, int mask_width, int mask_stride);
-int Get_Detection_with_Mask(NetworkHandle *handle, int img_height, int img_width,
+int Get_Detection_with_Mask(NetworkHandle *handle, int img_height, int img_width, 
                             unsigned char *mask, int mask_height, int mask_width, int mask_stride, float ratio);
 
 #ifdef __cplusplus
 }
-#endif
+#endif 
 
 #endif

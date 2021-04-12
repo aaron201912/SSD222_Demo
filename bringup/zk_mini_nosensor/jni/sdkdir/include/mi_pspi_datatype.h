@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 #include "mi_sys_datatype.h"
-#include <linux/types.h>
 #include "mi_common_datatype.h"
 
 typedef  void   PSPI_HANDLE;
@@ -17,8 +16,8 @@ typedef  void   PSPI_HANDLE;
 typedef struct{
     MI_U16  u16TxSize;
     MI_U16  u16RxSize;
-    MI_U8    u8TxBitCount;
-    MI_U8    u8RxBitCount;
+    MI_U8   u8TxBitCount;
+    MI_U8   u8RxBitCount;
     MI_U16  au16TxBuf[PSPI_PARAM_BUFF_SIZE];
     MI_U16  au16RxBuf[PSPI_PARAM_BUFF_SIZE];
 } MI_PSPI_Msg_t ;
@@ -68,11 +67,11 @@ typedef struct
     MI_U16  u16DelayCycle;                             /* cs is inactive*/
     MI_U16  u16WaitCycle;                              /* cs is active  */
     MI_U16  u16PspiMode;
-    MI_U8    u8DataLane;                               /* cs count      */
-    MI_U8    u8BitsPerWord;                         /* The number of bits in an SPI transmission*/
-    MI_U8    u8RgbSwap;                                /* for panel     */
-    MI_U8    u8TeMode;
-    MI_U8    u8ChipSelect;
+    MI_U8   u8DataLane;                               /* cs count      */
+    MI_U8   u8BitsPerWord;                         /* The number of bits in an SPI transmission*/
+    MI_U8   u8RgbSwap;                                /* for panel     */
+    MI_U8   u8TeMode;
+    MI_U8   u8ChipSelect;
 }MI_PSPI_Param_t;
 
 
@@ -81,17 +80,17 @@ typedef struct
 
 
 #define MI_PSPI_SUCCESS                                      (0)
-#define MI_PSPI_FAIL                                             (-1)
-#define MI_ERR_PSPI_NULL_PTR                           (-2)
-#define MI_ERR_PSPI_NO_MEM                             (-3)
-#define MI_ERR_PSPI_ILLEGAL_PARAM                (-4)
-#define MI_ERR_PSPI_DEV_NOT_INIT                   (-5)
-#define MI_ERR_PSPI_ENABLE_CHN_FAILED        (-6)
-#define MI_ERR_PSPI_ENABLE_PORT_FAILED      (-7)
-#define MI_ERR_PSPI_DISABLE_CHN_FAILED       (-8)
-#define MI_ERR_PSPI_DISABLE_PORT_FAILED     (-9)
-#define MI_ERR_PSPI_DEV_HAVE_INITED             (-10)
-#define MI_ERR_PSPI_FAILED_IN_MHAL               (-11)
+#define MI_PSPI_FAIL                                         (-1)
+#define MI_ERR_PSPI_NULL_PTR                                 (-2)
+#define MI_ERR_PSPI_NO_MEM                                   (-3)
+#define MI_ERR_PSPI_ILLEGAL_PARAM                            (-4)
+#define MI_ERR_PSPI_DEV_NOT_INIT                             (-5)
+#define MI_ERR_PSPI_ENABLE_CHN_FAILED                        (-6)
+#define MI_ERR_PSPI_ENABLE_PORT_FAILED                       (-7)
+#define MI_ERR_PSPI_DISABLE_CHN_FAILED                       (-8)
+#define MI_ERR_PSPI_DISABLE_PORT_FAILED                      (-9)
+#define MI_ERR_PSPI_DEV_HAVE_INITED                          (-10)
+#define MI_ERR_PSPI_FAILED_IN_MHAL                           (-11)
 
 #ifdef   __cplusplus
 }

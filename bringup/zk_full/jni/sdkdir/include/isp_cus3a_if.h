@@ -33,6 +33,8 @@ int CUS3A_AFRegInterface(MI_U32 nCh,ISP_AF_INTERFACE *pAF); /*This function is d
 int CUS3A_RegInterfaceEX(MI_U32 nCh ,CUS3A_ALGO_ADAPTOR_e eAdaptor, CUS3A_ALGO_TYPE_e eType, void* pAlgo);
 int CUS3A_SetAlgoAdaptor(CUS3A_ISP_CH_e nCh, CUS3A_ALGO_ADAPTOR_e eAdaptor, CUS3A_ALGO_TYPE_e eType);
 int CUS3A_GetAlgoAdaptor(CUS3A_ISP_CH_e nCh, CUS3A_ALGO_TYPE_e eType);
+int CUS3A_CreateChannel(CUS3A_ISP_CH_e eIspCh);
+int CUS3A_DestroyChannel(CUS3A_ISP_CH_e eIspCh);
 
 void* pAllocDmaBuffer(const char* pName, MI_U32 nReqSize, MI_U32 *pPhysAddr, MI_U32 *pMiuAddr, MI_U8 bCache); /*Do not use, This function is for SStar internal use only*/
 int FreeDmaBuffer(const char* pName, MI_U32 u32MiuAddr, void *pVirtAddr, MI_U32 u32FreeSize); /*Do not use, This function is for SStar internal use only*/

@@ -91,8 +91,6 @@ extern "C"
     MI_S32 MI_ISP_SET_ALL(int Channel, MI_U16 ApiId, MI_U32 ApiLen, MI_U8* pApiBuf);
     MI_S32 MI_ISP_GET_ALL(int Channel, MI_U16 ApiId, MI_U32* ApiLen, MI_U8* pApiBuf);
 
-    MI_S32 MI_ISP_API_CmdLoadBinFile(MI_U32 Channel, char* filepath, MI_U32 user_key);
-    MI_S32 MI_ISP_API_CmdLoadCaliData(MI_U32 Channel, MI_ISP_CALI_ITEM_e eCaliItem, char* filepath);
 
     typedef MI_S32 (*MI_ISP_ApiAgent_fp)(MI_VPE_IspApiHeader_t *pstData, void* pData);
 
@@ -101,6 +99,8 @@ extern "C"
 #if !defined(DUAL_OS) && !defined(__RTOS__) //for pure linux
     MI_S32 MI_ISP_EnableUserspace3A(MI_U32 Channel,MI_ISP_API_USERSPACE3A_ATTR_t *pAttr);
     MI_S32 MI_ISP_DisableUserspace3A(MI_U32 Channel);
+    MI_S32 MI_ISP_API_CmdLoadBinFile(MI_U32 Channel, char* filepath, MI_U32 user_key);
+    MI_S32 MI_ISP_API_CmdLoadCaliData(MI_U32 Channel, MI_ISP_CALI_ITEM_e eCaliItem, char* filepath);
 #else //for DualOS-Linux , RTK
     inline MI_S32 MI_ISP_EnableUserspace3A(MI_U32 Channel,MI_ISP_API_USERSPACE3A_ATTR_t *pAttr) {return 0;}
     inline MI_S32 MI_ISP_DisableUserspace3A(MI_U32 Channel) {return 0;}

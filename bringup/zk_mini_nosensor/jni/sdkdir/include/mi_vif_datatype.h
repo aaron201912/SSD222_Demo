@@ -318,6 +318,42 @@ typedef struct MI_VIF_InitParam_s
     MI_U8 *u8Data;
 } MI_VIF_InitParam_t;
 
+typedef MI_S32 (*MI_VIF_CALLBK_FUNC)(MI_U64 u64Data);
+
+typedef enum
+{
+    E_MI_VIF_CALLBACK_ISR,
+    E_MI_VIF_CALLBACK_MAX,
+} MI_VIF_CallBackMode_e;
+
+typedef enum
+{
+    E_MI_VIF_IRQ_FRAMESTART,  //frame start irq
+    E_MI_VIF_IRQ_FRAMEEND,  //frame end irq
+    E_MI_VIF_IRQ_LINEHIT,  //frame line hit irq
+    E_MI_VIF_IRQ_MAX,
+} MI_VIF_IrqType_e;
+
+typedef struct MI_VIF_CallBackParam_s
+{
+    MI_VIF_CallBackMode_e eCallBackMode;
+    MI_VIF_IrqType_e  eIrqType;
+    MI_VIF_CALLBK_FUNC  pfnCallBackFunc;
+    MI_U64    u64Data;
+} MI_VIF_CallBackParam_t;
+
+typedef struct MI_VIF_ChnCustInfo_s
+{
+    MI_U32  u32IrBrightness; 
+}MI_VIF_ChnCustInfo_t;
+
+typedef struct MI_VIF_VIFDevStatus_s
+{
+    MI_VIF_Dev2SnrPadMuxCfg_t stDev2SensrPad;
+    MI_U32 bDevEn;
+} MI_VIF_DevStatus_t;
+
+
 #pragma pack(pop)
 
 #endif //_MI_VIF_DATATYPE_H_

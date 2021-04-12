@@ -43,7 +43,6 @@ typedef struct
 typedef struct
 {
     MI_U32 u32Dir;  // 0: Set, 1: Get
-    //MI_VPE_IspApiData_t stApiData;
     MI_VPE_IspApiHeader_t stApiHeader;
     void* pData;
 }MI_CUS3A_CtrlCmd_t;
