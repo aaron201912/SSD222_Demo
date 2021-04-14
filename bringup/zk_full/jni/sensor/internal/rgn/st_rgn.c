@@ -29,6 +29,11 @@ static MI_RGN_PaletteTable_t _gstPaletteTable =
     {255, 0, 0, 128}, {255, 0, 128, 128}, {255, 128, 128, 128}, {255, 64, 64, 64}}
 };
 
+static MI_RGN_InitParam_t g_stInitParam =
+{
+	.pstPaletteTable = &_gstPaletteTable
+};
+
 static pthread_mutex_t g_rgnOsd_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static RgnAssembly_t g_stRgnAssembly;
@@ -244,8 +249,7 @@ int ST_RGN_Init(void)
 		return -1;
 	}
 
-    //if (MI_RGN_OK != MI_RGN_Init(&_gstPaletteTable))
-	if (MI_RGN_OK != g_stRgnAssembly.pfnRgnInit(&_gstPaletteTable))
+	if (MI_RGN_OK != g_stRgnAssembly.pfnRgnInitDev(&g_stInitParam))
     {
         printf("MI_RGN_Init fail\n");
         return -1;
@@ -325,13 +329,12 @@ int ST_RGN_Destroy(MI_RGN_HANDLE hHandle)
 
 int ST_RGN_Deinit(void)
 {
-	if (MI_RGN_OK != g_stRgnAssembly.pfnRgnDeInit())
+	if (MI_RGN_OK != g_stRgnAssembly.pfnRgnDeInitDev())
     {
         printf("MI_RGN_DeInit fail\n");
         return -1;
     }
 
-	g_stRgnAssembly.pfnRgnDeInitDev();
 	SSTAR_RGN_CloseLibrary(&g_stRgnAssembly);
 
     return 0;
