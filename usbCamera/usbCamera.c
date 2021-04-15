@@ -217,6 +217,8 @@ int display_init(int x, int y, int width, int height)
 	}
 #endif
 
+    printf("display_init ...\n");
+
     // disp & panel init
     MI_SYS_Init(); 
 
@@ -307,11 +309,15 @@ int display_init(int x, int y, int width, int height)
     MI_SYS_SetChnOutputPortDepth(&stDivpSrcPort, 0, 3);
 #endif
 
+    printf("display_init done\n");
+
     return 0;
 }
 
 int display_deinit()
 {
+    printf("display_deinit ...\n");
+
 #if ENABLE_DIVP
     MI_SYS_ChnPort_t stDivpSrcPort;
     MI_SYS_ChnPort_t stDispDstPort;
@@ -349,6 +355,8 @@ int display_deinit()
     MI_PANEL_DeInit();
     MI_PANEL_DeInitDev();
     MI_SYS_Exit();
+
+    printf("display_deinit done\n");
 
     return 0;
 }
@@ -589,6 +597,9 @@ static void * jpeg_decoding_thread(void * args)
 
         //save_file((char *)pkt.data, pkt.size, 2);
 
+        if (!decode_cnt)
+            printf("decode the first frame done\n");
+
         decode_cnt ++;
         //ST_INFO("had decoded jpeg num = [%d]\n", decode_cnt);
 
@@ -671,6 +682,31 @@ void sstar_usbcamera_deinit()
 int main(int argc, char **argv)
 {
     char ch = 0;
+    int checkTimeout = 500;
+    printf("check usb camera dev node\n");
+
+    while (checkTimeout--)
+    {
+        //if (!access("/dev/video0", F_OK))
+        if (!access("/dev/video0", R_OK))
+        {
+            printf("detect usb camera dev\n");
+            break;
+        }
+        else
+        {
+            usleep(5000);
+        }
+    }
+
+    if (!checkTimeout)
+    {
+        printf("usb camera dev is not exist, app exit\n");
+        return -1;
+    }
+
+    //sleep(5);
+
     printf("usb camere app start\n");
 
     if (sstar_usbcamera_init())
