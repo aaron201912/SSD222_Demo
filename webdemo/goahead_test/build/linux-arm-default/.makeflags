@@ -1,0 +1,1 @@
+s -j --jobserver-fds=3,4 --no-print-directory

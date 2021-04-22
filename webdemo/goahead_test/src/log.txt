@@ -1,0 +1,1085 @@
+./action.c:31:    assert(websValid(wp));
+./action.c:39:        websError(wp, HTTP_CODE_NOT_FOUND, "Missing action name");
+./action.c:51:        websError(wp, HTTP_CODE_NOT_FOUND, "Action %s is not defined", actionName);
+./action.c:70:PUBLIC int websDefineAction(cchar *name, void *fn)
+./action.c:92:PUBLIC void websActionOpen()
+./action.c:95:    websDefineHandler("action", 0, actionHandler, closeAction, 0);
+./action.c:101:    Don't use these routes. Use websWriteHeaders, websEndHeaders instead.
+./action.c:103:    Write a webs header. This is a convenience routine to write a common header for an action back to the browser.
+./action.c:105:PUBLIC void websHeader(Webs *wp)
+./action.c:107:    assert(websValid(wp));
+./action.c:109:    websWriteHeaders(wp, -1, 0);
+./action.c:110:    websWriteEndHeaders(wp);
+./action.c:111:    websWrite(wp, "<html>\n");
+./action.c:115:PUBLIC void websFooter(Webs *wp)
+./action.c:117:    assert(websValid(wp));
+./action.c:118:    websWrite(wp, "</html>\n");
+./alloc.c:23:PUBLIC void websSetMemNotifier(WebsMemNotifier cback)
+./auth.c:10:    When the web server starts up, it loads a route and authentication configuration file that specifies the Users,
+./auth.c:12:    in, the user's abilities are tested against the route abilities. When the web server receivess a request, the set of
+./auth.c:19:        Web form authentication which uses a web page form to login (insecure unless over TLS)
+./auth.c:40:static WebsVerify verifyPassword = websVerifyPasswordFromFile;
+./auth.c:80:PUBLIC bool websAuthenticate(Webs *wp)
+./auth.c:95:    if (wp->cookie && websGetSession(wp, 0) != 0) {
+./auth.c:99:        if ((username = (char*) websGetSessionVar(wp, WEBS_SESSION_USERNAME, 0)) != 0) {
+./auth.c:107:            websError(wp, HTTP_CODE_UNAUTHORIZED, "Access denied. Wrong authentication protocol type.");
+./auth.c:119:            websRedirectByStatus(wp, HTTP_CODE_UNAUTHORIZED);
+./auth.c:126:            websRedirectByStatus(wp, HTTP_CODE_UNAUTHORIZED);
+./auth.c:132:        if (websGetSession(wp, 1) != 0) {
+./auth.c:133:            websSetSessionVar(wp, WEBS_SESSION_USERNAME, wp->username);
+./auth.c:140:PUBLIC int websOpenAuth(int minimal)
+./auth.c:154:        masterSecret = websMD5(sbuf);
+./auth.c:156:        websJsDefine("can", jsCan);
+./auth.c:158:        websDefineAction("login", loginServiceProc);
+./auth.c:159:        websDefineAction("logout", logoutServiceProc);
+./auth.c:162:        verifyPassword = websVerifyPasswordFromFile;
+./auth.c:165:        verifyPassword = websVerifyPasswordFromPam;
+./auth.c:172:PUBLIC void websCloseAuth()
+./auth.c:197:PUBLIC int websWriteAuthFile(char *path)
+./auth.c:207:    tempFile = websTempFile(NULL, NULL);
+./auth.c:263:WebsUser *websAddUser(char *username, char *password, char *roles)
+./auth.c:271:    if (websLookupUser(username)) {
+./auth.c:286:PUBLIC int websRemoveUser(char *username)
+./auth.c:309:PUBLIC int websSetUserPassword(char *username, char *password)
+./auth.c:314:    if ((user = websLookupUser(username)) == 0) {
+./auth.c:323:PUBLIC int websSetUserRoles(char *username, char *roles)
+./auth.c:328:    if ((user = websLookupUser(username)) == 0) {
+./auth.c:338:WebsUser *websLookupUser(char *username)
+./auth.c:403:PUBLIC void websComputeAllUserAbilities()
+./auth.c:417:WebsRole *websAddRole(char *name, WebsHash abilities)
+./auth.c:452:PUBLIC int websRemoveRole(char *name)
+./auth.c:471:PUBLIC WebsHash websGetUsers()
+./auth.c:477:PUBLIC WebsHash websGetRoles()
+./auth.c:483:PUBLIC bool websLoginUser(Webs *wp, char *username, char *password)
+./auth.c:503:    websCreateSession(wp);
+./auth.c:504:    websSetSessionVar(wp, WEBS_SESSION_USERNAME, wp->username);
+./auth.c:509:PUBLIC bool websLogoutUser(Webs *wp)
+./auth.c:512:    websRemoveSessionVar(wp, WEBS_SESSION_USERNAME);
+./auth.c:513:    websDestroySession(wp);
+./auth.c:515:        websError(wp, HTTP_CODE_UNAUTHORIZED, "Logged out.");
+./auth.c:518:    websRedirectByStatus(wp, HTTP_CODE_OK);
+./auth.c:534:    if (websLoginUser(wp, websGetVar(wp, "username", ""), websGetVar(wp, "password", ""))) {
+./auth.c:537:        if ((referrer = websGetSessionVar(wp, "referrer", 0)) != 0) {
+./auth.c:538:            websRedirect(wp, referrer);
+./auth.c:540:            websRedirectByStatus(wp, HTTP_CODE_OK);
+./auth.c:542:        websSetSessionVar(wp, "loginStatus", "ok");
+./auth.c:547:        websSetSessionVar(wp, "loginStatus", "failed");
+./auth.c:548:        websRedirectByStatus(wp, HTTP_CODE_UNAUTHORIZED);
+./auth.c:555:    websLogoutUser(wp);
+./auth.c:568:void websSetPasswordStoreVerify(WebsVerify verify)
+./auth.c:574:WebsVerify websGetPasswordStoreVerify()
+./auth.c:580:PUBLIC bool websVerifyPasswordFromFile(Webs *wp)
+./auth.c:586:    if (!wp->user && (wp->user = websLookupUser(wp->username)) == 0) {
+./auth.c:597:        wp->password = websMD5(passbuf);
+./auth.c:618:PUBLIC bool websVerifyPasswordFromPam(Webs *wp)
+./auth.c:647:        wp->user = websLookupUser(wp->username);
+./auth.c:666:            if ((wp->user = websAddUser(wp->username, 0, abilities.servp)) == 0) {
+./auth.c:726:    if (websCanString(wp, argv[0])) {
+./auth.c:744:    if ((userAuth = websDecode64(wp->authDetails)) != 0) {
+./auth.c:778:        ME_GOAHEAD_REALM, websGetServerUrl(), "auth", nonce, opaque, "MD5", "FALSE");
+./auth.c:961:        if ((wp->user = websLookupUser(wp->username)) == 0) {
+./auth.c:986:    return websEncode64(nonce);
+./auth.c:999:    if ((decoded = websDecode64(nonce)) == 0) {
+./auth.c:1029:        ha1 = websMD5(a1Buf);
+./auth.c:1037:    ha2 = websMD5(a2Buf);
+./auth.c:1051:    result = websMD5(digestBuf);
+./auth.c:1059:PUBLIC int websSetRouteAuth(WebsRoute *route, char *auth)
+./certs/samples/roots.crt:13:## an Apache+mod_ssl webserver for SSL client authentication.
+./certs/certs.me:12:    To use appweb with HTTP, you need a server certificate. 
+./cgi.c:6:    process, rather than within the webserver process. For each CGI request the
+./cgi.c:60:    assert(websValid(wp));
+./cgi.c:62:    websSetEnv(wp);
+./cgi.c:69:        websError(wp, HTTP_CODE_NOT_FOUND, "Missing CGI name");
+./cgi.c:82:        websSetVar(wp, "PATH_INFO", extraPath);
+./cgi.c:83:        websSetVarFmt(wp, "PATH_TRANSLATED", "%s%s%s", dir, cgiPrefix, extraPath);
+./cgi.c:86:        websSetVar(wp, "PATH_INFO", "");
+./cgi.c:87:        websSetVar(wp, "PATH_TRANSLATED", "");
+./cgi.c:90:    websSetVarFmt(wp, "SCRIPT_NAME", "%s/%s", cgiPrefix, cgiName);
+./cgi.c:91:    websSetVar(wp, "SCRIPT_FILENAME", cgiPath);
+./cgi.c:107:                websError(wp, HTTP_CODE_NOT_FOUND | WEBS_NOLOG, "CGI program file does not exist");
+./cgi.c:118:            websError(wp, HTTP_CODE_NOT_FOUND, "CGI process file is not executable");
+./cgi.c:139:        websDecodeUrl(query, query, strlen(query));
+./cgi.c:181:        wp->cgiStdin = websGetCgiCommName();
+./cgi.c:184:    stdOut = websGetCgiCommName();
+./cgi.c:195:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "failed to spawn CGI task");
+./cgi.c:229:PUBLIC int websCgiOpen()
+./cgi.c:231:    websDefineHandler("cgi", 0, cgiHandler, 0, 0);
+./cgi.c:236:PUBLIC bool websProcessCgiData(Webs *wp)
+./cgi.c:243:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR| WEBS_CLOSE, "Cannot write to CGI gateway");
+./cgi.c:247:    websConsumeInput(wp, nbytes);
+./cgi.c:255:    websSetStatus(wp, status);
+./cgi.c:256:    websWriteHeaders(wp, contentLength, location);
+./cgi.c:257:    websWriteHeader(wp, "Pragma", "no-cache");
+./cgi.c:258:    websWriteHeader(wp, "Cache-Control", "no-cache");
+./cgi.c:260:        websWriteHeader(wp, "Content-Type", contentType);
+./cgi.c:317:                websWriteHeader(wp, key, "%s", value);
+./cgi.c:327:    websWriteEndHeaders(wp);
+./cgi.c:332:PUBLIC void websCgiGatherOutput(Cgi *cgip)
+./cgi.c:367:                websWriteBlock(wp, &buf[skip], nbytes - skip);
+./cgi.c:382:int websCgiPoll()
+./cgi.c:392:            websCgiGatherOutput(cgip);
+./cgi.c:398:                websCgiGatherOutput(cgip);
+./cgi.c:407:                        websCgiGatherOutput(cgip);
+./cgi.c:415:                    websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "CGI generated no output");
+./cgi.c:417:                    trace(5, "cgi: Request complete - calling websDone");
+./cgi.c:418:                    websDone(wp);
+./cgi.c:427:                    part of websFree().
+./cgi.c:438:                websPump(wp);
+./cgi.c:439:                websFree(wp);
+./cgi.c:452:PUBLIC char *websGetCgiCommName()
+./cgi.c:454:    return websTempFile(NULL, "cgi");
+./crypt.c:146:PUBLIC char *websDecode64(char *s)
+./crypt.c:148:    return websDecode64Block(s, NULL, WEBS_DECODE_TOKEQ);
+./crypt.c:156:PUBLIC char *websDecode64Block(char *s, ssize *len, int flags)
+./crypt.c:197:PUBLIC char *websMD5(char *s)
+./crypt.c:199:    return websMD5Block(s, strlen(s), NULL);
+./crypt.c:206:PUBLIC char *websMD5Block(char *buf, ssize length, char *prefix)
+./crypt.c:433:PUBLIC char *websEncode64(char *s)
+./crypt.c:435:    return websEncode64Block(s, slen(s));
+./crypt.c:443:PUBLIC char *websEncode64Block(char *s, ssize len)
+./crypt.c:878:PUBLIC int websGetRandomBytes(char *buf, ssize length, bool block)
+./crypt.c:923:PUBLIC char *websCryptPassword(char *password, char *salt, int rounds)
+./crypt.c:945:    result = websEncode64Block((char*) text, len);
+./crypt.c:953:PUBLIC char *websMakeSalt(ssize size)
+./crypt.c:962:    if (websGetRandomBytes(random, size, 0) < 0) {
+./crypt.c:982:PUBLIC char *websMakePassword(char *password, int saltLength, int rounds)
+./crypt.c:995:    salt = websMakeSalt(saltLength);
+./crypt.c:996:    return sfmt("BF1:%05d:%s:%s", rounds, salt, websCryptPassword(password, salt, rounds));
+./crypt.c:1000:PUBLIC bool websCheckPassword(char *plainTextPassword, char *passwordHash)
+./crypt.c:1018:    given = websCryptPassword(plainTextPassword, salt, atoi(rounds));
+./crypt.c:1028:PUBLIC char *websReadPassword(char *prompt)
+./file.c:13:static char   *websIndex;                   /* Default page name */
+./file.c:14:static char   *websDocuments;               /* Default Web page directory */
+./file.c:32:    assert(websValid(wp));
+./file.c:39:            websError(wp, HTTP_CODE_NOT_FOUND, "Cannot delete the URI");
+./file.c:42:            websResponse(wp, 204, 0);
+./file.c:46:        websResponse(wp, wp->code, 0);
+./file.c:54:        if (websPageIsDirectory(wp)) {
+./file.c:59:            tmp = sfmt("%s/%s", wp->path, websIndex);
+./file.c:60:            websRedirect(wp, tmp);
+./file.c:64:        if (websPageOpen(wp, O_RDONLY | O_BINARY, 0666) < 0) {
+./file.c:70:            websError(wp, HTTP_CODE_NOT_FOUND, "Cannot open document for: %s", wp->path);
+./file.c:73:        if (websPageStat(wp, &info) < 0) {
+./file.c:74:            websError(wp, HTTP_CODE_NOT_FOUND, "Cannot stat page for URL");
+./file.c:82:        websSetStatus(wp, code);
+./file.c:83:        websWriteHeaders(wp, info.size, 0);
+./file.c:84:        if ((date = websGetDateString(&info)) != NULL) {
+./file.c:85:            websWriteHeader(wp, "Last-Modified", "%s", date);
+./file.c:88:        websWriteEndHeaders(wp);
+./file.c:94:            websDone(wp);
+./file.c:98:            websSetBackgroundWriter(wp, fileWriteEvent);
+./file.c:100:            websDone(wp);
+./file.c:118:    assert(websValid(wp));
+./file.c:121:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot get memory");
+./file.c:124:    while ((len = websPageReadData(wp, buf, ME_GOAHEAD_LIMIT_BUFFER)) > 0) {
+./file.c:125:        if ((wrote = websWriteSocket(wp, buf, len)) < 0) {
+./file.c:128:                websPageSeek(wp, -len, SEEK_CUR);
+./file.c:130:                /* Will call websDone below */
+./file.c:136:            websPageSeek(wp, - (len - wrote), SEEK_CUR);
+./file.c:142:        websDone(wp);
+./file.c:148:PUBLIC bool websProcessPutData(Webs *wp)
+./file.c:159:        websError(wp, HTTP_CODE_REQUEST_TOO_LARGE | WEBS_CLOSE, "Put file too large");
+./file.c:162:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR | WEBS_CLOSE, "Cannot write to file");
+./file.c:164:    websConsumeInput(wp, nbytes);
+./file.c:172:    wfree(websIndex);
+./file.c:173:    websIndex = NULL;
+./file.c:174:    wfree(websDocuments);
+./file.c:175:    websDocuments = NULL;
+./file.c:179:PUBLIC void websFileOpen()
+./file.c:181:    websIndex = sclone("index.html");
+./file.c:182:    websDefineHandler("file", 0, fileHandler, fileClose, 0);
+./file.c:189:PUBLIC char *websGetIndex()
+./file.c:191:    return websIndex;
+./file.c:195:PUBLIC char *websGetDocuments()
+./file.c:197:    return websDocuments;
+./file.c:204:PUBLIC void websSetIndex(char *page)
+./file.c:208:    if (websIndex) {
+./file.c:209:        wfree(websIndex);
+./file.c:211:    websIndex = sclone(page);
+./file.c:216:    Set the default web directory
+./file.c:218:PUBLIC void websSetDocuments(char *dir)
+./file.c:221:    if (websDocuments) {
+./file.c:222:        wfree(websDocuments);
+./file.c:224:    websDocuments = sclone(dir);
+./fs.c:15:    Symbol table for web pages and files
+./fs.c:23:PUBLIC int websFsOpen()
+./fs.c:31:    for (wip = websRomIndex; wip->path; wip++) {
+./fs.c:44:PUBLIC void websFsClose()
+./fs.c:52:PUBLIC int websOpenFile(char *path, int flags, int mode)
+./fs.c:61:    return (int) (wip - websRomIndex);
+./fs.c:68:PUBLIC void websCloseFile(int fd)
+./fs.c:78:PUBLIC int websStatFile(char *path, WebsFileInfo *sbuf)
+./fs.c:121:PUBLIC ssize websReadFile(int fd, char *buf, ssize size)
+./fs.c:130:    wip = &websRomIndex[fd];
+./fs.c:142:PUBLIC char *websReadWholeFile(char *path)
+./fs.c:148:    if (websStatFile(path, &sbuf) < 0) {
+./fs.c:152:    if ((fd = websOpenFile(path, O_RDONLY, 0)) < 0) {
+./fs.c:156:    websReadFile(fd, buf, sbuf.size);
+./fs.c:158:    websCloseFile(fd);
+./fs.c:163:Offset websSeekFile(int fd, Offset offset, int origin)
+./fs.c:172:    wip = &websRomIndex[fd];
+./fs.c:204:PUBLIC ssize websWriteFile(int fd, char *buf, ssize size)
+./goahead.c:34:static LRESULT CALLBACK websWindProc(HWND hwnd, UINT msg, UINT wp, LPARAM lp);
+./goahead.c:67:            websSetBackground(1);
+./goahead.c:71:            websSetDebug(1);
+./goahead.c:108:    if (websOpen(documents, route) < 0) {
+./goahead.c:113:    if (websLoad(auth) < 0) {
+./goahead.c:122:            if (websListen(endpoint) < 0) {
+./goahead.c:132:            if (websListen(endpoint) < 0) {
+./goahead.c:142:        If custom matching is required, use websSetRouteMatch. If authentication is required, use websSetRouteAuth.
+./goahead.c:144:    websAddRoute("/", "file", 0);
+./goahead.c:150:    if (websGetBackground()) {
+./goahead.c:157:    websServiceEvents(&finished);
+./goahead.c:159:    websClose();
+./goahead.c:178:    logmsg(2, "Host:               %s", websGetServer());
+./goahead.c:180:    logmsg(2, "Documents:          %s", websGetDocuments());
+./goahead.c:239:    inst = websGetInst();
+./goahead.c:247:    wc.lpfnWndProc   = (WNDPROC) websWindProc;
+./goahead.c:253:        Create a window just so we can have a taskbar to close this web server
+./goahead.c:278:    inst = websGetInst();
+./goahead.c:286:static LRESULT CALLBACK websWindProc(HWND hwnd, UINT msg, UINT wp, LPARAM lp)
+./goahead.c:322:static LRESULT CALLBACK websAboutProc(HWND hwndDlg, uint msg, uint wp, long lp)
+./goahead.h:115:            largc = websParseArgs(command, &largv[1], ME_MAX_ARGC - 1); \
+./goahead.h:124:PUBLIC int websParseArgs(char *args, char **argv, int maxArgc);
+./goahead.h:127:    PUBLIC void websSetInst(HINSTANCE inst);
+./goahead.h:128:    PUBLIC HINSTANCE websGetInst();
+./goahead.h:169:      #define trace(l, ...) if (((l) & WEBS_LEVEL_MASK) <= websGetLogLevel()) { traceProc(l, __VA_ARGS__); } else {}
+./goahead.h:227:#define websGetTraceLevel websGetLogLevel
+./goahead.h:280:PUBLIC int websGetLogLevel();
+./goahead.h:288:void websSetLogLevel(int level);
+./goahead.h:330:    #define websGetLogLevel() 0
+./goahead.h:834:PUBLIC void websSetMemNotifier(WebsMemNotifier cback);
+./goahead.h:1716:    websRestartEvent.
+./goahead.h:1724:PUBLIC int websStartEvent(int delay, WebsEventProc proc, void *data);
+./goahead.h:1728:    @param id Event id allocated by websStartEvent
+./goahead.h:1733:PUBLIC void websStopEvent(int id);
+./goahead.h:1737:    @param id Event id allocated by websStartEvent
+./goahead.h:1742:PUBLIC void websRestartEvent(int id, int delay);
+./goahead.h:1750:PUBLIC int websRunEvents();
+./goahead.h:1763:    @see websUploadOpen websLookupUpload websGetUpload
+./goahead.h:1778:PUBLIC void websUploadOpen();
+./goahead.h:1787:PUBLIC WebsHash websGetUpload(struct Webs *wp);
+./goahead.h:1797:PUBLIC WebsUpload *websLookupUpload(struct Webs *wp, char *key);
+./goahead.h:1932:    int             wid;                /**< Index into webs */
+./goahead.h:2061:    int             size;                   /**< Size of web page in bytes */
+./goahead.h:2071:    PUBLIC_DATA WebsRomIndex websRomIndex[];
+./goahead.h:2086:PUBLIC int websAccept(int sid, char *ipaddr, int port, int listenSid);
+./goahead.h:2093:PUBLIC void websActionOpen();
+./goahead.h:2098:    @return The webs[] handle index for the allocated Webs object
+./goahead.h:2102:PUBLIC int websAlloc(int sid);
+./goahead.h:2112:PUBLIC void websCancelTimeout(Webs *wp);
+./goahead.h:2121:PUBLIC int websCgiOpen();
+./goahead.h:2130:PUBLIC int websCgiHandler(Webs *wp);
+./goahead.h:2138:PUBLIC int websCgiPoll();
+./goahead.h:2146:    Close the core GoAhead web server module
+./goahead.h:2151:PUBLIC void websClose();
+./goahead.h:2155:    @param fd Open file handle returned by websOpenFile
+./goahead.h:2159:PUBLIC void websCloseFile(int fd);
+./goahead.h:2170:PUBLIC int websCompareVar(Webs *wp, char *var, char *value);
+./goahead.h:2181:PUBLIC void websConsumeInput(Webs *wp, ssize nbytes);
+./goahead.h:2191:PUBLIC char *websDecode64(char *str);
+./goahead.h:2202:PUBLIC char *websDecode64Block(char *str, ssize *len, int flags);
+./goahead.h:2213:PUBLIC void websDecodeUrl(char *decoded, char *input, ssize len);
+./goahead.h:2227:PUBLIC int websDefineHandler(char *name, WebsHandlerProc match, WebsHandlerProc service, WebsHandlerClose close, int flags);
+./goahead.h:2231:    @description A handler should call websDone() to complete the request.
+./goahead.h:2236:PUBLIC void websDone(Webs *wp);
+./goahead.h:2246:PUBLIC char *websEncode64(char *str);
+./goahead.h:2257:PUBLIC char *websEncode64Block(char *str, ssize len);
+./goahead.h:2266:PUBLIC char *websEscapeHtml(char *str);
+./goahead.h:2277:PUBLIC void websError(Webs *wp, int code, char *fmt, ...);
+./goahead.h:2286:PUBLIC char *websErrorMsg(int code);
+./goahead.h:2293:PUBLIC void websFileOpen();
+./goahead.h:2308:PUBLIC int websFlush(Webs *wp, bool block);
+./goahead.h:2311:    Free the webs request object.
+./goahead.h:2312:    @description Callers should call websDone to complete requests prior to invoking websFree.
+./goahead.h:2317:PUBLIC void websFree(Webs *wp);
+./goahead.h:2326:PUBLIC int websGetBackground();
+./goahead.h:2335:PUBLIC char *websGetCgiCommName();
+./goahead.h:2345:PUBLIC char *websGetCookie(Webs *wp);
+./goahead.h:2355:PUBLIC char *websGetDateString(WebsFileInfo *sbuf);
+./goahead.h:2364:PUBLIC int websGetDebug();
+./goahead.h:2374:PUBLIC char *websGetDir(Webs *wp);
+./goahead.h:2383:PUBLIC char *websGetDocuments();
+./goahead.h:2393:PUBLIC int websGetEof(Webs *wp);
+./goahead.h:2402:PUBLIC char *websGetExt(Webs *wp);
+./goahead.h:2412:PUBLIC char *websGetFilename(Webs *wp);
+./goahead.h:2423:PUBLIC char *websGetHost(Webs *wp);
+./goahead.h:2432:PUBLIC char *websGetIfaddr(Webs *wp);
+./goahead.h:2436:    @description The default index is "index.html" and can be updated via websSetIndex.
+./goahead.h:2441:PUBLIC char *websGetIndex();
+./goahead.h:2450:PUBLIC char *websGetMethod(Webs *wp);
+./goahead.h:2461:PUBLIC char *websGetPassword(Webs *wp);
+./goahead.h:2472:PUBLIC char *websGetPath(Webs *wp);
+./goahead.h:2481:PUBLIC int websGetPort(Webs *wp);
+./goahead.h:2491:PUBLIC char *websGetProtocol(Webs *wp);
+./goahead.h:2500:PUBLIC char *websGetQuery(Webs *wp);
+./goahead.h:2508:PUBLIC char *websGetServer();
+./goahead.h:2516:PUBLIC char *websGetServerUrl();
+./goahead.h:2524:PUBLIC char *websGetServerAddress();
+./goahead.h:2532:PUBLIC char *websGetServerAddressUrl();
+./goahead.h:2536:    @description This returns the request URI. This may be modified if the request is rewritten via websRewrite
+./goahead.h:2542:PUBLIC char *websGetUrl(Webs *wp);
+./goahead.h:2551:PUBLIC char *websGetUserAgent(Webs *wp);
+./goahead.h:2561:PUBLIC char *websGetUsername(Webs *wp);
+./goahead.h:2574:PUBLIC char *websGetVar(Webs *wp, char *name, char *defaultValue);
+./goahead.h:2585:PUBLIC int websListen(char *endpoint);
+./goahead.h:2594:PUBLIC char *websMD5(char *str);
+./goahead.h:2605:PUBLIC char *websMD5Block(char *buf, ssize length, char *prefix);
+./goahead.h:2615:PUBLIC char *websNormalizeUriPath(char *path);
+./goahead.h:2624:PUBLIC void websNoteRequestActivity(Webs *wp);
+./goahead.h:2628:    @description Called from websClose
+./goahead.h:2632:PUBLIC void websRuntimeClose();
+./goahead.h:2636:    @description Called from websOpen
+./goahead.h:2641:PUBLIC int websRuntimeOpen();
+./goahead.h:2644:    Open the web server
+./goahead.h:2645:    @description This initializes the web server and defines the documents directory.
+./goahead.h:2646:    @param documents Optional web documents directory. If set to null, the build time ME_GOAHEAD_DOCUMENTS value
+./goahead.h:2649:        authentication configuration files can be loaded via websLoad.
+./goahead.h:2655:PUBLIC int websOpen(char *documents, char *routes);
+./goahead.h:2659:    @description Called from websClose
+./goahead.h:2663:PUBLIC void websOsClose();
+./goahead.h:2667:    @description Called from websOpen
+./goahead.h:2672:PUBLIC int websOsOpen();
+./goahead.h:2675:    Open the web page document for the current request
+./goahead.h:2683:PUBLIC int websOpenFile(char *path, int flags, int mode);
+./goahead.h:2691:PUBLIC int websOptionsOpen();
+./goahead.h:2699:PUBLIC void websPageClose(Webs *wp);
+./goahead.h:2708:PUBLIC int websPageIsDirectory(Webs *wp);
+./goahead.h:2711:    Open a web page document for a request
+./goahead.h:2719:PUBLIC int websPageOpen(Webs *wp, int mode, int perms);
+./goahead.h:2730:PUBLIC ssize websPageReadData(Webs *wp, char *buf, ssize size);
+./goahead.h:2741:PUBLIC void websPageSeek(Webs *wp, Offset offset, int origin);
+./goahead.h:2751:PUBLIC int websPageStat(Webs *wp, WebsFileInfo *sbuf);
+./goahead.h:2762:PUBLIC bool websProcessPutData(Webs *wp);
+./goahead.h:2772:PUBLIC void websPump(Webs *wp);
+./goahead.h:2783:PUBLIC int websDefineAction(cchar *name, void *fun);
+./goahead.h:2787:    @param fd Open file handle returned by websOpenFile
+./goahead.h:2794:PUBLIC ssize websReadFile(int fd, char *buf, ssize size);
+./goahead.h:2803:PUBLIC char *websReadWholeFile(char *path);
+./goahead.h:2814:PUBLIC void websRedirect(Webs *wp, char *url);
+./goahead.h:2826:PUBLIC int websRedirectByStatus(Webs *wp, int status);
+./goahead.h:2839:PUBLIC void websResponse(Webs *wp, int status, char *msg);
+./goahead.h:2850:PUBLIC int websRewriteRequest(Webs *wp, char *url);
+./goahead.h:2858:PUBLIC int websFsOpen();
+./goahead.h:2865:PUBLIC void websFsClose();
+./goahead.h:2869:    @param fd Open file handle returned by websOpenFile
+./goahead.h:2876:PUBLIC Offset websSeekFile(int fd, Offset offset, int origin);
+./goahead.h:2886:PUBLIC int websStatFile(char *path, WebsFileInfo *sbuf);
+./goahead.h:2892:    @param documents Directory containing web documents to serve
+./goahead.h:2896:PUBLIC int websServer(char *endpoint, char *documents);
+./goahead.h:2906:PUBLIC void websServiceEvents(int *finished);
+./goahead.h:2914:PUBLIC void websSetBackground(int on);
+./goahead.h:2921:PUBLIC void websSetBackgroundWriter(Webs *wp, WebsWriteProc proc);
+./goahead.h:2924:    Flags for websSetCookie
+./goahead.h:2926:#define WEBS_COOKIE_SECURE   0x1         /**< Flag for websSetCookie for secure cookies (https only) */
+./goahead.h:2927:#define WEBS_COOKIE_HTTP     0x2         /**< Flag for websSetCookie for http cookies (http only) */
+./goahead.h:2943:PUBLIC void websSetCookie(Webs *wp, char *name, char *value, char *path, char *domain, int lifespan, int flags);
+./goahead.h:2951:PUBLIC void websSetDebug(int on);
+./goahead.h:2954:    Set the web documents directory
+./goahead.h:2955:    @description The web documents directory is used when resolving request URIs into filenames.
+./goahead.h:2960:PUBLIC void websSetDocuments(char *dir);
+./goahead.h:2968:PUBLIC void websSetEnv(Webs *wp);
+./goahead.h:2978:PUBLIC void websSetFormVars(Webs *wp);
+./goahead.h:2986:PUBLIC void websSetHost(char *host);
+./goahead.h:2994:PUBLIC void websSetIpAddr(char *ipaddr);
+./goahead.h:3004:PUBLIC void websSetIndex(char *filename);
+./goahead.h:3012:PUBLIC void websSetQueryVars(Webs *wp);
+./goahead.h:3021:PUBLIC void websSetStatus(Webs *wp, int status);
+./goahead.h:3030:PUBLIC void websSetTxLength(Webs *wp, ssize length);
+./goahead.h:3043:PUBLIC void websSetVarFmt(Webs *wp, char *name, char *fmt, ...);
+./goahead.h:3055:PUBLIC void websSetVar(Webs *wp, char *name, char *value);
+./goahead.h:3065:PUBLIC bool websTestVar(Webs *wp, char *name);
+./goahead.h:3076:PUBLIC char *websTempFile(char *dir, char *prefix);
+./goahead.h:3084:PUBLIC int websTimeOpen();
+./goahead.h:3091:PUBLIC void websTimeClose();
+./goahead.h:3118:PUBLIC int websParseDateTime(WebsTime *time, char *date, struct tm *defaults);
+./goahead.h:3136:PUBLIC int websUrlParse(char *url, char **buf, char **protocol, char **host, char **port, char **path, char **ext,
+./goahead.h:3140:    Test if a webs object is valid
+./goahead.h:3141:    @description After calling websDone, the websFree routine will have been called and the memory for the webs object
+./goahead.h:3142:        will be released. Call websValid to test a Webs object for validity.
+./goahead.h:3144:    @return True if the webs object is still valid and the request has not been completed.
+./goahead.h:3148:PUBLIC bool websValid(Webs *wp);
+./goahead.h:3160:PUBLIC char *websValidateUriPath(char *uri);
+./goahead.h:3173:PUBLIC bool websValidUriChars(char *uri);
+./goahead.h:3181:    @see websSetStatus
+./goahead.h:3184:PUBLIC void websWriteHeaders(Webs *wp, ssize contentLength, char *redirect);
+./goahead.h:3193:PUBLIC void websWriteEndHeaders(Webs *wp);
+./goahead.h:3197:    @description This routine writes a response header. It should be invoked after calling websWriteHeaders
+./goahead.h:3198:        to write the standard headers and before websWriteEndHeaders.
+./goahead.h:3199:        This routine differs from websWrite in that it traces header values to the log.
+./goahead.h:3208:PUBLIC int websWriteHeader(Webs *wp, char *key, char *fmt, ...);
+./goahead.h:3212:    @description The data is buffered and will be sent to the client when the buffer is full or websFlush is
+./goahead.h:3221:PUBLIC ssize websWrite(Webs *wp, char *fmt, ...);
+./goahead.h:3225:    @param fd Open file handle returned by websOpenFile
+./goahead.h:3232:PUBLIC ssize websWriteFile(int fd, char *buf, ssize size);
+./goahead.h:3236:    @description The data is buffered and will be sent to the client when the buffer is full or websFlush is
+./goahead.h:3245:PUBLIC ssize websWriteBlock(Webs *wp, char *buf, ssize size);
+./goahead.h:3259:PUBLIC ssize websWriteSocket(Webs *wp, char *buf, ssize size);
+./goahead.h:3269:PUBLIC bool websProcessUploadData(Webs *wp);
+./goahead.h:3277:PUBLIC void websFreeUpload(Webs *wp);
+./goahead.h:3288:PUBLIC bool websProcessCgiData(Webs *wp);
+./goahead.h:3302:PUBLIC int websGetRandomBytes(char *buf, ssize length, bool block);
+./goahead.h:3313:PUBLIC char *websCryptPassword(char *password, char *salt, int rounds);
+./goahead.h:3322:PUBLIC char *websMakeSalt(ssize size);
+./goahead.h:3333:PUBLIC char *websMakePassword(char *password, int saltLength, int rounds);
+./goahead.h:3338:    @param passwordHash Required password in hashed format previously computed by websMakePassword.
+./goahead.h:3343:PUBLIC bool websCheckPassword(char *plainTextPassword, char *passwordHash);
+./goahead.h:3352:PUBLIC char *websReadPassword(char *prompt);
+./goahead.h:3380:PUBLIC int websDefineJst(char *name, WebsJstProc fn);
+./goahead.h:3388:PUBLIC int websJstOpen();
+./goahead.h:3400:PUBLIC int websJstWrite(int jid, Webs *wp, int argc, char **argv);
+./goahead.h:3521:    Callback to parse authentication details submitted with the web request
+./goahead.h:3560:PUBLIC WebsRoute *websAddRoute(char *uri, char *handler, int pos);
+./goahead.h:3567:PUBLIC void websCloseRoute();
+./goahead.h:3576:PUBLIC int websLoad(char *path);
+./goahead.h:3583:PUBLIC int websOpenRoute();
+./goahead.h:3592:PUBLIC int websRemoveRoute(char *uri);
+./goahead.h:3603:PUBLIC void websRouteRequest(Webs *wp);
+./goahead.h:3607:    @description This routine will run the handler and route selected by #websRouteRequest.
+./goahead.h:3615:PUBLIC bool websRunRequest(Webs *wp);
+./goahead.h:3631:PUBLIC int websSetRouteMatch(WebsRoute *route, char *dir, char *protocol, WebsHash methods, WebsHash extensions,
+./goahead.h:3642:PUBLIC int websSetRouteAuth(WebsRoute *route, char *authType);
+./goahead.h:3683:PUBLIC WebsRole *websAddRole(char *role, WebsHash abilities);
+./goahead.h:3695:PUBLIC WebsUser *websAddUser(char *username, char *password, char *roles);
+./goahead.h:3705:PUBLIC bool websAuthenticate(Webs *wp);
+./goahead.h:3715:PUBLIC bool websCan(Webs *wp, WebsHash ability);
+./goahead.h:3722:PUBLIC void websCloseAuth();
+./goahead.h:3729:PUBLIC void websComputeAllUserAbilities();
+./goahead.h:3737:PUBLIC WebsVerify websGetPasswordStoreVerify();
+./goahead.h:3745:PUBLIC WebsHash websGetRoles();
+./goahead.h:3753:PUBLIC WebsHash websGetUsers();
+./goahead.h:3765:PUBLIC bool websLoginUser(Webs *wp, char *username, char *password);
+./goahead.h:3774:PUBLIC bool websLogoutUser(Webs *wp);
+./goahead.h:3783:PUBLIC WebsUser *websLookupUser(char *username);
+./goahead.h:3792:PUBLIC int websRemoveRole(char *role);
+./goahead.h:3801:PUBLIC int websRemoveUser(char *name);
+./goahead.h:3810:PUBLIC int websOpenAuth(int minimal);
+./goahead.h:3818:PUBLIC void websSetPasswordStoreVerify(WebsVerify verify);
+./goahead.h:3828:PUBLIC int websSetUserPassword(char *username, char *password);
+./goahead.h:3839:PUBLIC int websSetUserRoles(char *username, char *roles);
+./goahead.h:3848:PUBLIC bool websVerifyPasswordFromCustom(Webs *wp);
+./goahead.h:3857:PUBLIC bool websVerifyPasswordFromFile(Webs *wp);
+./goahead.h:3867:PUBLIC bool websVerifyPasswordFromPam(Webs *wp);
+./goahead.h:3892:PUBLIC WebsSession *websAllocSession(Webs *wp, char *id, int lifespan);
+./goahead.h:3903:PUBLIC WebsSession *websCreateSession(Webs *wp);
+./goahead.h:3906:    Destroy the webs session object
+./goahead.h:3912:PUBLIC void websDestroySession(Webs *wp);
+./goahead.h:3921:PUBLIC char *websGetSessionID(Webs *wp);
+./goahead.h:3931:PUBLIC WebsSession *websGetSession(Webs *wp, int create);
+./goahead.h:3942:PUBLIC char *websGetSessionVar(Webs *wp, char *name, char *defaultValue);
+./goahead.h:3951:PUBLIC void websRemoveSessionVar(Webs *wp, char *name);
+./goahead.h:3962:PUBLIC int websSetSessionVar(Webs *wp, char *name, char *value);
+./goahead.h:3981:    #define emfReschedCallback websRestartEvent
+./goahead.h:3982:    #define emfSchedCallback websStartEvent
+./goahead.h:3984:    #define emfSchedProcess websRunEvents
+./goahead.h:3985:    #define emfUnschedCallback websStopEvent
+./goahead.h:4052:    #define gtempnam websTempFile
+./goahead.h:4064:    #define websAspDefine websDefineJst
+./goahead.h:4065:    #define websAspOpen websJstOpen
+./goahead.h:4066:    #define websAspRequest websJstRequest
+./goahead.h:4067:    #define websFormDefine websDefineAction
+./goahead.h:4068:    #define websGetDefaultDir websGetDocuments
+./goahead.h:4069:    #define websGetDefaultPage websGetIndex
+./goahead.h:4071:    #define websGetRequestDir(wp) wp->dir
+./goahead.h:4072:    #define websGetRequestIpAddr(wp) wp->ipaddr
+./goahead.h:4073:    #define websGetRequestFilename(wp) wp->filename
+./goahead.h:4074:    #define websGetRequestFlags(wp) wp->flags
+./goahead.h:4075:    #define websGetRequestLpath(wp) wp->filename
+./goahead.h:4076:    #define websGetRequestPath(wp) wp->path
+./goahead.h:4077:    #define websGetRequestPassword(wp) wp->password
+./goahead.h:4078:    #define websGetRequestUserName(wp) wp->username
+./goahead.h:4079:    #define websGetRequestWritten(wp) wp->written
+./goahead.h:4081:    #define websSetDefaultDir websSetDocuments
+./goahead.h:4082:    #define websSetDefaultPage websSetIndex
+./goahead.h:4083:    #define websSetRequestLpath websSetRequestFilename
+./goahead.h:4084:    #define websSetRequestWritten(wp, nbytes) if (1) { wp->written = nbytes; } else {}
+./goahead.h:4085:    #define websTimeoutCancel websCancelTimeout
+./goahead.h:4086:    #define websWriteDataNonBlock websWriteRaw
+./goahead.h:4116:    typedef Webs *webs_t;
+./goahead.h:4118:    typedef Webs websType;
+./goahead.h:4120:    typedef WebsError websErrorType;
+./goahead.h:4129:    typedef WebsMime websMimeType;
+./goahead.h:4136:    PUBLIC void websFooter(Webs *wp);
+./goahead.h:4137:    PUBLIC void websHeader(Webs *wp);
+./goahead.h:4138:    PUBLIC int websPublish(char *prefix, char *path);
+./goahead.h:4139:    PUBLIC void websSetRequestFilename(Webs *wp, char *filename);
+./goahead.h:4140:    PUBLIC int websUrlHandlerDefine(char *prefix, char *dir, int arg, WebsLegacyHandlerProc handler, int flags);
+./goahead.h:4143:    typedef WebsRomIndex websRomIndexType;
+./goahead-mbedtls/goahead-mbedtls.c:72:    if (websGetLogLevel() >= mbedLogLevel) {
+./goahead-mbedtls/goahead-mbedtls.c:73:        mbedtls_debug_set_threshold(websGetLogLevel() - mbedLogLevel);
+./goahead-mbedtls/goahead-mbedtls.c:184:    if (websGetLogLevel() >= 5) {
+./goahead-mbedtls/goahead-mbedtls.c:475:    if ((buf = websReadWholeFile(path)) == 0) {
+./goahead-mbedtls/goahead-mbedtls.c:500:    if ((buf = websReadWholeFile(path)) == 0) {
+./goahead-mbedtls/goahead-mbedtls.c:524:    if ((buf = websReadWholeFile(path)) == 0) {
+./goahead-mbedtls/goahead-mbedtls.c:548:    if (level <= websGetLogLevel()) {
+./goahead-openssl/goahead-openssl.c:631:    if ((buf = websReadWholeFile(certFile)) == 0) {
+./goahead-openssl/goahead-openssl.c:681:    } else if ((buf = websReadWholeFile(keyFile)) == 0) {
+./http.c:4:    This module implements an embedded HTTP/1.1 web server. It supports
+./http.c:22:static int          websBackground;             /* Run as a daemon */
+./http.c:23:static int          websDebug;                  /* Run in debug mode and defeat timeouts */
+./http.c:28:static Webs         **webs;                     /* Open connection list head */
+./http.c:29:static WebsHash     websMime;                   /* Set of mime types */
+./http.c:30:static int          websMax;                    /* List size */
+./http.c:31:static char         websHost[ME_MAX_IP];        /* Host name for the server */
+./http.c:32:static char         websIpAddr[ME_MAX_IP];      /* IP address for the server */
+./http.c:33:static char         *websHostUrl = NULL;        /* URL to access server */
+./http.c:34:static char         *websIpAddrUrl = NULL;      /* URL to access server */
+./http.c:63:static WebsMime websMimeList[] = {
+./http.c:160:static WebsError websErrors[] = {
+./http.c:218:PUBLIC int websOpen(char *documents, char *routeFile)
+./http.c:222:    webs = NULL;
+./http.c:223:    websMax = 0;
+./http.c:225:    websOsOpen();
+./http.c:226:    websRuntimeOpen();
+./http.c:227:    websTimeOpen();
+./http.c:228:    websFsOpen();
+./http.c:243:    if (!websDebug) {
+./http.c:244:        pruneId = websStartEvent(WEBS_SESSION_PRUNE, (WebsEventProc) pruneSessions, 0);
+./http.c:247:        websSetDocuments(documents);
+./http.c:249:    if (websOpenRoute() < 0) {
+./http.c:253:    websCgiOpen();
+./http.c:255:    websOptionsOpen();
+./http.c:256:    websActionOpen();
+./http.c:257:    websFileOpen();
+./http.c:259:    websUploadOpen();
+./http.c:262:    websJstOpen();
+./http.c:265:    if (websOpenAuth(0) < 0) {
+./http.c:269:    if (websLoad(routeFile) < 0) {
+./http.c:275:    websMime = hashCreate(WEBS_HASH_INIT * 4);
+./http.c:276:    assert(websMime >= 0);
+./http.c:277:    for (mt = websMimeList; mt->type; mt++) {
+./http.c:278:        hashEnter(websMime, mt->ext, valueString(mt->type, 0), 0);
+./http.c:293:PUBLIC void websClose()
+./http.c:298:    websCloseRoute();
+./http.c:300:    websCloseAuth();
+./http.c:303:        websStopEvent(pruneId);
+./http.c:316:    for (i = websMax; webs && i >= 0; i--) {
+./http.c:317:        if ((wp = webs[i]) == NULL) {
+./http.c:324:        websFree(wp);
+./http.c:326:    wfree(websHostUrl);
+./http.c:327:    wfree(websIpAddrUrl);
+./http.c:328:    websIpAddrUrl = websHostUrl = NULL;
+./http.c:339:    websFsClose();
+./http.c:340:    hashFree(websMime);
+./http.c:343:    websTimeClose();
+./http.c:344:    websRuntimeClose();
+./http.c:345:    websOsClose();
+./http.c:457:    websPageClose(wp);
+./http.c:459:        websCancelTimeout(wp);
+./http.c:500:        websFreeUpload(wp);
+./http.c:506:PUBLIC int websAlloc(int sid)
+./http.c:511:    if ((wid = wallocObject(&webs, &websMax, sizeof(Webs))) < 0) {
+./http.c:514:    wp = webs[wid];
+./http.c:527:    assert(websValid(wp));
+./http.c:538:PUBLIC void websFree(Webs *wp)
+./http.c:541:    assert(websValid(wp));
+./http.c:544:    websMax = wfreeHandle(&webs, wp->wid);
+./http.c:546:    assert(websMax >= 0);
+./http.c:553:PUBLIC void websDone(Webs *wp)
+./http.c:558:    assert(websValid(wp));
+./http.c:573:        if (websFlush(wp, 0) == 0) {
+./http.c:590:    assert(websValid(wp));
+./http.c:606:PUBLIC int websListen(char *endpoint)
+./http.c:619:    if ((sid = socketListen(ip, port, websAccept, 0)) < 0) {
+./http.c:640:    if (!websHostUrl) {
+./http.c:642:            websHostUrl = sclone(ip ? ip : websIpAddr);
+./http.c:644:            websHostUrl = sfmt("%s:%d", ip ? ip : websIpAddr, port);
+./http.c:647:    if (!websIpAddrUrl) {
+./http.c:649:            websIpAddrUrl = sclone(websIpAddr);
+./http.c:651:            websIpAddrUrl = sfmt("%s:%d", websIpAddr, port);
+./http.c:662:PUBLIC int websAccept(int sid, char *ipaddr, int port, int listenSid)
+./http.c:675:        Allocate a new handle for this accepted connection. This will allocate a Webs structure in the webs[] list
+./http.c:677:    if ((wid = websAlloc(sid)) < 0) {
+./http.c:680:    wp = webs[wid];
+./http.c:700:    if (strcmp(wp->ipaddr, "127.0.0.1") == 0 || strcmp(wp->ipaddr, websIpAddr) == 0 ||
+./http.c:701:            strcmp(wp->ipaddr, websHost) == 0) {
+./http.c:723:    wp->timeout = websStartEvent(PARSE_TIMEOUT, checkTimeout, (void*) wp);
+./http.c:730:    The webs socket handler. Called in response to I/O. We just pass control to the relevant read or write handler. A
+./http.c:731:    pointer to the webs structure is passed as a (void*) in wptr.
+./http.c:740:    assert(websValid(wp));
+./http.c:741:    if (! websValid(wp)) {
+./http.c:751:        websFree(wp);
+./http.c:761:static ssize websRead(Webs *wp, char *buf, ssize len)
+./http.c:776:    The webs read handler. This is the primary read event loop. It uses a state machine to track progress while parsing
+./http.c:786:    assert(websValid(wp));
+./http.c:788:    if (!websValid(wp)) {
+./http.c:791:    websNoteRequestActivity(wp);
+./http.c:796:            websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot grow rxbuf");
+./http.c:797:            websPump(wp);
+./http.c:801:    if ((nbytes = websRead(wp, (char*) rxbuf->endp, ME_GOAHEAD_LIMIT_BUFFER)) > 0) {
+./http.c:807:        websPump(wp);
+./http.c:815:                websError(wp, HTTP_CODE_COMMS_ERROR, "Read error: connection lost");
+./http.c:816:                websPump(wp);
+./http.c:830:PUBLIC void websPump(Webs *wp)
+./http.c:843:            if (!websRunRequest(wp)) {
+./http.c:845:                websRouteRequest(wp);
+./http.c:853:            /* Nothing to do until websDone is called */
+./http.c:876:            websError(wp, HTTP_CODE_REQUEST_TOO_LARGE | WEBS_CLOSE, "Header too large");
+./http.c:900:    websRouteRequest(wp);
+./http.c:908:            wp->cgiStdin = websGetCgiCommName();
+./http.c:910:                websError(wp, HTTP_CODE_NOT_FOUND | WEBS_CLOSE, "Cannot open CGI file");
+./http.c:921:        wp->putname = websTempFile(ME_GOAHEAD_PUT_DIR, "put");
+./http.c:924:            websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot create the put URI");
+./http.c:943:    assert(websValid(wp));
+./http.c:950:        websError(wp, HTTP_CODE_NOT_FOUND | WEBS_CLOSE, "Bad HTTP request");
+./http.c:957:        websError(wp, HTTP_CODE_BAD_REQUEST | WEBS_CLOSE, "Bad HTTP request");
+./http.c:961:        websError(wp, HTTP_CODE_REQUEST_URL_TOO_LARGE | WEBS_CLOSE, "URI too big");
+./http.c:965:    if (websGetLogLevel() == 2) {
+./http.c:970:        Parse the URL and store all the various URL components. websUrlParse returns an allocated buffer in buf which we
+./http.c:975:    if (websUrlParse(url, &buf, NULL, &host, &port, &path, &ext, NULL, &query) < 0) {
+./http.c:977:        websError(wp, HTTP_CODE_BAD_REQUEST | WEBS_CLOSE | WEBS_NOLOG, "Bad URL");
+./http.c:980:    if ((wp->path = websValidateUriPath(path)) == 0) {
+./http.c:981:        websError(wp, HTTP_CODE_BAD_REQUEST | WEBS_CLOSE | WEBS_NOLOG, "Bad URL");
+./http.c:989:    wp->filename = sfmt("%s%s", websGetDocuments(), wp->path);
+./http.c:999:        websError(wp, WEBS_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
+./http.c:1019:    assert(websValid(wp));
+./http.c:1028:            websError(wp, HTTP_CODE_REQUEST_TOO_LARGE | WEBS_CLOSE, "Too many headers");
+./http.c:1038:            websError(wp, HTTP_CODE_BAD_REQUEST | WEBS_CLOSE, "Bad header format");
+./http.c:1056:        if ((prior = websGetVar(wp, upperKey, 0)) != 0) {
+./http.c:1058:            websSetVar(wp, upperKey, combined);
+./http.c:1061:            websSetVar(wp, upperKey, value);
+./http.c:1092:                    websError(wp, HTTP_CODE_REQUEST_TOO_LARGE | WEBS_CLOSE, "Too big");
+./http.c:1097:                    websError(wp, HTTP_CODE_REQUEST_TOO_LARGE | WEBS_CLOSE, "Too big");
+./http.c:1129:                websError(wp, WEBS_CLOSE | HTTP_CODE_BAD_REQUEST, "Bad host header");
+./http.c:1139:            websParseDateTime(&wp->since, value, 0);
+./http.c:1177:        canProceed = websProcessUploadData(wp);
+./http.c:1185:        canProceed = websProcessPutData(wp);
+./http.c:1193:        canProceed = websProcessCgiData(wp);
+./http.c:1214:PUBLIC void websConsumeInput(Webs *wp, ssize nbytes)
+./http.c:1273:                websError(wp, WEBS_CLOSE | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
+./http.c:1278:                websError(wp, WEBS_CLOSE | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
+./http.c:1290:                    websError(wp, WEBS_CLOSE | HTTP_CODE_BAD_REQUEST, "Bad final chunk specification");
+./http.c:1313:                websError(wp, HTTP_CODE_REQUEST_TOO_LARGE | WEBS_CLOSE, "Too big");
+./http.c:1334:PUBLIC void websServiceEvents(int *finished)
+./http.c:1347:        delay = websCgiPoll();
+./http.c:1351:        nextEvent = websRunEvents();
+./http.c:1371:            websDecodeUrl(keyword, keyword, strlen(keyword));
+./http.c:1372:            websDecodeUrl(value, value, strlen(value));
+./http.c:1380:            if ((prior = websGetVar(wp, keyword, NULL)) != 0) {
+./http.c:1381:                websSetVarFmt(wp, keyword, "%s %s", prior, value);
+./http.c:1383:                websSetVar(wp, keyword, value);
+./http.c:1395:PUBLIC void websSetEnv(Webs *wp)
+./http.c:1398:    assert(websValid(wp));
+./http.c:1400:    websSetVar(wp, "AUTH_TYPE", wp->authType);
+./http.c:1401:    websSetVarFmt(wp, "CONTENT_LENGTH", "%d", wp->rxLen);
+./http.c:1402:    websSetVar(wp, "CONTENT_TYPE", wp->contentType);
+./http.c:1404:        websSetVar(wp, "DOCUMENT_ROOT", wp->route->dir);
+./http.c:1406:    websSetVar(wp, "GATEWAY_INTERFACE", "CGI/1.1");
+./http.c:1407:    websSetVar(wp, "PATH_INFO", wp->path);
+./http.c:1408:    websSetVar(wp, "PATH_TRANSLATED", wp->filename);
+./http.c:1409:    websSetVar(wp, "QUERY_STRING", wp->query);
+./http.c:1410:    websSetVar(wp, "REMOTE_ADDR", wp->ipaddr);
+./http.c:1411:    websSetVar(wp, "REMOTE_USER", wp->username);
+./http.c:1412:    websSetVar(wp, "REMOTE_HOST", wp->ipaddr);
+./http.c:1413:    websSetVar(wp, "REQUEST_METHOD", wp->method);
+./http.c:1414:    websSetVar(wp, "REQUEST_TRANSPORT", wp->protocol);
+./http.c:1415:    websSetVar(wp, "REQUEST_URI", wp->path);
+./http.c:1416:    websSetVar(wp, "SERVER_ADDR", wp->ifaddr);
+./http.c:1417:    websSetVar(wp, "SERVER_HOST", websHost);
+./http.c:1418:    websSetVar(wp, "SERVER_NAME", websHost);
+./http.c:1419:    websSetVarFmt(wp, "SERVER_PORT", "%d", wp->port);
+./http.c:1420:    websSetVar(wp, "SERVER_PROTOCOL", wp->protoVersion);
+./http.c:1421:    websSetVar(wp, "SERVER_URL", websHostUrl);
+./http.c:1422:    websSetVarFmt(wp, "SERVER_SOFTWARE", "GoAhead/%s", ME_VERSION);
+./http.c:1426:PUBLIC void websSetFormVars(Webs *wp)
+./http.c:1440:PUBLIC void websSetQueryVars(Webs *wp)
+./http.c:1455:    Define a webs (CGI) variable for this connection. Also create in relevant scripting engines. Note: the incoming
+./http.c:1458:PUBLIC void websSetVarFmt(Webs *wp, char *var, char *fmt, ...)
+./http.c:1463:    assert(websValid(wp));
+./http.c:1478:PUBLIC void websSetVar(Webs *wp, char *var, char *value)
+./http.c:1482:    assert(websValid(wp));
+./http.c:1495:    Return TRUE if a webs variable exists for this connection.
+./http.c:1497:PUBLIC bool websTestVar(Webs *wp, char *var)
+./http.c:1501:    assert(websValid(wp));
+./http.c:1515:    Get a webs variable but return a default value if string not found.  Note, defaultGetValue can be NULL to permit
+./http.c:1518:PUBLIC char *websGetVar(Webs *wp, char *var, char *defaultGetValue)
+./http.c:1522:    assert(websValid(wp));
+./http.c:1538:    Return TRUE if a webs variable is set to a given value
+./http.c:1540:PUBLIC int websCompareVar(Webs *wp, char *var, char *value)
+./http.c:1542:    assert(websValid(wp));
+./http.c:1545:    if (strcmp(value, websGetVar(wp, var, " __UNDEF__ ")) == 0) {
+./http.c:1555:PUBLIC void websCancelTimeout(Webs *wp)
+./http.c:1557:    assert(websValid(wp));
+./http.c:1560:        websStopEvent(wp->timeout);
+./http.c:1569:PUBLIC void websResponse(Webs *wp, int code, char *message)
+./http.c:1573:    assert(websValid(wp));
+./http.c:1574:    websSetStatus(wp, code);
+./http.c:1578:        websWriteHeaders(wp, len + 2, 0);
+./http.c:1579:        websWriteEndHeaders(wp);
+./http.c:1580:        websWriteBlock(wp, message, len);
+./http.c:1581:        websWriteBlock(wp, "\r\n", 2);
+./http.c:1583:        websWriteHeaders(wp, 0, 0);
+./http.c:1584:        websWriteEndHeaders(wp);
+./http.c:1586:    websDone(wp);
+./http.c:1603:    Redirect the user to another webs page
+./http.c:1605:PUBLIC void websRedirect(Webs *wp, char *uri)
+./http.c:1613:    assert(websValid(wp));
+./http.c:1618:    if ((host = (wp->host ? wp->host : websHostUrl)) != 0) {
+./http.c:1659:    websSetStatus(wp, HTTP_CODE_MOVED_TEMPORARILY);
+./http.c:1660:    websWriteHeaders(wp, len + 2, uri);
+./http.c:1661:    websWriteEndHeaders(wp);
+./http.c:1662:    websWriteBlock(wp, message, len);
+./http.c:1663:    websWriteBlock(wp, "\r\n", 2);
+./http.c:1664:    websDone(wp);
+./http.c:1670:PUBLIC int websRedirectByStatus(Webs *wp, int status)
+./http.c:1685:        websRedirect(wp, uri);
+./http.c:1688:            websError(wp, status, "Access Denied. User not logged in.");
+./http.c:1690:            websError(wp, status, 0);
+./http.c:1701:PUBLIC char *websEscapeHtml(char *html)
+./http.c:1761:PUBLIC int websWriteHeader(Webs *wp, char *key, char *fmt, ...)
+./http.c:1766:    assert(websValid(wp));
+./http.c:1773:        if (websWriteBlock(wp, key, strlen(key)) < 0) {
+./http.c:1776:        if (websWriteBlock(wp, ": ", 2) < 0) {
+./http.c:1784:            error("websWrite lost data, buffer overflow");
+./http.c:1790:        if (websWriteBlock(wp, buf, strlen(buf)) < 0) {
+./http.c:1794:        if (websWriteBlock(wp, "\r\n", 2) != 2) {
+./http.c:1803:PUBLIC void websSetStatus(Webs *wp, int code)
+./http.c:1816:PUBLIC void websWriteHeaders(Webs *wp, ssize length, char *location)
+./http.c:1821:    assert(websValid(wp));
+./http.c:1829:        websWriteHeader(wp, NULL, "%s %d %s", protoVersion, wp->code, websErrorMsg(wp->code));
+./http.c:1831:        websWriteHeader(wp, "Server", "GoAhead-http");
+./http.c:1833:        if ((date = websGetDateString(NULL)) != NULL) {
+./http.c:1834:            websWriteHeader(wp, "Date", "%s", date);
+./http.c:1838:            websWriteHeader(wp, "WWW-Authenticate", "%s", wp->authResponse);
+./http.c:1842:                websWriteHeader(wp, "Content-Length", "%d", (int) length);
+./http.c:1845:                websWriteHeader(wp, "Content-Length", "%d", (int) length);
+./http.c:1850:            websWriteHeader(wp, "Transfer-Encoding", "chunked");
+./http.c:1853:            websWriteHeader(wp, "Connection", "keep-alive");
+./http.c:1855:            websWriteHeader(wp, "Connection", "close");
+./http.c:1858:            websWriteHeader(wp, "Location", "%s", location);
+./http.c:1859:        } else if ((key = hashLookup(websMime, wp->ext)) != 0) {
+./http.c:1860:            websWriteHeader(wp, "Content-Type", "%s", key->content.value.string);
+./http.c:1863:            websWriteHeader(wp, "Set-Cookie", "%s", wp->responseCookie);
+./http.c:1864:            websWriteHeader(wp, "Cache-Control", "%s", "no-cache=\"set-cookie\"");
+./http.c:1870:                websWriteHeader(wp, "Cache-Control", "public, max-age=%d", ME_GOAHEAD_CLIENT_CACHE_LIFESPAN);
+./http.c:1877:            websWriteHeader(wp, "X-Frame-Options", "%s", ME_GOAHEAD_XFRAME_HEADER);
+./http.c:1884:PUBLIC void websWriteEndHeaders(Webs *wp)
+./http.c:1891:        websWriteBlock(wp, "\r\n", 2);
+./http.c:1900:PUBLIC void websSetTxLength(Webs *wp, ssize length)
+./http.c:1910:PUBLIC ssize websWrite(Webs *wp, char *fmt, ...)
+./http.c:1916:    assert(websValid(wp));
+./http.c:1924:        error("websWrite lost data, buffer overflow");
+./http.c:1929:        rc = websWriteBlock(wp, buf, strlen(buf));
+./http.c:1940:PUBLIC ssize websWriteSocket(Webs *wp, char *buf, ssize size)
+./http.c:1962:    websNoteRequestActivity(wp);
+./http.c:2040:PUBLIC int websFlush(Webs *wp, bool block)
+./http.c:2051:        trace(6, "websFlush chunking finalized %d", wp->finalized);
+./http.c:2053:            trace(6, "websFlush: write chunk trailer");
+./http.c:2059:    trace(6, "websFlush: buflen %d", bufLen(op));
+./http.c:2062:        if ((written = websWriteSocket(wp, op->servp, nbytes)) < 0) {
+./http.c:2079:        trace(6, "websFlush: wrote %d to socket", written);
+./http.c:2084:    assert(websValid(wp));
+./http.c:2101:    Respond to a writable event. First write any tx buffer by calling websFlush.
+./http.c:2103:    Calls websPump() to advance state.
+./http.c:2111:        websFlush(wp, 0);
+./http.c:2117:        websPump(wp);
+./http.c:2122:PUBLIC void websSetBackgroundWriter(Webs *wp, WebsWriteProc proc)
+./http.c:2133:        websFlush(wp, 0);
+./http.c:2146:    Write a block of data of length to the user's browser. Output is buffered and flushed via websFlush.
+./http.c:2150:PUBLIC ssize websWriteBlock(Webs *wp, char *buf, ssize size)
+./http.c:2156:    assert(websValid(wp));
+./http.c:2171:            if (websFlush(wp, 1) < 0) {
+./http.c:2195:PUBLIC void websDecodeUrl(char *decoded, char *input, ssize len)
+./http.c:2295:    assert(websValid(wp));
+./http.c:2298:    if (websDebug) {
+./http.c:2299:        websRestartEvent(id, (int) WEBS_TIMEOUT);
+./http.c:2304:        websFree(wp);
+./http.c:2310:                websError(wp, HTTP_CODE_REQUEST_TIMEOUT, "Request exceeded timeout");
+./http.c:2312:                websError(wp, HTTP_CODE_REQUEST_TIMEOUT, "Idle connection closed");
+./http.c:2317:        websFree(wp);
+./http.c:2323:    websRestartEvent(id, delay);
+./http.c:2343:    websSetIpAddr(ipaddr);
+./http.c:2344:    websSetHost(ipaddr);
+./http.c:2350:    websSetIpAddr(ipaddr);
+./http.c:2351:    websSetHost(ipaddr);
+./http.c:2361:    websSetIpAddr(ipaddr);
+./http.c:2362:    websSetHost(ipaddr);
+./http.c:2375:    websSetIpAddr(ipaddr);
+./http.c:2376:    websSetHost(ipaddr);
+./http.c:2387:    websSetIpAddr(ipaddr);
+./http.c:2388:    websSetHost(ipaddr);
+./http.c:2395:PUBLIC void websSetHost(char *host)
+./http.c:2397:    scopy(websHost, sizeof(websHost), host);
+./http.c:2401:PUBLIC void websSetHostUrl(char *url)
+./http.c:2405:    wfree(websHostUrl);
+./http.c:2406:    websHostUrl = sclone(url);
+./http.c:2410:PUBLIC void websSetIpAddr(char *ipaddr)
+./http.c:2413:    scopy(websIpAddr, sizeof(websIpAddr), ipaddr);
+./http.c:2418:PUBLIC void websSetRequestFilename(Webs *wp, char *filename)
+./http.c:2420:    assert(websValid(wp));
+./http.c:2425:    websSetVar(wp, "PATH_TRANSLATED", wp->filename);
+./http.c:2430:PUBLIC int websRewriteRequest(Webs *wp, char *url)
+./http.c:2439:    if (websUrlParse(url, &buf, NULL, NULL, NULL, &path, NULL, NULL, NULL) < 0) {
+./http.c:2451:PUBLIC bool websValid(Webs *wp)
+./http.c:2455:    for (wid = 0; wid < websMax; wid++) {
+./http.c:2456:        if (wp == webs[wid]) {
+./http.c:2467:PUBLIC char *websGetDateString(WebsFileInfo *sbuf)
+./http.c:2499:PUBLIC void websNoteRequestActivity(Webs *wp)
+./http.c:2514:PUBLIC bool websValidUriChars(char *uri)
+./http.c:2533:PUBLIC int websUrlParse(char *url, char **pbuf, char **pscheme, char **phost, char **pport, char **ppath, char **pext,
+./http.c:2696:PUBLIC char *websNormalizeUriPath(char *pathArg)
+./http.c:2777:PUBLIC char *websValidateUriPath(char *uri)
+./http.c:2782:    if (!websValidUriChars(uri)) {
+./http.c:2785:    websDecodeUrl(uri, uri, -1);
+./http.c:2786:    if ((uri = websNormalizeUriPath(uri)) == 0) {
+./http.c:2798:    Open a web page. filename is the local filename. path is the URL path name.
+./http.c:2800:PUBLIC int websPageOpen(Webs *wp, int mode, int perm)
+./http.c:2802:    assert(websValid(wp));
+./http.c:2803:    return (wp->docfd = websOpenFile(wp->filename, mode, perm));
+./http.c:2807:PUBLIC void websPageClose(Webs *wp)
+./http.c:2809:    assert(websValid(wp));
+./http.c:2812:        websCloseFile(wp->docfd);
+./http.c:2818:PUBLIC int websPageStat(Webs *wp, WebsFileInfo *sbuf)
+./http.c:2820:    return websStatFile(wp->filename, sbuf);
+./http.c:2824:PUBLIC int websPageIsDirectory(Webs *wp)
+./http.c:2828:    if (websStatFile(wp->filename, &sbuf) >= 0) {
+./http.c:2836:    Read a web page. Returns the number of _bytes_ read. len is the size of buf, in bytes.
+./http.c:2838:PUBLIC ssize websPageReadData(Webs *wp, char *buf, ssize nBytes)
+./http.c:2841:    assert(websValid(wp));
+./http.c:2842:    return websReadFile(wp->docfd, buf, nBytes);
+./http.c:2849:PUBLIC void websPageSeek(Webs *wp, Offset offset, int origin)
+./http.c:2851:    assert(websValid(wp));
+./http.c:2853:    websSeekFile(wp->docfd, offset, origin);
+./http.c:2857:PUBLIC void websSetCookie(Webs *wp, char *name, char *value, char *path, char *cookieDomain, int lifespan, int flags)
+./http.c:2957:PUBLIC int websGetBackground()
+./http.c:2959:    return websBackground;
+./http.c:2963:PUBLIC void websSetBackground(int on)
+./http.c:2965:    websBackground = on;
+./http.c:2969:PUBLIC int websGetDebug()
+./http.c:2971:    return websDebug;
+./http.c:2975:PUBLIC void websSetDebug(int on)
+./http.c:2977:    websDebug = on;
+./http.c:2988:    return websMD5Block(idBuf, slen(idBuf), "::webs.session::");
+./http.c:2992:PUBLIC void websDestroySession(Webs *wp)
+./http.c:2994:    websGetSession(wp, 0);
+./http.c:3002:PUBLIC WebsSession *websCreateSession(Webs *wp)
+./http.c:3004:    websDestroySession(wp);
+./http.c:3005:    return websGetSession(wp, 1);
+./http.c:3009:WebsSession *websAllocSession(Webs *wp, char *id, int lifespan)
+./http.c:3047:WebsSession *websGetSession(Webs *wp, int create)
+./http.c:3055:        id = websGetSessionID(wp);
+./http.c:3067:            if ((wp->session = websAllocSession(wp, id, ME_GOAHEAD_LIMIT_SESSION_LIFE)) == 0) {
+./http.c:3076:            websSetCookie(wp, WEBS_SESSION, wp->session->id, "/", NULL, 0, 0);
+./http.c:3089:static char *websParseCookie(Webs *wp, char *name)
+./http.c:3136:PUBLIC char *websGetSessionID(Webs *wp)
+./http.c:3143:    return websParseCookie(wp, WEBS_SESSION);
+./http.c:3147:PUBLIC char *websGetSessionVar(Webs *wp, char *key, char *defaultValue)
+./http.c:3155:    if ((sp = websGetSession(wp, 1)) != 0) {
+./http.c:3165:PUBLIC void websRemoveSessionVar(Webs *wp, char *key)
+./http.c:3172:    if ((sp = websGetSession(wp, 1)) != 0) {
+./http.c:3178:PUBLIC int websSetSessionVar(Webs *wp, char *key, char *value)
+./http.c:3186:    if ((sp = websGetSession(wp, 1)) == 0) {
+./http.c:3219:    websRestartEvent(pruneId, WEBS_SESSION_PRUNE);
+./http.c:3244:PUBLIC int websServer(char *endpoint, char *documents)
+./http.c:3248:    if (websOpen(documents, "route.txt") < 0) {
+./http.c:3252:    if (websLoad("auth.txt") < 0) {
+./http.c:3256:    if (websListen(endpoint) < 0) {
+./http.c:3259:    websServiceEvents(&finished);
+./http.c:3260:    websClose();
+./http.c:3304:PUBLIC void websError(Webs *wp, int code, char *fmt, ...)
+./http.c:3328:    encoded = websEscapeHtml(wp->url);
+./http.c:3345:</html>\r\n", websErrorMsg(code), websErrorMsg(code));
+./http.c:3349:    websResponse(wp, code, buf);
+./http.c:3357:PUBLIC char *websErrorMsg(int code)
+./http.c:3363:    for (ep = websErrors; ep->code; ep++) {
+./http.c:3368:    return websErrorMsg(HTTP_CODE_INTERNAL_SERVER_ERROR);
+./http.c:3375:PUBLIC char *websGetCookie(Webs *wp) { return wp->cookie; }
+./http.c:3376:PUBLIC char *websGetDir(Webs *wp) { return wp->route && wp->route->dir ? wp->route->dir : websGetDocuments(); }
+./http.c:3377:PUBLIC int  websGetEof(Webs *wp) { return wp->eof; }
+./http.c:3378:PUBLIC char *websGetExt(Webs *wp) { return wp->ext; }
+./http.c:3379:PUBLIC char *websGetFilename(Webs *wp) { return wp->filename; }
+./http.c:3380:PUBLIC char *websGetHost(Webs *wp) { return wp->host; }
+./http.c:3381:PUBLIC char *websGetIfaddr(Webs *wp) { return wp->ifaddr; }
+./http.c:3382:PUBLIC char *websGetIpaddr(Webs *wp) { return wp->ipaddr; }
+./http.c:3383:PUBLIC char *websGetMethod(Webs *wp) { return wp->method; }
+./http.c:3384:PUBLIC char *websGetPassword(Webs *wp) { return wp->password; }
+./http.c:3385:PUBLIC char *websGetPath(Webs *wp) { return wp->path; }
+./http.c:3386:PUBLIC int   websGetPort(Webs *wp) { return wp->port; }
+./http.c:3387:PUBLIC char *websGetProtocol(Webs *wp) { return wp->protocol; }
+./http.c:3388:PUBLIC char *websGetQuery(Webs *wp) { return wp->query; }
+./http.c:3389:PUBLIC char *websGetServer() { return websHost; }
+./http.c:3390:PUBLIC char *websGetServerAddress() { return websIpAddr; }
+./http.c:3391:PUBLIC char *websGetServerAddressUrl() { return websIpAddrUrl; }
+./http.c:3392:PUBLIC char *websGetServerUrl() { return websHostUrl; }
+./http.c:3393:PUBLIC char *websGetUrl(Webs *wp) { return wp->url; }
+./http.c:3394:PUBLIC char *websGetUserAgent(Webs *wp) { return wp->userAgent; }
+./http.c:3395:PUBLIC char *websGetUsername(Webs *wp) { return wp->username; }
+./jst.c:15:static WebsHash websJstFunctions = -1;  /* Symbol table of functions */
+./jst.c:24:    Process requests and expand all scripting commands. We read the entire web page into memory and then process. If
+./jst.c:25:    you have really big documents, it is better to make them plain HTML files rather than Javascript web pages.
+./jst.c:35:    assert(websValid(wp));
+./jst.c:40:    if ((jid = jsOpenEngine(wp->vars, websJstFunctions)) < 0) {
+./jst.c:41:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot create JavaScript engine");
+./jst.c:46:    if (websPageStat(wp, &sbuf) < 0) {
+./jst.c:47:        websError(wp, HTTP_CODE_NOT_FOUND, "Cannot stat %s", wp->filename);
+./jst.c:50:    if (websPageOpen(wp, O_RDONLY | O_BINARY, 0666) < 0) {
+./jst.c:51:        websError(wp, HTTP_CODE_NOT_FOUND, "Cannot open URL: %s", wp->filename);
+./jst.c:55:        Create a buffer to hold the web page in-memory
+./jst.c:59:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot get memory");
+./jst.c:64:    if (websPageReadData(wp, buf, len) != len) {
+./jst.c:65:        websError(wp, HTTP_CODE_NOT_FOUND, "Cannot read %s", wp->filename);
+./jst.c:68:    websPageClose(wp);
+./jst.c:69:    websWriteHeaders(wp, (ssize) -1, 0);
+./jst.c:70:    websWriteHeader(wp, "Pragma", "no-cache");
+./jst.c:71:    websWriteHeader(wp, "Cache-Control", "no-cache");
+./jst.c:72:    websWriteEndHeaders(wp);
+./jst.c:79:        websWriteBlock(wp, last, (nextp - last));
+./jst.c:121:                         Be careful if the user has called websError() already.
+./jst.c:124:                    if (websValid(wp)) {
+./jst.c:126:                            websWrite(wp, "<h2><b>Javascript Error: %s</b></h2>\n", result);
+./jst.c:127:                            websWrite(wp, "<pre>%s</pre>", nextp);
+./jst.c:130:                            websWrite(wp, "<h2><b>Javascript Error</b></h2>\n%s\n", nextp);
+./jst.c:132:                        websWrite(wp, "</body></html>\n");
+./jst.c:140:            websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Unterminated script in %s: \n", wp->filename);
+./jst.c:148:        websWriteBlock(wp, last, strlen(last));
+./jst.c:155:    if (websValid(wp)) {
+./jst.c:156:        websPageClose(wp);
+./jst.c:161:    websDone(wp);
+./jst.c:169:    if (websJstFunctions != -1) {
+./jst.c:170:        hashFree(websJstFunctions);
+./jst.c:171:        websJstFunctions = -1;
+./jst.c:176:PUBLIC int websJstOpen()
+./jst.c:178:    websJstFunctions = hashCreate(WEBS_HASH_INIT * 2);
+./jst.c:179:    websDefineJst("write", websJstWrite);
+./jst.c:180:    websDefineHandler("jst", 0, jstHandler, closeJst, 0);
+./jst.c:188:PUBLIC int websDefineJst(char *name, WebsJstProc fn)
+./jst.c:190:    return jsSetGlobalFunctionDirect(websJstFunctions, name, (JsProc) fn);
+./jst.c:197:PUBLIC int websJstWrite(int jid, Webs *wp, int argc, char **argv)
+./jst.c:201:    assert(websValid(wp));
+./jst.c:205:        if (websWriteBlock(wp, argv[i], strlen(argv[i])) < 0) {
+./jst.c:209:            if (websWriteBlock(wp, " ", 1) < 0) {
+./mbedtls/mbedtls.c:12759: *  http://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2005-2643
+./options.c:23:        websSetStatus(wp, HTTP_CODE_OK);
+./options.c:24:        websWriteHeaders(wp, 0, 0);
+./options.c:25:        websWriteHeader(wp, "Allow", "DELETE,GET,HEAD,OPTIONS,POST,PUT,TRACE");
+./options.c:26:        websWriteEndHeaders(wp);
+./options.c:27:        websDone(wp);
+./options.c:31:        websSetStatus(wp, HTTP_CODE_OK);
+./options.c:32:        websWriteHeaders(wp, 0, 0);
+./options.c:33:        websWriteEndHeaders(wp);
+./options.c:34:        websWrite(wp, "%s %s %s\r\n", wp->method, wp->url, wp->protoVersion);
+./options.c:35:        websDone(wp);
+./options.c:39:    websResponse(wp, HTTP_CODE_NOT_ACCEPTABLE, "Unsupported method");
+./options.c:44:PUBLIC int websOptionsOpen()
+./options.c:46:    websDefineHandler("options", 0, optionsHandler, 0, 0);
+./osdep.c:20:PUBLIC int websOsOpen()
+./osdep.c:36:PUBLIC void websOsClose()
+./osdep.c:44:PUBLIC char *websTempFile(char *dir, char *prefix)
+./osdep.c:133:PUBLIC void websSetInst(HINSTANCE inst)
+./osdep.c:139:HINSTANCE websGetInst()
+./rom.c:3:   Compiled by webcomp: Mon Jan 14 14:13:54 2013
+./rom.c:9:WebsRomIndex websRomIndex[] = {
+./rom.c:13:WebsRomIndex websRomIndex[] = {
+./rom.files:1:web
+./rom.files:2:web/favicon.ico
+./rom.files:3:web/index.html
+./route.c:41:PUBLIC void websRouteRequest(Webs *wp)
+./route.c:108:        if (route->authType && !websAuthenticate(wp)) {
+./route.c:111:        if (route->abilities >= 0 && !websCan(wp, route->abilities)) {
+./route.c:134:    websError(wp, HTTP_CODE_NOT_FOUND, "Cannot find suitable route for request.");
+./route.c:139:PUBLIC bool websRunRequest(Webs *wp)
+./route.c:150:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Configuration error - no route for request");
+./route.c:154:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Configuration error - no handler for route");
+./route.c:159:        wp->filename = sfmt("%s%s", route->dir ? route->dir : websGetDocuments(), wp->path);
+./route.c:163:            websSetQueryVars(wp);
+./route.c:166:            websSetFormVars(wp);
+./route.c:179:        websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Configuration error - no handler service callback");
+./route.c:199:PUBLIC bool websCan(Webs *wp, WebsHash abilities)
+./route.c:210:                websError(wp, HTTP_CODE_UNAUTHORIZED, "Access Denied. User not logged in.");
+./route.c:213:            if ((wp->user = websLookupUser(wp->username)) == 0) {
+./route.c:214:                websError(wp, HTTP_CODE_UNAUTHORIZED, "Access Denied. Unknown user.");
+./route.c:221:            wp->user = websLookupUser(wp->username);
+./route.c:239:                    websError(wp, HTTP_CODE_UNAUTHORIZED, "Access Denied. Insufficient capabilities.");
+./route.c:243:                websError(wp, HTTP_CODE_UNAUTHORIZED, "Access Denied. Insufficient capabilities.");
+./route.c:254:PUBLIC bool websCanString(Webs *wp, char *abilities)
+./route.c:263:        if ((user = websLookupUser(wp->username)) == 0) {
+./route.c:284:WebsRoute *websAddRoute(char *uri, char *handler, int pos)
+./route.c:312:    route->verify = websGetPasswordStoreVerify();
+./route.c:327:PUBLIC int websSetRouteMatch(WebsRoute *route, char *dir, char *protocol, WebsHash methods, WebsHash extensions,
+./route.c:396:PUBLIC int websRemoveRoute(char *uri)
+./route.c:414:PUBLIC int websOpenRoute()
+./route.c:419:    websDefineHandler("continue", continueHandler, 0, 0, 0);
+./route.c:420:    websDefineHandler("redirect", redirectHandler, 0, 0, 0);
+./route.c:425:PUBLIC void websCloseRoute()
+./route.c:454:PUBLIC int websDefineHandler(char *name, WebsHandlerProc match, WebsHandlerProc service, WebsHandlerClose close, int flags)
+./route.c:499:PUBLIC int websLoad(char *path)
+./route.c:510:    if ((buf = websReadWholeFile(path)) == 0) {
+./route.c:558:            if ((route = websAddRoute(uri, handler, -1)) == 0) {
+./route.c:562:            websSetRouteMatch(route, dir, protocol, methods, extensions, abilities, redirects);
+./route.c:564:            if (auth && websSetRouteAuth(route, auth) < 0) {
+./route.c:584:            if (websAddUser(name, password, roles) == 0) {
+./route.c:600:            if (websAddRole(name, abilities) == 0) {
+./route.c:613:    websComputeAllUserAbilities();
+./route.c:633:    return websRedirectByStatus(wp, 0) == 0;
+./route.c:638:PUBLIC int websUrlHandlerDefine(char *prefix, char *dir, int arg, WebsLegacyHandlerProc handler, int flags)
+./route.c:648:    if (websDefineHandler(name, 0, (WebsHandlerProc) handler, 0, WEBS_LEGACY_HANDLER) < 0) {
+./route.c:651:    if ((route = websAddRoute(prefix, name, 0)) == 0) {
+./route.c:661:PUBLIC int websPublish(char *prefix, char *dir)
+./route.c:665:    if ((route = websAddRoute(prefix, 0, 0)) == 0) {
+./runtime.c:207:PUBLIC int websRuntimeOpen()
+./runtime.c:216:PUBLIC void websRuntimeClose()
+./runtime.c:237:    Schedule an event in delay milliseconds time. We will use 1 second granularity for webServer.
+./runtime.c:239:PUBLIC int websStartEvent(int delay, WebsEventProc proc, void *arg)
+./runtime.c:260:PUBLIC void websRestartEvent(int id, int delay)
+./runtime.c:271:PUBLIC void websStopEvent(int id)
+./runtime.c:283:int websRunEvents()
+./runtime.c:515:                    safe = websEscapeHtml(va_arg(args, wchar*));
+./runtime.c:521:                    safe = websEscapeHtml(va_arg(args, char*));
+./runtime.c:972:            if (flags & WEBS_ERROR_MSG && websGetBackground()) {
+./runtime.c:1045:PUBLIC int websGetLogLevel()
+./runtime.c:1051:void websSetLogLevel(int level)
+./runtime.c:2737:PUBLIC int websParseArgs(char *args, char **argv, int maxArgc)
+./time.c:136:PUBLIC int websTimeOpen()
+./time.c:166:PUBLIC void websTimeClose()
+./time.c:293:PUBLIC int websParseDateTime(WebsTime *time, char *dateString, struct tm *defaults)
+./upload.c:57:            websError(wp, HTTP_CODE_BAD_REQUEST, "Bad boundary");
+./upload.c:59:            websSetVar(wp, "UPLOAD_DIR", uploadDir);
+./upload.c:78:PUBLIC void websFreeUpload(Webs *wp)
+./upload.c:104:PUBLIC bool websProcessUploadData(Webs *wp)
+./upload.c:125:            websConsumeInput(wp, nbytes);
+./upload.c:168:        websError(wp, HTTP_CODE_BAD_REQUEST, "Bad upload state. Incomplete boundary");
+./upload.c:226:                    websError(wp, HTTP_CODE_BAD_REQUEST, "Bad upload state. Missing name field");
+./upload.c:229:                value = websNormalizeUriPath(value);
+./upload.c:230:                if (*value == '.' || !websValidUriChars(value) || strpbrk(value, "\\/:*?<>|~\"'%`^\n\r\t\f")) {
+./upload.c:231:                    websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Bad upload client filename");
+./upload.c:242:                if ((wp->uploadTmp = websTempFile(uploadDir, "tmp")) == 0) {
+./upload.c:243:                    websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR,
+./upload.c:250:                    websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot open upload temp file %s", wp->uploadTmp);
+./upload.c:280:    websSetVar(wp, key, file->clientFilename);
+./upload.c:283:    websSetVar(wp, key, file->contentType);
+./upload.c:286:    websSetVar(wp, key, file->filename);
+./upload.c:289:    websSetVarFmt(wp, key, "%d", (int) file->size);
+./upload.c:301:        websError(wp, HTTP_CODE_REQUEST_TOO_LARGE, "Uploaded file exceeds maximum %d", (int) ME_GOAHEAD_LIMIT_UPLOAD);
+./upload.c:309:            websError(wp, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot write to upload temp file %s, rc %d", wp->uploadTmp, rc);
+./upload.c:346:            websConsumeInput(wp, nbytes);
+./upload.c:355:        websConsumeInput(wp, nbytes);
+./upload.c:379:            websDecodeUrl(wp->uploadVar, wp->uploadVar, -1);
+./upload.c:380:            websDecodeUrl(data, data, -1);
+./upload.c:381:            websSetVar(wp, wp->uploadVar, data);
+./upload.c:431:WebsUpload *websLookupUpload(Webs *wp, char *key)
+./upload.c:445:WebsHash websGetUpload(Webs *wp)
+./upload.c:451:PUBLIC void websUploadOpen()
+./upload.c:462:    websDefineHandler("upload", 0, uploadHandler, 0, 0);
+./utils/gopass.c:103:    websOpenAuth(1);
+./utils/gopass.c:106:        if (websLoad(authFile) < 0) {
+./utils/gopass.c:117:    encodedPassword = websMD5(sfmt("%s:%s:%s", username, realm, password));
+./utils/gopass.c:120:        encodedPassword = websMD5(sfmt("%s:%s:%s", username, realm, password));
+./utils/gopass.c:123:        encodedPassword = websMakePassword(sfmt("%s:%s:%s", username, realm, password), 16, 128);
+./utils/gopass.c:126:        websRemoveUser(username);
+./utils/gopass.c:127:        if (websAddUser(username, encodedPassword, roles) == 0) {
+./utils/gopass.c:136:    websCloseAuth();
+./utils/gopass.c:152:    tempFile = websTempFile(NULL, "gp");
+./utils/gopass.c:159:    roles = websGetRoles();
+./utils/gopass.c:171:    users = websGetUsers();
+./utils/webcomp.c:2:    webcomp -- Compile web pages into C source
+./utils/webcomp.c:4:    Usage: webcomp --strip strip filelist >webrom.c
+./utils/webcomp.c:6:        filelist is a file containing the pathnames of all web pages
+./utils/webcomp.c:7:        strip is a path prefix to remove from all the web page pathnames
+./utils/webcomp.c:8:        webrom.c is the resulting C source file to compile and link.
+./utils/webcomp.c:54:    fprintf(stdout, "usage: webcomp [--strip strip] filelist >output.c\n\
+./utils/webcomp.c:55:        --strip specifies is a path prefix to remove from all the web page pathnames\n\
+./utils/webcomp.c:56:        filelist is a file containing the pathnames of all web pages\n\
+./utils/webcomp.c:78:    fprintf(stdout, "   Compiled by webcomp: %s */\n\n", ctime(&now));
+./utils/webcomp.c:83:        Open each input file and compile each web page
+./utils/webcomp.c:123:    fprintf(stdout, "WebsRomIndex websRomIndex[] = {\n");
+./utils/webcomp.c:163:    fprintf(stdout, "WebsRomIndex websRomIndex[] = {\n");

@@ -1,0 +1,162 @@
+body{
+    color: #fff;
+    background:rgb(80, 80, 80);
+    height: 100%;
+}
+::-webkit-scrollbar {
+    display: none;/*隐藏滚轮*/
+    }
+
+.header{
+width:100%;
+background: rgba(0, 0, 0);
+height: 60px;
+line-height: 60px;
+color:#fff;
+padding: 0 10px;
+}
+.header .logo{
+width: 40px;
+vertical-align: middle;
+float: left;
+margin: 10px 10px 0 10px;
+}
+.header .title{
+    font-size: 18px;
+    float: left;
+}
+.main{height:calc(100% - 60px) }
+.menu{
+width: 200px;
+height: 100%;
+float: left;
+background: rgba(0, 11, 29, 1);
+border-right:1px solid #fff;
+box-sizing: border-box;
+overflow: auto;
+}
+.menu .logout{
+    position: absolute;
+    bottom:10px;
+    color:red;
+    left:20px;
+    font-size: 16px;
+}
+.menuList{
+    height: 540px;
+    overflow: auto;
+}
+.menuList li{
+padding-left: 20px;
+height: 50px;
+line-height: 50px;
+}
+.menuList li.active  {
+background: rgba(173, 124, 124, 0.2);
+}
+.menuList li:hover {
+background: rgba(173, 124, 124, 0.2);
+}
+.content{
+width: calc(100% - 200px);
+float: left;
+background:rgba(0, 0, 0, 0.1);
+border-right:1px solid #fff;
+box-sizing: border-box;
+padding:10px 0 10px 20px;
+box-sizing: border-box;
+height: 100%;
+overflow: auto;
+}
+.content .tab-content{
+display: none;
+margin: 30px 0 0 20px;
+}
+
+
+.content .tab-content ul li{
+    height: 50px;
+    width: 500px;
+}
+.content .tab-content ul li option{
+    background: rgba(0, 0, 0, 0.1);
+    color:#222;
+}
+.content .tab-content ul li span{
+    display: inline-block;
+    width: 100px;
+    vertical-align: middle;
+    text-align: center;
+}
+.content .tab-content ul li input[type='text'] , .tab-content ul li select,.tab-content ul li input[type='number'] {
+    display: inline-block;
+    border: 1px solid #ccc;
+    width: 300px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.1);
+    color: #fff;
+    border-radius: 4px;
+    padding-left: 10px;
+}
+.content .tab-content ul li input[type='submit'],.tab-content ul li input[type='button']{
+    display: inline-block;
+    border: 1px solid #ccc;
+    width: 100px;
+    height: 30px;
+    line-height: 30px;
+    background: #0a56bb;
+    color: #fff;
+    border-radius: 4px;
+}
+.content .tab-content ul li:last-child{
+    text-align: center;
+}
+
+
+/* 弹出框的样式 */
+.alert{
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top:0;
+    left:0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.8);
+    color:#333;
+    display: none;
+}
+.alert .alertbody{
+    width:300px;
+    position: absolute;
+    top:50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 4px;
+
+}
+.alert .alertbody .alertitle{
+    height: 40px;
+    line-height: 40px;
+    padding-left: 10px;
+    border-bottom: 1px solid #efefef;
+    font-size: 18px;
+}
+.alert .alertbody .alertContent{
+    padding:20px 20px;
+}
+.alert .alertbody .alertFoot{
+    border-top:1px solid #efefef;
+    text-align: center;
+}
+
+.alert .alertbody .alertFoot input[type='submit'],.alert .alertbody .alertFoot input[type='button']{
+    display: inline-block;
+    border: 1px solid #ccc;
+    width: 147px;
+    height: 30px;
+    line-height: 30px;
+    background: #0a56bb;
+    color: #fff;
+    border-radius: 4px;
+}

@@ -1,0 +1,32 @@
+@charset "utf-8";
+*{
+	padding: 0;
+	margin:0;
+}
+img{
+	border:0;
+}
+li{list-style: none;}
+a{
+	text-decoration: none;	
+}
+html{
+    height: 100%;
+}
+body{
+	line-height: 1.5;
+	font-size: 12px;
+    font-family: 'micosoft yahei';
+    background: rgba(0,0,0,0.9);
+    /* background: -webkit-gradient(linear,0 0,0 100%,from(#000),to(#ccc));     
+    background: -moz-gradient(linear,0 0,0 100%,from(#000),to(#ccc));     
+    background:-webkit-gradient(linear,left top,left bottom,from(#000),to(#ccc));  */
+}
+.clearfix:after{
+    content: "";             /*内容设置为空！！！*/
+    display: block;        /*显示为块级元素！！！*/
+    height: 0;
+    visibility: hidden;  
+    clear: both;         /*清除浮动！！！*/
+  
+}

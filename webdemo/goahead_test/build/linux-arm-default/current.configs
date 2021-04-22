@@ -1,0 +1,44 @@
+PROJ_ROOT = /home/suzhen.liu/code/I6E_Work/project
+CONFIG_NAME = config_module_list.mk
+#SOURCE_MK = ../sdk/sdk.mk
+KERNEL_MEMADR = $(shell /home/suzhen.liu/code/I6E_Work/project/image/makefiletools/bin/mmapparser /home/suzhen.liu/code/I6E_Work/project/board/$(CHIP)/mmap/$(MMAP) $(CHIP) E_LX_MEM phyaddr)
+KERNEL_MEMLEN = $(shell /home/suzhen.liu/code/I6E_Work/project/image/makefiletools/bin/mmapparser /home/suzhen.liu/code/I6E_Work/project/board/$(CHIP)/mmap/$(MMAP) $(CHIP) E_LX_MEM size)
+KERNEL_MEMADR2 = $(shell /home/suzhen.liu/code/I6E_Work/project/image/makefiletools/bin/mmapparser /home/suzhen.liu/code/I6E_Work/project/board/$(CHIP)/mmap/$(MMAP) $(CHIP) E_LX_MEM2 phyaddr)
+KERNEL_MEMLEN2 = $(shell /home/suzhen.liu/code/I6E_Work/project/image/makefiletools/bin/mmapparser /home/suzhen.liu/code/I6E_Work/project/board/$(CHIP)/mmap/$(MMAP) $(CHIP) E_LX_MEM2 size)
+KERNEL_MEMADR3 = $(shell /home/suzhen.liu/code/I6E_Work/project/image/makefiletools/bin/mmapparser /home/suzhen.liu/code/I6E_Work/project/board/$(CHIP)/mmap/$(MMAP) $(CHIP) E_LX_MEM3 phyaddr)
+KERNEL_MEMLEN3 = $(shell /home/suzhen.liu/code/I6E_Work/project/image/makefiletools/bin/mmapparser /home/suzhen.liu/code/I6E_Work/project/board/$(CHIP)/mmap/$(MMAP) $(CHIP) E_LX_MEM3 size)
+LOGO_ADDR = $(shell /home/suzhen.liu/code/I6E_Work/project/image/makefiletools/bin/mmapparser /home/suzhen.liu/code/I6E_Work/project/board/$(CHIP)/mmap/$(MMAP) $(CHIP) $(BOOTLOGO_ADDR) miuaddr)
+CHIP = i6e
+BOARD = 012B
+BOARD_NAME = SSC012B-S01A
+PRODUCT = ipc
+TOOLCHAIN = glibc
+TOOLCHAIN_VERSION = 9.1.0
+KERNEL_VERSION = 4.9.84
+LIBC       = libc-2.30
+BUSYBOX    = busybox-1.20.2-arm-linux-gnueabihf-glibc-9.1.0-dynamic
+IMAGE_CONFIG = spinand.squashfs.partition.config
+CUSTOMER_OPTIONS = null_options.mk
+CUSTOMER_TAILOR = ipc_i6e_tailor.mk
+MMAP = MMAP_I6E_256.h
+IQ0 = imx307/imx307_iqfile.bin
+IQ1 = imx307/imx307_iqfile.bin
+IQ2 = imx307/imx307_iqfile.bin
+IQ3 = imx307/imx307_iqfile.bin
+EXBOOTARGS =
+KERNEL_BOOT_ENV = LX_MEM=$(KERNEL_MEMLEN) mma_heap=mma_heap_name0,miu=0,sz=0x9E9C000 mma_heap=mma_heap_ipu,miu=0,sz=0x164000 cma=2M
+TOOLCHAIN_REL = arm-linux-gnueabihf-9.1.0-
+FPGA = 0
+FBDEV = video
+ARCH=arm
+CROSS_COMPILE=arm-linux-gnueabihf-9.1.0-
+CHIP_ALIAS = pudding
+export ARCH CROSS_COMPILE
+SENSOR_LIST = gc1054_dual_MIPI.ko gc1054_MIPI.ko
+SENSOR0 = gc1054_dual_MIPI.ko 
+SENSOR0_OPT = chmap=1
+SENSOR1 = gc1054_MIPI.ko 
+SENSOR1_OPT = chmap=4
+IQFILE =gc1054/gc1054_api.bin
+IQFILEIR =gc1054/gc1054_api_ir.bin
+LCD = CUSTOMER_PANEL_INDEX_LX50FWB4001_RM68172_480x854_TTL
