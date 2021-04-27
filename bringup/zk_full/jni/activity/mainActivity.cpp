@@ -5,6 +5,7 @@
 #include <sys/time.h>
 
 /*TAG:GlobalVariable全局变量*/
+static ZKListView* mListView_indicator2Ptr;
 static ZKListView* mListview_indicatorPtr;
 static ZKSlideWindow* mSlidewindow1Ptr;
 static mainActivity* mActivityPtr;
@@ -72,6 +73,7 @@ typedef struct {
 }S_ListViewFunctionsCallback;
 /*TAG:ListViewFunctionsCallback*/
 static S_ListViewFunctionsCallback SListViewFunctionsCallbackTab[] = {
+    ID_MAIN_ListView_indicator2, getListItemCount_ListView_indicator2, obtainListItemData_ListView_indicator2, onListItemClick_ListView_indicator2,
     ID_MAIN_Listview_indicator, getListItemCount_Listview_indicator, obtainListItemData_Listview_indicator, onListItemClick_Listview_indicator,
 };
 
@@ -139,6 +141,7 @@ const char* mainActivity::getAppName() const{
 //TAG:onCreate
 void mainActivity::onCreate() {
 	Activity::onCreate();
+    mListView_indicator2Ptr = (ZKListView*)findControlByID(ID_MAIN_ListView_indicator2);if(mListView_indicator2Ptr!= NULL){mListView_indicator2Ptr->setListAdapter(this);mListView_indicator2Ptr->setItemClickListener(this);}
     mSlidewindow1Ptr = (ZKSlideWindow*)findControlByID(ID_MAIN_Slidewindow1);if(mSlidewindow1Ptr!= NULL){mSlidewindow1Ptr->setSlideItemClickListener(this);}
     mListview_indicatorPtr = (ZKListView*)findControlByID(ID_MAIN_Listview_indicator);if(mListview_indicatorPtr!= NULL){mListview_indicatorPtr->setListAdapter(this);mListview_indicatorPtr->setItemClickListener(this);}
     mSlidewindow1Ptr = (ZKSlideWindow*)findControlByID(ID_MAIN_Slidewindow1);if(mSlidewindow1Ptr!= NULL){mSlidewindow1Ptr->setSlideItemClickListener(this);mSlidewindow1Ptr->setSlidePageChangeListener(this);}
@@ -247,30 +250,30 @@ void mainActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
     {
         if (SSlideWindowItemClickCallbackTab[i].id == pSlideWindow->getID())
         {
-        	if (index < (sizeof(IconTab) / sizeof(const char*)))
-        	{
-        		SSlideWindowItemClickCallbackTab[i].onSlideItemClickCallback(pSlideWindow, index);
-        		break;
-        	}
-        	else
+        	if (index == STR_ICON_INDEX)
         	{
         		//str suspend in
-        		printf("suspend in\n");
-        		gettimeofday(&tv_cur, NULL);
-        		printf("tv_cur: %ld,tv_pre: %ld\n",tv_cur.tv_sec,tv_pre.tv_sec);
+				printf("suspend in\n");
+				gettimeofday(&tv_cur, NULL);
+				printf("tv_cur: %ld,tv_pre: %ld\n",tv_cur.tv_sec,tv_pre.tv_sec);
 
-                if( (tv_pre.tv_sec != 0) && ((tv_cur.tv_sec - tv_pre.tv_sec) <= 3)
-                    && (tv_cur.tv_sec >= tv_pre.tv_sec) )
-                    break;
+				if( (tv_pre.tv_sec != 0) && ((tv_cur.tv_sec - tv_pre.tv_sec) <= 3)
+					&& (tv_cur.tv_sec >= tv_pre.tv_sec) )
+					break;
 
 				Enter_STR_SuspendMode();
 
-        		//mi deinit
-        		system("echo mem > /sys/power/state");
-        		//usleep(2*1000*1000);
-        		printf("resume back\n");
+				//mi deinit
+				system("echo mem > /sys/power/state");
+				//usleep(2*1000*1000);
+				printf("resume back\n");
 				Enter_STR_ResumeMode();
-        		gettimeofday(&tv_pre, NULL);
+				gettimeofday(&tv_pre, NULL);
+				break;
+        	}
+        	else
+        	{
+        		SSlideWindowItemClickCallbackTab[i].onSlideItemClickCallback(pSlideWindow, index);
         		break;
         	}
         }

@@ -47,6 +47,8 @@
 #define BACKLIGHT_GPIO	62	// 7
 #define POWERCTRL_GPIO	63	// 8
 
+#define STR_ICON_INDEX	14
+
 static int g_curPageIdx = 0;
 /**
  * 注册定时器
@@ -437,6 +439,18 @@ static void onUI_init(){
 	MI_DISP_EnableInputPort(0, 0);
 	MI_DISP_ClearInputPortBuffer(0, 0, TRUE);
 	printf("clear disp inputport buf done\n");
+
+	int totalPage = mSlidewindow1Ptr->getPageSize();
+	if (totalPage < 3 && totalPage > 1)
+	{
+		mListview_indicatorPtr->setVisible(true);
+		mListView_indicator2Ptr->setVisible(false);
+	}
+	else if (totalPage >= 3)
+	{
+		mListview_indicatorPtr->setVisible(false);
+		mListView_indicator2Ptr->setVisible(true);
+	}
 }
 
 static void onUI_quit() {
@@ -502,14 +516,15 @@ const char* IconTab[]={
 	"playPcmFileActivity",
 	"facedetectActivity",
 	"dualsensorActivity",
-	"usbCameraActivity",
+	"str",
 	"scannerActivity",
+	"usbCameraActivity",
 	"localsettingActivity"
 };
 
 static void onSlideItemClick_Slidewindow1(ZKSlideWindow *pSlideWindow, int index) {
 	ShowStatusBar(0, 1 ,1);
-	printf("select idx is %d\n", index);
+	//printf("select idx is %d\n", index);
 	EASYUICONTEXT->openActivity(IconTab[index]);
 }
 
@@ -518,16 +533,25 @@ static void onSlidePageChange_Slidewindow1(ZKSlideWindow *pSlideWindow, int page
 	g_curPageIdx = pSlideWindow->getCurrentPage();
 	//printf("Logic: param page is %d, total page is %d, cur page is %d\n", page, totalPage, g_curPageIdx);
 	mListview_indicatorPtr->refreshListView();
+	mListView_indicator2Ptr->refreshListView();
 }
 
 static int getListItemCount_Listview_indicator(const ZKListView *pListView) {
     //LOGD("getListItemCount_Listview_indicator !\n");
 	int totalPage = mSlidewindow1Ptr->getPageSize();
-    return totalPage;
+	//printf("total page num is %d\n", totalPage);
+
+	if (pListView->isVisible())
+		return totalPage;
+
+    return 0;
 }
 
 static void obtainListItemData_Listview_indicator(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index) {
     //LOGD(" obtainListItemData_ Listview_indicator  !!!\n");
+	if (!pListView->isVisible())
+		return;
+
 	if (index == g_curPageIdx)
 		pListItem->setBackgroundPic("slider_/indicator_focus.png");
 	else
@@ -538,6 +562,65 @@ static void onListItemClick_Listview_indicator(ZKListView *pListView, int index,
     //LOGD(" onListItemClick_ Listview_indicator  !!!\n");
 	int curPageIdx =  g_curPageIdx;
 	//printf("click idx is %d, curPageIdx is %d\n", index, g_curPageIdx);
+
+	while (curPageIdx < index)
+	{
+		mSlidewindow1Ptr->turnToNextPage();
+		curPageIdx++;
+	}
+
+	while (curPageIdx > index)
+	{
+		mSlidewindow1Ptr->turnToPrevPage();
+		curPageIdx--;
+	}
+}
+static int getListItemCount_ListView_indicator2(const ZKListView *pListView) {
+    //LOGD("getListItemCount_ListView_indicator2 !\n");
+	int totalPage = mSlidewindow1Ptr->getPageSize();
+	//printf("total page num is %d\n", totalPage);
+
+	if (pListView->isVisible())
+		return totalPage;
+
+    return 0;
+}
+
+static void obtainListItemData_ListView_indicator2(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index) {
+    //LOGD(" obtainListItemData_ ListView_indicator2  !!!\n");
+	if (!pListView->isVisible())
+		return;
+
+	if (index == g_curPageIdx)
+		pListItem->setBackgroundPic("slider_/indicator_focus.png");
+	else
+		pListItem->setBackgroundPic("slider_/indicator.png");
+}
+
+static void onListItemClick_ListView_indicator2(ZKListView *pListView, int index, int id) {
+    //LOGD(" onListItemClick_ ListView_indicator2  !!!\n");
+	if (!pListView->isVisible())
+		return;
+
+	int totalPage = mSlidewindow1Ptr->getPageSize();
+	int curPageIdx =  g_curPageIdx;
+	int firstVisibleIdx = 0;
+	//printf("click idx is %d, curPageIdx is %d\n", index, g_curPageIdx);
+
+	if (index < 0 || index > totalPage - 1)
+	{
+		printf("wrong select index\n");
+		return;
+	}
+
+	if (index == 0)
+		firstVisibleIdx = 0;
+	else if (index == totalPage - 1)
+		firstVisibleIdx = totalPage - 3;
+	else
+		firstVisibleIdx = index -1;
+
+	pListView->setSelection(firstVisibleIdx);
 
 	while (curPageIdx < index)
 	{

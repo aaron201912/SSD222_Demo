@@ -73,7 +73,7 @@ static bool ontestSliderActivityTouchEvent(const MotionEvent &ev) {
     return false;
 }
 static void onProgressChanged_SeekBar2(ZKSeekBar *pSeekBar, int progress) {
-	printf("seekbar2 pos:%d\n", progress);
+	//printf("seekbar2 pos:%d\n", progress);
 	mTextValuePtr->setText(progress);
 //	BRIGHTNESSHELPER->setBrightness(progress);
     BYTE data[2] = {0x00, (BYTE)progress};
@@ -86,15 +86,15 @@ static bool onButtonClick_sys_back(ZKButton *pButton) {
 
 static void onProgressChanged_SeekBar1(ZKSeekBar *pSeekBar, int progress) {
 //	mCirclebar1Ptr->setProgress(progress);
-	printf("seekbar1 pos:%d\n", progress);
+	//printf("seekbar1 pos:%d\n", progress);
 	mTextview3Ptr->setText(progress);
 	BYTE data[2] = {0x00, (BYTE)progress};
 	sendProtocol(CMD_SEEKBAR_TEMPERATURE, data, sizeof(data));
-	printf("seekbar1 pos xx:%d\n", progress);
+	//printf("seekbar1 pos xx:%d\n", progress);
 }
 
 static void onProgressChanged_CircleBar1(ZKCircleBar *pCircleBar, int progress) {
-	printf("circlebar1 pos xx:%d\n", progress);
+	//printf("circlebar1 pos xx:%d\n", progress);
 }
 
 static bool onButtonClick_Button1(ZKButton *pButton) {
