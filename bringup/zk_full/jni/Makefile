@@ -61,7 +61,7 @@ INCLUDE_DIR :=  -I$(EASYUI_COMMON_INCLUDE) \
                 -I ../jni/scanner/include
 
 LDFLAGS = -leasyui -lpthread -lmi_sys -lmi_disp -lmi_panel -lmi_gfx -lmi_common -lmi_wlan -lcjson -lstdc++	\
-		-lmi_vpe -lmi_isp -lmi_iqserver -lfbc_decode -lcus3a -lispalgo -lcam_os_wrapper -lFD_ARM -lm \
+		-lmi_vpe -lmi_isp -lmi_sensor -lmi_iqserver -lfbc_decode -lcus3a -lispalgo -lcam_os_wrapper -lFD_ARM -lm \
 		-ldl -lrt -fPIC -shared \
 		-ljpeg -lZXing
 LDFLAGS += -L$(ZKSW_PREBUILT_LIB_PATH)/system -L. -L ../jni/sdkdir/lib -L ../jni/uvc/libjpeg/lib -L ../jni/uvc/libyuv/lib -L ../jni/scanner/lib
