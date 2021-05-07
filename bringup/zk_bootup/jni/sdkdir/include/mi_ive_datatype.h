@@ -1,16 +1,15 @@
-/* SigmaStar trade secret */
-/* Copyright (c) [2019~2020] SigmaStar Technology.
-All rights reserved.
+/* Copyright (c) 2018-2019 Sigmastar Technology Corp.
+ All rights reserved.
 
-Unless otherwise stipulated in writing, any and all information contained
-herein regardless in any format shall remain the sole proprietary of
-SigmaStar and be kept in strict confidence
-(SigmaStar Confidential Information) by the recipient.
-Any unauthorized act including without limitation unauthorized disclosure,
-copying, use, reproduction, sale, distribution, modification, disassembling,
-reverse engineering and compiling of the contents of SigmaStar Confidential
-Information is unlawful and strictly prohibited. SigmaStar hereby reserves the
-rights to any and all damages, losses, costs and expenses resulting therefrom.
+  Unless otherwise stipulated in writing, any and all information contained
+ herein regardless in any format shall remain the sole proprietary of
+ Sigmastar Technology Corp. and be kept in strict confidence
+ (��Sigmastar Confidential Information��) by the recipient.
+ Any unauthorized act including without limitation unauthorized disclosure,
+ copying, use, reproduction, sale, distribution, modification, disassembling,
+ reverse engineering and compiling of the contents of Sigmastar Confidential
+ Information is unlawful and strictly prohibited. Sigmastar hereby reserves the
+ rights to any and all damages, losses, costs and expenses resulting therefrom.
 */
 
 #ifndef _MI_IVE_DATATYPE_H_
@@ -219,7 +218,9 @@ typedef struct MI_IVE_FilterCtrl_s
 typedef enum
 {
     E_MI_IVE_CSC_MODE_PIC_BT601_YUV2RGB   =  0x0,   /*CSC: YUV2RGB, picture transfer mode, RGB value range [0, 255]*/
-    E_MI_IVE_CSC_MODE_PIC_BT601_RGB2YUV   =  0x1,   /*CSC: RGB2YUV, picture transfer mode, Y:[16, 235],U\V:[16, 240]*/
+    E_MI_IVE_CSC_MODE_PIC_BT601_YUV2BGR   =  0x1,   /*CSC: YUV2BGR, picture transfer mode, RGB value range [0, 255]*/
+    E_MI_IVE_CSC_MODE_PIC_BT601_RGB2YUV   =  0x2,   /*CSC: RGB2YUV, picture transfer mode, YUV:value range [0, 255]*/
+    E_MI_IVE_CSC_MODE_PIC_BT601_BGR2YUV   =  0x3,   /*CSC: BGR2YUV, picture transfer mode, YUV:value range [0, 255]*/
     E_MI_IVE_CSC_MODE_MAX
 }MI_IVE_CscMode_e;
 
@@ -801,9 +802,27 @@ typedef enum
 typedef struct MI_IVE_MatrTranfCtrl_S
 {
     MVE_IVE_MatrTranfMode_e enMode;    /*Input channel mode*/
-    MI_S16 s16MatrixArray[9];  //Official
+    MI_S32 s32MatrixArray[9];  //Official
 } MI_IVE_MatrTranfCtrl_t;
 
+typedef enum
+{
+    E_MI_IVE_SHIFT_DETECT_MODE_SINGLE    = 0x00,
+    E_MI_IVE_SHIFT_DETECT_MODE_MULTI     = 0x01,
+
+    E_MI_IVE_SHIFT_DETECT_MODE_MAX
+} MVE_IVE_SHIFT_DETECT_MODE_e;
+
+typedef struct MVE_IVE_SHIFT_DETECT_CTRL_S
+{
+    MVE_IVE_SHIFT_DETECT_MODE_e enMode;
+    MI_U8 pyramid_level;
+    MI_U8 search_range;
+    MI_U16 u16Left;
+    MI_U16 u16Top;
+    MI_U16 u16Width;
+    MI_U16 u16Height;
+} MI_IVE_SHIFT_DETECT_CTRL_t;
 #ifdef __cplusplus
 #if __cplusplus
 }

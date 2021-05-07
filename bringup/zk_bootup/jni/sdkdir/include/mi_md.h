@@ -1,22 +1,20 @@
-/* SigmaStar trade secret */
-/* Copyright (c) [2019~2020] SigmaStar Technology.
-All rights reserved.
+/* Copyright (c) 2018-2019 Sigmastar Technology Corp.
+ All rights reserved.
 
-Unless otherwise stipulated in writing, any and all information contained
-herein regardless in any format shall remain the sole proprietary of
-SigmaStar and be kept in strict confidence
-(SigmaStar Confidential Information) by the recipient.
-Any unauthorized act including without limitation unauthorized disclosure,
-copying, use, reproduction, sale, distribution, modification, disassembling,
-reverse engineering and compiling of the contents of SigmaStar Confidential
-Information is unlawful and strictly prohibited. SigmaStar hereby reserves the
-rights to any and all damages, losses, costs and expenses resulting therefrom.
+  Unless otherwise stipulated in writing, any and all information contained
+ herein regardless in any format shall remain the sole proprietary of
+ Sigmastar Technology Corp. and be kept in strict confidence
+ (��Sigmastar Confidential Information��) by the recipient.
+ Any unauthorized act including without limitation unauthorized disclosure,
+ copying, use, reproduction, sale, distribution, modification, disassembling,
+ reverse engineering and compiling of the contents of Sigmastar Confidential
+ Information is unlawful and strictly prohibited. Sigmastar hereby reserves the
+ rights to any and all damages, losses, costs and expenses resulting therefrom.
 */
 #ifndef __MI_MD_H__
 #define __MI_MD_H__
 
 #include <stdint.h>
-
 
 #ifdef __cplusplus
 extern "C"
@@ -53,8 +51,9 @@ typedef enum MDSAD_OUT_CTRL_E
 
 typedef enum MDALG_MODE_E
 {
-    MDALG_MODE_FG      = 0x0,
-    MDALG_MODE_SAD     = 0x1,
+    MDALG_MODE_FG         = 0x0,
+    MDALG_MODE_SAD        = 0x1,
+    MDALG_MODE_FRAMEDIFF  = 0x2,
     MDALG_MODE_BUTT
 } MDALG_MODE_e;
 
@@ -63,6 +62,20 @@ typedef struct MDCCL_ctrl_s
     uint16_t u16InitAreaThr;
     uint16_t u16Step;
 } MDCCL_ctrl_t;
+
+typedef struct MDPreproc_ctrl_s
+{
+    uint16_t u16Md_rgn_size;;
+    uint16_t u16Align;
+} MDPreproc_ctrl_t;
+
+typedef struct MDblock_info_s
+{
+    uint16_t st_x;
+    uint16_t st_y;
+    uint16_t end_x;
+    uint16_t end_y;
+} MDblock_info_t;
 
 typedef struct MDPoint_s
 {
@@ -103,15 +116,6 @@ typedef struct MDOBJ_DATA_s
 
 } MDOBJ_DATA_t;
 
-//need?
-typedef struct MI_MD_DATA_s
-{
-    MDSAD_DATA_t sad_data;
-    MDOBJ_DATA_t obj_data;
-    uint32_t alarm_pix_cnt;
-
-} MI_MD_DATA_t;
-
 typedef struct MI_MD_IMG_s
 {
     void *pu32PhyAddr;
@@ -123,7 +127,7 @@ typedef struct MI_MD_static_param_s
     uint16_t width;
     uint16_t height;
     uint8_t color;
-	uint32_t stride;
+    uint32_t stride;
     MDMB_MODE_e mb_size;
     MDSAD_OUT_CTRL_e sad_out_ctrl;
     MDROI_t roi_md;
@@ -142,6 +146,7 @@ uint32_t MI_MD_GetLibVersion();
 MD_HANDLE MI_MD_Init(MI_MD_static_param_t *static_param, MI_MD_param_t *param);
 void MI_MD_Uninit(MD_HANDLE handle);
 int32_t MI_MD_Run(MD_HANDLE handle, const MI_MD_IMG_t* pImage);
+MI_MD_RET MI_MD_Preproc(MD_HANDLE handle, const MI_MD_IMG_t* pImage0, const MI_MD_IMG_t* pImage1, MDPreproc_ctrl_t* PpCtrl, MDSAD_DATA_t *sad_data, MDblock_info_t *md_region);
 
 MI_MD_RET MI_MD_SetParam(MD_HANDLE handle, MI_MD_param_t *param);
 MI_MD_RET MI_MD_GetParam(MD_HANDLE handle, MI_MD_param_t *param);
@@ -149,6 +154,7 @@ MI_MD_RET MI_MD_GetMBResult(MD_HANDLE handle, uint8_t *result_img, uint32_t *res
 
 MI_MD_RET MI_MD_ComputeImageSAD(MD_HANDLE handle, const MI_MD_IMG_t* pImage, MDSAD_DATA_t *sad_data);
 MI_MD_RET MI_MD_CCL(MD_HANDLE handle, MDCCL_ctrl_t* pCclCtrl, MDOBJ_DATA_t *ccobj);
+MI_MD_RET MI_MD_GetMotionCnt(MD_HANDLE handle, uint32_t *obj_cnt);
 
 void MI_MD_SetTime(MD_HANDLE handle, uint32_t time_diff);
 
