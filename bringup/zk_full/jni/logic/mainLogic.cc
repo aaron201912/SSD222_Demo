@@ -517,7 +517,6 @@ const char* IconTab[]={
 	"facedetectActivity",
 	"dualsensorActivity",
 	"str",
-	"scannerActivity",
 	"usbCameraActivity",
 	"localsettingActivity"
 };
