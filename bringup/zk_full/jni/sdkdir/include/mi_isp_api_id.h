@@ -333,6 +333,8 @@ extern "C"
 #define ID_API_RAW_DATA_INFO                        ( ID_API_RAW_DATA_BASE + 1 ) //12801
 #define ID_API_RAW_DATA_INJECT_SWITCH               ( ID_API_RAW_DATA_BASE + 2 ) //12802
 #define ID_API_RAW_DATA_COUNT                       ( ID_API_RAW_DATA_BASE + 3 ) //12803
+#define ID_API_RAW_DATA_COMPRESS                    ( ID_API_RAW_DATA_BASE + 4 ) //12804
+#define ID_API_RAW_SCL_INFO                         ( ID_API_RAW_DATA_BASE + 5 ) //12805
 
 
 #define ID_API_REGISTER_API_SET_CB                  ( ID_API_RESERVED_BASE + 1) //1. register API_SET callback
