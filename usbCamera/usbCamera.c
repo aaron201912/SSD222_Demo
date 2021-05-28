@@ -1065,6 +1065,17 @@ void sstar_usbcamera_deinit()
 	SSTAR_LIBYUV_CloseLibrary(&g_stLibyuvAssembly);
 }
 
+static int set_non_block(int iSock)
+{
+    int iFlags;
+ 
+    iFlags = fcntl(iSock, F_GETFL, 0);
+    iFlags |= O_NONBLOCK;
+    iFlags |= O_NDELAY;
+    int ret = fcntl(iSock, F_SETFL, iFlags);
+    return ret;
+}
+
 static int init_uvc_hotplug_sock()
 {
     struct sockaddr_nl snl;
@@ -1081,6 +1092,9 @@ static int init_uvc_hotplug_sock()
         printf("error getting socket: %s", strerror(errno));
         return -1;
     }
+
+    // set nonblock
+    set_non_block(hotplug_sock);
 
     /* set receive buffersize */
     setsockopt(hotplug_sock, SOL_SOCKET, SO_RCVBUF, &buffersize, sizeof(buffersize));
