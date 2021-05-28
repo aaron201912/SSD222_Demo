@@ -13,6 +13,9 @@
 #include <fcntl.h>
 #include <sys/syscall.h>
 #include <dlfcn.h>
+#include <sys/socket.h>
+#include <linux/netlink.h>
+#include <errno.h>
 #include "mi_common.h"
 #include "mi_common_datatype.h"
 #include "mi_sys.h"
@@ -62,6 +65,8 @@
 
 #define CAMERA_VIDEO_WIDTH    		640         //1280
 #define CAMERA_VIDEO_HEIGHT   		480         //720
+
+#define UEVENT_BUFFER_SIZE 			2048
 
 
 /*
@@ -125,6 +130,8 @@ typedef struct
 static DivpAssembly_t g_stDivpAssembly;
 static LibyuvAssembly_t g_stLibyuvAssembly;
 static int g_isRotate = 0;
+static pthread_t g_checkHotplugThread = 0;
+static int g_bCheckUvcThreadRun = 0;
 
 int SSTAR_LIBYUV_OpenLibrary(LibyuvAssembly_t *pstLibyuvAssembly)
 {
@@ -976,6 +983,31 @@ int sstar_usbcamera_init()
 {
     printf("sstar_usbcamera_init\n");
 
+    int checkTimeout = 500;
+    printf("check usb camera dev node\n");
+
+    while (checkTimeout--)
+    {
+        //if (!access("/dev/video0", F_OK))
+        if (!access("/dev/video0", R_OK))
+        {
+            printf("detect usb camera dev\n");
+            break;
+        }
+        else
+        {
+            usleep(5000);
+        }
+    }
+
+    if (!checkTimeout)
+    {
+        printf("usb camera dev is not exist, app exit\n");
+        return -1;
+    }
+
+    printf("usb camere app start\n");
+
     if (SSTAR_LIBYUV_OpenLibrary(&g_stLibyuvAssembly))
     {
     	printf("open libyuv failed\n");
@@ -1033,41 +1065,131 @@ void sstar_usbcamera_deinit()
 	SSTAR_LIBYUV_CloseLibrary(&g_stLibyuvAssembly);
 }
 
+static int init_uvc_hotplug_sock()
+{
+    struct sockaddr_nl snl;
+    const int buffersize = 2 * 1024 * 1024;
+    int retval;
+    memset(&snl, 0x00, sizeof(struct sockaddr_nl));
+    snl.nl_family = AF_NETLINK;
+    snl.nl_pid = getpid();
+    snl.nl_groups = 1;
+    int hotplug_sock = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
+
+    if (hotplug_sock == -1)
+    {
+        printf("error getting socket: %s", strerror(errno));
+        return -1;
+    }
+
+    /* set receive buffersize */
+    setsockopt(hotplug_sock, SOL_SOCKET, SO_RCVBUF, &buffersize, sizeof(buffersize));
+    retval = bind(hotplug_sock, (struct sockaddr *) &snl, sizeof(struct sockaddr_nl));
+
+    if (retval < 0)
+    {
+        printf("bind failed: %s", strerror(errno));
+        close(hotplug_sock);
+        hotplug_sock = -1;
+        return -1;
+    }
+
+    return hotplug_sock;
+}
+
+static void deinit_uvc_hotplug_sock(int sock)
+{
+    if (sock != -1)
+        close(sock);
+}
+
+static void *check_uvc_hotplug_proc(void *pdata)
+{
+    int hotplug_sock = init_uvc_hotplug_sock();
+
+    printf("Exec check_uvc_hotplug_proc\n");
+
+    while(g_bCheckUvcThreadRun)
+    {
+        char buf[UEVENT_BUFFER_SIZE*2] = {0};
+        int len = recv(hotplug_sock, &buf, sizeof(buf), 0);
+
+        if (strstr(buf, "video"))
+        {
+            char *pstmsg = buf;
+			pstmsg = strstr(buf, "video");
+			printf("pstmsg is %s\n", pstmsg);
+
+            if (strstr(buf, "add"))
+			{
+				printf("uvc add\n");
+
+				sstar_usbcamera_init();
+			}
+
+			if (strstr(buf, "remove"))
+			{
+				printf("usb remove\n");
+				
+                sstar_usbcamera_deinit();
+			}
+        }
+
+        usleep(20000);
+    }
+
+    printf("close socket\n");
+    deinit_uvc_hotplug_sock(hotplug_sock);
+
+    printf("exit thread proc\n");
+    return NULL;
+}
+
+int uvc_start_check_hotplug()
+{
+	g_bCheckUvcThreadRun = 1;
+
+	pthread_create(&g_checkHotplugThread, NULL, check_uvc_hotplug_proc, NULL);
+
+	if (!g_checkHotplugThread)
+	{
+		printf("create check hotplug thread failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+void uvc_stop_check_hotplug()
+{
+	g_bCheckUvcThreadRun = 0;
+
+	if (g_checkHotplugThread)
+	{
+		printf("check thread is exiting\n");
+		pthread_join(g_checkHotplugThread, NULL);
+		g_checkHotplugThread = 0;
+		printf("check thread exit\n");
+	}
+}
+
+
 int main(int argc, char **argv)
 {
     char ch = 0;
-    int checkTimeout = 500;
-    printf("check usb camera dev node\n");
 
-    while (checkTimeout--)
+    // if camera has already connected
+    if (!access("/dev/video0", R_OK))
     {
-        //if (!access("/dev/video0", F_OK))
-        if (!access("/dev/video0", R_OK))
+        if (sstar_usbcamera_init())
         {
-            printf("detect usb camera dev\n");
-            break;
-        }
-        else
-        {
-            usleep(5000);
+            printf("usbcamera init error\n");
+            return -1;
         }
     }
 
-    if (!checkTimeout)
-    {
-        printf("usb camera dev is not exist, app exit\n");
+    if (uvc_start_check_hotplug())
         return -1;
-    }
-
-    //sleep(5);
-
-    printf("usb camere app start\n");
-
-    if (sstar_usbcamera_init())
-    {
-        printf("usbcamera init error\n");
-        return -1;
-    }
 
     while (1)
     {
@@ -1079,7 +1201,7 @@ int main(int argc, char **argv)
         usleep(20000);
     }
 
-    sstar_usbcamera_deinit();
+    uvc_stop_check_hotplug();
 
     return 0;
 }
