@@ -1,5 +1,5 @@
 #依赖本地sdk路径
-PROJECT_PATH=/home/koda.xu/P3/test_stable_p3/project
+PROJECT_PATH=../bringup/zk_full/jni/sdkdir
 
 #Toolchain设置
 CC = arm-linux-gnueabihf-g++
@@ -43,10 +43,9 @@ CFLAGS = -Wno-write-strings
 LDFLAGS = 
 CONFIG_PREFIX =.
 
-LOCAL_CFLAGS = -I$(PROJECT_PATH)/release/include -I$(PROJECT_PATH)/release/include/isp -I$(PROJECT_PATH)/release/include/isp/ikayaki \
+LOCAL_CFLAGS = -I$(PROJECT_PATH)/include -I$(PROJECT_PATH)/include/isp -I$(PROJECT_PATH)/include/isp/ikayaki \
 			   -I./ -I./uvc/app -I./uvc/libjpeg/include -I./uvc/libyuv/include -I./uvc/v4l2/inc -I./uvc/v4l2/src
-LOCAL_LDFLAGS = -L$(PROJECT_PATH)/release/dispcam/p3/common/glibc/9.1.0/mi_libs/dynamic -L$(PROJECT_PATH)/release/dispcam/p3/common/glibc/9.1.0/ex_libs/dynamic \
-				-L ./uvc/libjpeg/lib -L ./uvc/libyuv/lib
+LOCAL_LDFLAGS = -L$(PROJECT_PATH)/lib -L ./uvc/libjpeg/lib -L ./uvc/libyuv/lib
 LOCAL_LDFLAGS += -lpthread -ldl -lmi_common -lmi_sys -lmi_divp -lmi_disp -lmi_panel -ljpeg -lrt -fPIC
 
 all: prepare $(TARGET) install

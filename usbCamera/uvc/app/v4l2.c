@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <gcc/stdatomic.h>
 #include <libv4l/libv4l2.h>
-
+#include "list.h"
 #include "v4l2.h"
 
 DEMO_DBG_LEVEL_e demo_debug_level = DEMO_DBG_ALL;
@@ -21,6 +21,55 @@ static const int desired_video_buffers = 4;
 #define V4L_ALLFORMATS  3
 #define V4L_RAWFORMATS  1
 #define V4L_COMPFORMATS 2
+
+#define CLEAR_LIST(list)    \
+{   \
+    FmtListData_t *pos = NULL;  \
+	FmtListData_t *posN = NULL; \
+    \
+	list_for_each_entry_safe(pos, posN, &list, fmtList) \
+	{   \
+		list_del(&pos->fmtList);    \
+		free(pos);  \
+	}   \
+}
+
+#define AUTO_MATCH(s, list, pixelFmt)  \
+/*if (s->pixelformat == pixelFmt) */ \
+{   \
+    if (!list_empty(&list)) \
+    {   \
+        FmtListData_t *pos = NULL;  \
+        int i = 0, matchIndex = 0;  \
+        int matchW = 0, matchH = 0, matchFps = 0; \
+        int minDeltRes = 4096 * 2160;   \
+        char strFmt[8] = {0};   \
+        \
+        list_for_each_entry(pos, &list, fmtList)    \
+        {   \
+            int deltRes = abs((pos->supportFmt.width * pos->supportFmt.height) - (s->width * s->height));   \
+        \
+            if (deltRes < minDeltRes)   \
+            {   \
+                matchIndex = i; \
+                matchW = pos->supportFmt.width; \
+                matchH = pos->supportFmt.height;    \
+                matchFps = pos->supportFmt.fps; \
+                minDeltRes = deltRes;   \
+            }   \
+        \
+            i++;    \
+        }   \
+        \
+        printf("set current format: %s, %d * %d, fps %d\n", format_fcc_to_str2(pixelFmt, strFmt, sizeof(strFmt)), matchW, matchH, matchFps); \
+        \
+        s->pixelformat = pixelFmt;  \
+        s->width = matchW;  \
+        s->height = matchH; \
+        \
+        return 0;   \
+    }   \
+}
 
 struct video_data {
     int fd;
@@ -49,6 +98,28 @@ struct video_data {
     void *(*mmap_f)(void *start, size_t length, int prot, int flags, int fd, int64_t offset);
     int (*munmap_f)(void *_start, size_t length);
 };
+
+typedef struct {
+	int fmt;
+	int width;
+	int height;
+	int fps;
+} v4l2_fmt_support;
+
+typedef struct {
+	list_t fmtList;
+	v4l2_fmt_support supportFmt;
+}FmtListData_t;
+
+static list_t g_supportFmtList;
+static int g_formatCnt = 0;
+
+static list_t g_mjpegFmtList;
+static int g_mjpegFmtCnt = 0;
+static list_t g_yuyvFmtList;
+static int g_yuyvFmtCnt = 0;
+static list_t g_nv12FmtList;
+static int g_nv12FmtCnt = 0;
 
 void v4l2_free(void *ptr)
 {
@@ -216,51 +287,6 @@ static int device_init(DeviceContex_t *ctx, int *width, int *height,
     }
 
     return res;
-}
-
-static void list_formats(DeviceContex_t *ctx, int type)
-{
-    const struct video_data *s = (struct video_data *)ctx->priv_data;
-    struct v4l2_fmtdesc vfd = { .type = V4L2_BUF_TYPE_VIDEO_CAPTURE };
-    int ret;
-    while(! (ret = v4l2_ioctl(s->fd, VIDIOC_ENUM_FMT, &vfd))) {
-
-        vfd.index++;
-        if (!(vfd.flags & V4L2_FMT_FLAG_COMPRESSED) &&
-            type & V4L_RAWFORMATS) {
-            DEMO_INFO("Raw       : %15s\n",vfd.description);
-        } else
-        if (vfd.flags & V4L2_FMT_FLAG_COMPRESSED &&
-            type & V4L_COMPFORMATS) {
-            DEMO_INFO("Compressed: %15s\n",vfd.description);
-        } else {
-            continue;
-        }
-    }
-}
-
-static void list_standards(DeviceContex_t *ctx)
-{
-    int ret;
-    struct video_data *s = (struct video_data *)ctx->priv_data;
-    struct v4l2_standard standard;
-
-    if (s->std_id == 0)
-        return;
-
-    for (standard.index = 0; ; standard.index++) {
-        if (v4l2_ioctl(s->fd, VIDIOC_ENUMSTD, &standard) < 0) {
-            ret = errno;
-            if (ret == EINVAL) {
-                break;
-            } else {
-                DEMO_ERR("ioctl(VIDIOC_ENUMSTD): %s\n", strerror(ret));
-                return;
-            }
-        }
-        DEMO_INFO("%2d, %16llu, %s\n",
-               standard.index, (uint64_t)standard.id, standard.name);
-    }
 }
 
 static int mmap_init(DeviceContex_t *ctx)
@@ -575,9 +601,40 @@ static int v4l2_set_parameters(DeviceContex_t *ctx)
     return 0;
 }
 
+static char* format_fcc_to_str(uint fcc)
+{
+    switch(fcc)
+    {
+    case V4L2_PIX_FMT_YUYV:    
+        return "YUYV";         
+    case V4L2_PIX_FMT_NV12:    
+        return "NV12";         
+    case V4L2_PIX_FMT_MJPEG:   
+        return "MJPEG";        
+    case V4L2_PIX_FMT_H264:    
+        return "H264";
+    case V4L2_PIX_FMT_H265:
+        return "H265";
+    default:
+        return "unkonown";
+    }
+}
+
+static char* format_fcc_to_str2(uint fcc, char *str, int size)
+{
+    if (size < 5)
+        return NULL;
+
+    sprintf(str, "%c%c%c%c", fcc & 0xFF, (fcc >> 8) & 0xFF, (fcc >> 16) & 0xFF, (fcc >> 24) & 0xFF);
+    return str;
+}
+
 static bool format_is_support(int *fmt, int *width, int *height)
 {
-    DEMO_DEBUG("fmt 0x%x width%d height%d\n", *fmt, *width, *height);
+    char strFmt[8] = {0};
+    memset(strFmt, 0, sizeof(strFmt));
+
+    DEMO_DEBUG("fmt %s width%d height%d\n", format_fcc_to_str2(*fmt, strFmt, sizeof(strFmt)), *width, *height);
     return true;
 }
 
@@ -628,23 +685,294 @@ static unsigned int image_get_buffer_size(int fmt, int width, int height, int al
     return buffer_size;
 }
 
-static char* format_fcc_to_str(uint fcc)
+static int query_cap(DeviceContex_t *ctx)
 {
-    switch(fcc)
+    struct video_data *s = (struct video_data *)ctx->priv_data;
+    struct v4l2_capability cap;
+
+    memset(&cap, 0, sizeof(cap));
+
+    if (ioctl(s->fd, VIDIOC_QUERYCAP, &cap) < 0)
     {
-    case V4L2_PIX_FMT_YUYV:    
-        return "YUYV";         
-    case V4L2_PIX_FMT_NV12:    
-        return "NV12";         
-    case V4L2_PIX_FMT_MJPEG:   
-        return "MJPEG";        
-    case V4L2_PIX_FMT_H264:    
-        return "H264";
-    case V4L2_PIX_FMT_H265:
-        return "H265";
-    default:
-        return "unkonown";
+        printf("ERR(%s):VIDIOC_QUERYCAP failed\n", __func__);
+        return -1;
     }
+
+	if(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)
+		printf("dev support capture\n");
+
+	if(cap.capabilities & V4L2_CAP_VIDEO_OUTPUT)
+		printf("dev support output\n");
+
+	if(cap.capabilities & V4L2_CAP_VIDEO_OVERLAY)
+		printf("dev support overlay\n");
+
+	if(cap.capabilities & V4L2_CAP_STREAMING)
+		printf("dev support streaming\n");
+
+	if(cap.capabilities & V4L2_CAP_READWRITE)
+		printf("dev support read write\n");
+
+    return 0;
+}
+
+static int enum_input(DeviceContex_t *ctx)
+{
+    struct v4l2_input input;
+    char name[128];
+    struct video_data *s = (struct video_data *)ctx->priv_data;
+    int found = 0;
+    int index = 0;
+
+    memset(name, 0, sizeof(name));
+    input.index = 0;
+
+    while(!ioctl(s->fd, VIDIOC_ENUMINPUT, &input))
+    {
+        printf("input:%s\n", input.name);
+
+        if(input.index == index)
+        {
+            found = 1;
+            strcpy(name, (const char*)input.name);
+        }
+
+        ++input.index;
+    }
+
+    if(!found)
+    {
+        printf("%s:can't find input dev\n", __func__);
+        return -1;
+    }
+
+    printf("input device name:%s\n", name);
+
+    return 0;
+}
+
+static int set_input(DeviceContex_t *ctx, int index)
+{
+    struct video_data *s = (struct video_data *)ctx->priv_data;
+    struct v4l2_input input;
+
+    input.index = index;
+
+    if (ioctl(s->fd, VIDIOC_S_INPUT, &input) < 0)
+    {
+        printf("ERR(%s):VIDIOC_S_INPUT failed\n", __func__);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int v4l2_enum_frameInterval(DeviceContex_t *ctx, int pixfmt, int width, int height)
+{
+	struct v4l2_frmivalenum fival;
+	struct video_data *s = (struct video_data *)ctx->priv_data;
+
+	// 设置参数
+	memset(&fival, 0, sizeof(fival));
+	fival.index = 0;
+	fival.pixel_format = pixfmt;
+	fival.width = width;
+	fival.height = height;
+
+	printf("\tTime interval between frame: \n");
+	// 遍历的调用ioctl获取所有支持的fps
+	while (ioctl(s->fd, VIDIOC_ENUM_FRAMEINTERVALS, &fival) >= 0)
+	{
+		fival.index++;
+		// 同样只认DISCRETE
+		if (fival.type == V4L2_FRMIVAL_TYPE_DISCRETE)
+		{
+			printf("\t\t%u/%u\n", fival.discrete.numerator, fival.discrete.denominator);
+            FmtListData_t *pFmtListData = (FmtListData_t *)malloc(sizeof(FmtListData_t));
+			memset(pFmtListData, 0, sizeof(FmtListData_t));
+			INIT_LIST_HEAD(&pFmtListData->fmtList);
+			pFmtListData->supportFmt.fmt = pixfmt;
+			pFmtListData->supportFmt.width = width;
+			pFmtListData->supportFmt.height = height;
+			pFmtListData->supportFmt.fps = fival.discrete.denominator / fival.discrete.numerator;
+			// list_add_tail(&pFmtListData->fmtList, &g_supportFmtList);
+			// g_formatCnt++;
+
+            if (pixfmt == V4L2_PIX_FMT_MJPEG)
+            {
+                list_add_tail(&pFmtListData->fmtList, &g_mjpegFmtList);
+                g_mjpegFmtCnt++;
+            }
+            else if (pixfmt == V4L2_PIX_FMT_YUYV)
+            {
+                list_add_tail(&pFmtListData->fmtList, &g_yuyvFmtList);
+                g_yuyvFmtCnt++;
+            }
+            else if (pixfmt == V4L2_PIX_FMT_NV12)
+            {
+                list_add_tail(&pFmtListData->fmtList, &g_nv12FmtList);
+                g_nv12FmtCnt++;
+            }
+		}
+		else if (fival.type == V4L2_FRMIVAL_TYPE_CONTINUOUS)
+		{
+			printf("\t\t{min { %u/%u } .. max { %u/%u } }\n",
+				fival.stepwise.min.numerator, fival.stepwise.min.numerator,
+				fival.stepwise.max.denominator, fival.stepwise.max.denominator);
+			break;
+		}
+		else if (fival.type == V4L2_FRMIVAL_TYPE_STEPWISE)
+		{
+			printf("\t\t{min { %u/%u } .. max { %u/%u }, stepsize { %u/%u } }\n",
+				fival.stepwise.min.numerator, fival.stepwise.min.denominator,
+				fival.stepwise.max.numerator, fival.stepwise.max.denominator,
+				fival.stepwise.step.numerator, fival.stepwise.step.denominator);
+			break;
+		}
+	}
+
+	return 0;
+}
+
+static int v4l2_enum_frameSize(DeviceContex_t *ctx, int pixfmt)
+{
+	int ret=0;
+	int fsizeind = 0;
+	struct v4l2_frmsizeenum fsize;
+    struct video_data *s = (struct video_data *)ctx->priv_data;
+
+	// 设置好v4l2_frmsizeenum
+	memset(&fsize, 0, sizeof(fsize));
+	fsize.index = 0;
+	fsize.pixel_format = pixfmt;
+	// 循环调用VIDIOC_ENUM_FRAMESIZES ioctl查询所有支持的分辨率
+	while (ioctl(s->fd, VIDIOC_ENUM_FRAMESIZES, &fsize) >= 0)
+	{
+		fsize.index++;
+		// 根据输出结果的type分情况讨论
+		if (fsize.type == V4L2_FRMSIZE_TYPE_DISCRETE)       // 离散帧size
+		{
+			printf("{ \tdiscrete: width = %u, height = %u }\n", fsize.discrete.width, fsize.discrete.height);
+			fsizeind++;
+
+			// 过滤超过1080p的设置
+			if (fsize.discrete.width > 1920 || fsize.discrete.height > 1080)
+				continue;
+
+			// enum supported fps under this size
+			v4l2_enum_frameInterval(ctx, pixfmt, fsize.discrete.width, fsize.discrete.height);
+		}
+		else if (fsize.type == V4L2_FRMSIZE_TYPE_CONTINUOUS)    // 连续帧size
+		{
+			// 如果type是CONTINUOUS或STEPWISE, 则不做任何事
+			printf("{ continuous: min { width = %u, height = %u }, max { width = %u, height = %u } }\n",
+				fsize.stepwise.min_width, fsize.stepwise.min_height,
+				fsize.stepwise.max_width, fsize.stepwise.max_height);
+			printf("  will not enumerate frame intervals.\n");
+		}
+		else if (fsize.type == V4L2_FRMSIZE_TYPE_STEPWISE)      // 逐步定义帧size
+		{
+			printf("{ stepwise: min { width = %u, height = %u }, max { width = %u, height = %u }, stepsize { width = %u, height = %u } }\n",
+				fsize.stepwise.min_width, fsize.stepwise.min_height,
+				fsize.stepwise.max_width, fsize.stepwise.max_height,
+				fsize.stepwise.step_width, fsize.stepwise.step_height);
+			printf("  will not enumerate frame intervals.");
+		}
+		else
+		{
+			printf("  fsize.type not supported: %d\n", fsize.type);
+			printf("     (Discrete: %d   Continuous: %d  Stepwise: %d)\n",
+				V4L2_FRMSIZE_TYPE_DISCRETE,
+				V4L2_FRMSIZE_TYPE_CONTINUOUS,
+				V4L2_FRMSIZE_TYPE_STEPWISE);
+		}
+	}
+
+	// 如果设备不支持任何DISCRETE类型的分辨率, 尝试通过VIDIOC_TRY_FMT对设备设置分辨率, 如果设置成功, 也认为
+	// 这个摄像头设备支持这种分辨率
+	if (fsizeind == 0)
+	{
+		/* ------ gspca doesn't enumerate frame sizes ------ */
+		/*       negotiate with VIDIOC_TRY_FMT instead       */
+		static const struct {
+			int w,h;
+		} defMode[] = {
+			{800,600},
+			{768,576},
+			{768,480},
+			{720,576},
+			{720,480},
+			{704,576},
+			{704,480},
+			{640,480},
+			{352,288},
+			{320,240}
+		};
+
+		unsigned int i;
+		for (i = 0 ; i < (sizeof(defMode) / sizeof(defMode[0])); i++)
+		{
+			fsizeind++;
+			struct v4l2_format fmt;
+			fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+			fmt.fmt.pix.width = defMode[i].w;
+			fmt.fmt.pix.height = defMode[i].h;
+			fmt.fmt.pix.pixelformat = pixfmt;
+			fmt.fmt.pix.field = V4L2_FIELD_ANY;
+
+			if (ioctl(s->fd,VIDIOC_TRY_FMT, &fmt) >= 0)
+			{
+				printf("{ ?GSPCA? : width = %u, height = %u }\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int v4l2_enum_frameFormat(DeviceContex_t *ctx)
+{
+    struct video_data *s = (struct video_data *)ctx->priv_data;
+	struct v4l2_fmtdesc vfd;
+
+	memset(&vfd, 0, sizeof(vfd));
+	vfd.index = 0;
+	vfd.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+	// enum supported fmt of this dev
+	while (ioctl(s->fd, VIDIOC_ENUM_FMT, &vfd) >= 0)
+	{
+        char strFmt[8] = {0};
+		vfd.index++;
+
+        if (!(vfd.flags & V4L2_FMT_FLAG_COMPRESSED) &&
+            s->list_format & V4L_RAWFORMATS) {
+            DEMO_INFO("Raw\t\t: pixelformat = %s, description = %s\n", format_fcc_to_str2(vfd.pixelformat, strFmt, sizeof(strFmt)), vfd.description);
+        } else
+        if (vfd.flags & V4L2_FMT_FLAG_COMPRESSED &&
+            s->list_format & V4L_COMPFORMATS) {
+            DEMO_INFO("Compressed\t: pixelformat = %s, description = %s\n", format_fcc_to_str2(vfd.pixelformat, strFmt, sizeof(strFmt)), vfd.description);
+        } else {
+            continue;
+        }
+
+		//enumerate frame sizes & fps for this pixel format
+		v4l2_enum_frameSize(ctx, vfd.pixelformat);
+	}
+
+    return 0;
+}
+
+static int get_commended_frameFormat(DeviceContex_t *ctx)
+{
+    struct video_data *s = (struct video_data *)ctx->priv_data;
+
+    AUTO_MATCH(s, g_mjpegFmtList, V4L2_PIX_FMT_MJPEG);
+    AUTO_MATCH(s, g_yuyvFmtList, V4L2_PIX_FMT_YUYV);
+    AUTO_MATCH(s, g_nv12FmtList, V4L2_PIX_FMT_NV12);
+
+    printf("Not supported format!\n");
+    return -1;
 }
 
 int v4l2_read_header(DeviceContex_t *ctx)
@@ -652,7 +980,8 @@ int v4l2_read_header(DeviceContex_t *ctx)
     struct video_data *s = (struct video_data *)ctx->priv_data;
     int res = 0;
     struct v4l2_input input = { 0 };
- 
+    char strFmt[8] = {0};
+    
     /* silence libv4l2 logging. if fopen() fails v4l2_log_file will be NULL
        and errors will get sent to stderr */
     if (s->use_libv4l2)
@@ -663,62 +992,36 @@ int v4l2_read_header(DeviceContex_t *ctx)
         DEMO_ERR("device_open error\n");
         return s->fd;
     }
-    DEMO_INFO("v4l2_read_header done\n");
+    DEMO_INFO("device_open done\n");
 
-    if (s->channel != -1) {
-        /* set video input */
-        DEMO_INFO("Selecting input_channel: %d\n", s->channel);
-        if (v4l2_ioctl(s->fd, VIDIOC_S_INPUT, &s->channel) < 0) {
-            DEMO_ERR("ioctl(VIDIOC_S_INPUT): %s\n", strerror(errno));
-            goto fail;
-        }
-    } else {
-        /* get current video input */
-        if (v4l2_ioctl(s->fd, VIDIOC_G_INPUT, &s->channel) < 0) {
-            DEMO_ERR("ioctl(VIDIOC_G_INPUT): %s\n", strerror(errno));
-            goto fail;
-        }
-    }
-
-    /* enum input */
-    input.index = s->channel;
-    if (v4l2_ioctl(s->fd, VIDIOC_ENUMINPUT, &input) < 0) {
-        DEMO_ERR("ioctl(VIDIOC_ENUMINPUT): %s\n", strerror(errno));
+    // query capability 
+    if (query_cap(ctx) < 0)
         goto fail;
-    }
-    s->std_id = input.std;
-    DEMO_DEBUG("Current input_channel: %d, input_name: %s, input_std: 0x%llx\n",
-           s->channel, input.name, (uint64_t)input.std);
 
-    if (s->list_format) {
-        list_formats(ctx, s->list_format);
-    }
+    // enum input dev
+    if (enum_input(ctx) < 0)
+		goto fail;
 
-    if (s->list_standard) {
-        list_standards(ctx);
-    }
+    // set input dev
+    if (set_input(ctx, 0) < 0)
+		goto fail;
 
-    if (!s->width && !s->height) {
-        struct v4l2_format fmt = { .type = V4L2_BUF_TYPE_VIDEO_CAPTURE };
+	printf("v4l2_s_input exec success\n");
 
-        DEMO_INFO("Querying the device for the current frame size\n");
-        if (v4l2_ioctl(s->fd, VIDIOC_G_FMT, &fmt) < 0) {
-            DEMO_ERR("ioctl(VIDIOC_G_FMT): %s\n",
-                   strerror(errno));
-            goto fail;
-        }
+    // get supported fmt list
+    v4l2_enum_frameFormat(ctx);
 
-        s->width  = fmt.fmt.pix.width;
-        s->height = fmt.fmt.pix.height;
-    }
-    s->pixelformat = s->pixelformat ? s->pixelformat : V4L2_PIX_FMT_MJPEG;
+    // cget the configuration closest to the settings
+    if (get_commended_frameFormat(ctx) < 0)
+        goto fail;
 
+    // set commended format
     res = device_try_init(ctx, &s->width, &s->height, &s->pixelformat);
     if (res < 0)
         goto fail;
 
     DEMO_INFO("Setting format %s frame size to %dx%d\n", 
-        format_fcc_to_str(s->pixelformat),s->width, s->height);
+        format_fcc_to_str2(s->pixelformat, strFmt, sizeof(strFmt)), s->width, s->height);
 
     if ((res = image_check_size(s->width, s->height, ctx)) < 0)
         goto fail;
@@ -792,12 +1095,21 @@ int v4l2_dev_init(DeviceContex_t **ctx, char *path)
     c->inited = true;
     strcpy(c->url, path);
     *ctx = c;
+
+    g_mjpegFmtCnt = 0;
+    INIT_LIST_HEAD(&g_mjpegFmtList);
+    g_yuyvFmtCnt = 0;
+    INIT_LIST_HEAD(&g_yuyvFmtList);
+    g_nv12FmtCnt = 0;
+    INIT_LIST_HEAD(&g_nv12FmtList);
+    
     return 0;
 }
 
 void v4l2_dev_set_fmt(DeviceContex_t *ctx, int v4l2_fmt, int width, int height)
 {
     struct video_data *s = (struct video_data *)ctx->priv_data;
+    char strFmt[8] = {0};
 
     assert(ctx);
     assert(s);
@@ -805,17 +1117,39 @@ void v4l2_dev_set_fmt(DeviceContex_t *ctx, int v4l2_fmt, int width, int height)
     s->pixelformat = v4l2_fmt;
     s->width = width;
     s->height = height;
+
+    printf("desired fmt: %s, width: %d, height: %d\n", format_fcc_to_str2(v4l2_fmt, strFmt, sizeof(strFmt)), width, height);
 }
+
+void v4l2_dev_get_fmt(DeviceContex_t *ctx, int *v4l2_fmt, int *width, int *height)
+{
+    struct video_data *s = (struct video_data *)ctx->priv_data;
+
+    assert(ctx);
+    assert(s);
+
+    *v4l2_fmt = s->pixelformat;
+    *width = s->width;
+    *height = s->height;
+}
+
 void v4l2_dev_deinit(DeviceContex_t *ctx)
 {
     assert(ctx);
     assert(ctx->inited==true);
 
+    CLEAR_LIST(g_mjpegFmtList);
+    g_mjpegFmtCnt = 0;
+    CLEAR_LIST(g_yuyvFmtList);
+    g_yuyvFmtCnt = 0;
+    CLEAR_LIST(g_nv12FmtList);
+    g_nv12FmtCnt = 0;
+
     v4l2_free(ctx->priv_data);
     v4l2_free(ctx);
 }
 
-void save_file(void *buf, int length,char type)
+void save_file(void *buf, int length, char type)
 {
     if(NULL == buf || 0 >= length)
        return;
@@ -849,7 +1183,8 @@ void save_file(void *buf, int length,char type)
         break;
     default:
        break;
-    }    
+    }  
+
     fwrite(buf,length,1, DEMOFile);
     fclose(DEMOFile);
 }
