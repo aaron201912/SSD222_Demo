@@ -9,6 +9,7 @@
 #include <stdlib.h> /* exit */
 #include <pthread.h>
 
+#include "player.h"
 #include "interface.h"
 #include "platform.h"
 
@@ -20,6 +21,7 @@ int main(int argc, char *argv[])
     uint32_t luma = 50, contrast = 50;
     int volumn = 30;
     bool b_exit = false, mute = false;
+    double duration, position;
 
     int i, nrcpus;
     cpu_set_t mask;
@@ -74,13 +76,17 @@ int main(int argc, char *argv[])
 
     printf("try playing %s ...\n", argv[1]);
 
-    //sstar_player_setopts("video_only", "1", 0);   //设置是否只播视频
-    //sstar_player_setopts("rotate", "0", 0);       //设置是否旋转
+    mm_player_set_opts("audio_layout", "", AV_CH_LAYOUT_MONO);
+    mm_player_set_opts("video_only", "", 0);
+    mm_player_set_opts("video_rotate", "", AV_ROTATE_NONE);
+    mm_player_set_opts("resolution", "384000", 0);//限制视频分辨率800x480
 
-    ret = sstar_player_open(argv[1], 0, 0, width, height);
+    ret = mm_player_open(argv[1], 0, 0, width, height);
     if (ret < 0) {
         goto exit;
     }
+
+    mm_player_getduration(&duration);
 
     while (!b_exit)
     {
@@ -90,48 +96,48 @@ int main(int argc, char *argv[])
         switch (cmd) 
         {
             case 's':
-                sstar_player_open(argv[1], 0, 0, width, height);
+                mm_player_open(argv[1], 0, 0, width, height);
             break;
 
             case 't':
-                sstar_player_close();
+                mm_player_close();
             break;
 
             case 'p':
-                sstar_player_pause();    // 暂停
+                mm_player_pause();    // 暂停
             break;
 
             case 'c':
-                sstar_player_resume();   // 恢复播放
+                mm_player_resume();   // 恢复播放
             break;
 
             case 'f':
-                sstar_player_seek(10);   // forward
+                mm_player_getposition(&position);
+                position += 10.0;
+                position = (position >= duration) ? duration : position;
+                mm_player_seek2time(position);
             break;
 
             case 'b':
-                sstar_player_seek(-10);  // backward
+                mm_player_getposition(&position);
+                position -= 10.0;
+                position = (position <= 0) ? 0 : position;
+                mm_player_seek2time(position);
             break;
 
-            case 'd': {
-                double duration;
-                if (0 == (ret = sstar_player_getduration(&duration))) {
-                    printf("get video duration = [%.3lf]!\n", duration);
-                }
-                break;
-            }
+            case 'd':
+                mm_player_getduration(&duration);
+                printf("get video duration = [%.3lf]!\n", duration);
+            break;
 
-            case 'g': {
-                double current_time;
-                if (0 == (ret = sstar_player_gettime(&current_time))) {
-                    printf("get video current time = [%.3lf]!\n", current_time);
-                }
-                break;
-            }
+            case 'g':
+                mm_player_getposition(&position);
+                printf("get video current time = [%.3lf]!\n", position);
+            break;
 
             case 'u': {
                 mute = !mute;
-                sstar_player_set_mute(mute);
+                mm_player_set_mute(mute);
                 break;
             }
 
@@ -141,7 +147,7 @@ int main(int argc, char *argv[])
                     volumn = 100;
                     printf("audio volumn is over max!\n");
                 }
-                sstar_player_set_volumn(volumn);
+                mm_player_set_volumn(volumn);
                 break;
             }
 
@@ -151,7 +157,7 @@ int main(int argc, char *argv[])
                     volumn = 0;
                     printf("audio volumn is lower min!\n");
                 }
-                sstar_player_set_volumn(volumn);
+                mm_player_set_volumn(volumn);
                 break;
             }
 
@@ -166,7 +172,7 @@ int main(int argc, char *argv[])
         fflush(stdout);
     }
 exit:
-    sstar_player_close();
+    mm_player_close();
 
     sstar_panel_deinit();
 

@@ -3,13 +3,15 @@ CC  = $(CROSS_COMPILE)gcc
 CPP = $(CROSS_COMPILE)g++
 AR  = $(CROSS_COMPILE)ar
 
-COM_FLAGS = -Wall -O2 -fPIC -mcpu=cortex-a9 -mfpu=neon-fp16 -mfloat-abi=hard -mthumb-interwork -marm -g
+ALKAID_PATH ?= ./../..
+
+COM_FLAGS = -Wall -O2 -fPIC -mtune=cortex-a7 -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -mthumb-interwork -marm -g
 C_FLAGS   = $(COM_FLAGS) -std=c11
 CPP_FLAGS = $(COM_FLAGS) -std=c++11
 
-
-INCLUDES  = -I. -I../include -I../sstar/include -I../ffmpeg/include
-LIB_PATH  = -L../sstar/lib -L../ffmpeg/lib
+INCLUDES  = -I. -I$(ALKAID_PATH)/project/release/include -I../player/include -I../ffmpeg/include
+LIB_PATH  = -L../player/lib -L../ffmpeg/lib -L../3rdparty
+LIB_PATH += -L$(ALKAID_PATH)/project/release/dispcam/p3/common/glibc/9.1.0/mi_libs/dynamic -L$(ALKAID_PATH)/project/release/dispcam/p3/common/glibc/9.1.0/ex_libs/dynamic
 
 TARGET_NAME  = ssplayer
 
@@ -21,7 +23,7 @@ C_SRCS   +=  $(wildcard ../src/*.c)
 CPP_OBJS  = $(patsubst %.cpp, %.cpp.o, $(CPP_SRCS))
 C_OBJS    = $(patsubst %.c, %.c.o, $(C_SRCS))
 
-LIB_NAME  = -lavformat -lavcodec -lavutil -lswscale -lswresample
+LIB_NAME  = -lssplayer -lavformat -lavcodec -lavutil -lswscale -lswresample
 LIB_NAME += -lmi_panel -lmi_ao -lmi_divp -lmi_disp -lmi_gfx -lmi_sys -lmi_common -lcam_os_wrapper
 LIB_NAME += -lssl -lcrypto
 
