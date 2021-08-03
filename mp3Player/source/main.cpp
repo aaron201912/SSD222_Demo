@@ -5,13 +5,31 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "user_audio.h"
+
+
+static bool g_bExit = false;
+
+void signalHandler(int signo)
+{
+    switch (signo)
+    {
+        case SIGINT:
+            printf("catch exit signal\n");
+            g_bExit = true;
+            break;
+        default:
+            break;
+    }
+}
 
 int main(int argc, char *argv[])
 {
     int ret;
     char cmd;
+    signal(SIGINT, signalHandler);
 
     if (!argv[1]) {
         printf("please input a mp3 file!\n");
@@ -31,13 +49,10 @@ int main(int argc, char *argv[])
     {
         if (is_play_done())
             break;
-        fflush(stdin);
-        cmd = getchar();
-        if (cmd == 'q') {
+        if (g_bExit) {
             Mp3PlayStopDec();
             break;
         }
-        fflush(stdout);
     }
 
     printf("### Exit Mp3Player ###\n");
