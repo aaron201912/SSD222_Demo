@@ -1,0 +1,11 @@
+huffman.lo: huffman.c \
+ /tools/toolchain/gcc-arm-8.2-2018.08-x86_64-arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include/stdc-predef.h \
+ config.h global.h huffman.h
+
+/tools/toolchain/gcc-arm-8.2-2018.08-x86_64-arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include/stdc-predef.h:
+
+config.h:
+
+global.h:
+
+huffman.h:

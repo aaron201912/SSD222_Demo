@@ -1,0 +1,23 @@
+synth.lo: synth.c \
+ /tools/toolchain/gcc-arm-8.2-2018.08-x86_64-arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include/stdc-predef.h \
+ config.h global.h fixed.h frame.h timer.h stream.h bit.h synth.h D.dat
+
+/tools/toolchain/gcc-arm-8.2-2018.08-x86_64-arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include/stdc-predef.h:
+
+config.h:
+
+global.h:
+
+fixed.h:
+
+frame.h:
+
+timer.h:
+
+stream.h:
+
+bit.h:
+
+synth.h:
+
+D.dat:
