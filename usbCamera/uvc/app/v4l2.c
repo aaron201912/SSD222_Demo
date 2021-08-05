@@ -389,7 +389,7 @@ static int mmap_read_frame(DeviceContex_t *ctx, Packet *pkt)
         if (errno == EAGAIN)
             return -EAGAIN;
 
-        DEMO_ERR("ioctl(VIDIOC_DQBUF): %s\n", strerror(ret));
+        DEMO_WRN("ioctl(VIDIOC_DQBUF): %s\n", strerror(ret));
         return ret;
     }
 
