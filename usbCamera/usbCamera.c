@@ -158,7 +158,6 @@ static VencParam_t g_vencParam;
 static int g_snapTryCnt = 0;
 static int g_videoFrameCnt = 0;
 static pthread_t g_stretchBufThread = 0;
-static MI_SYS_PixelFormat_e g_eSnapFixelFmt = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
 
 int SSTAR_LIBYUV_OpenLibrary(LibyuvAssembly_t *pstLibyuvAssembly)
 {
@@ -315,8 +314,6 @@ int jdec_convert_yuv_fotmat(jdecIMAGE *pImage, unsigned char *pBuf[3])
 
 void* stretch_buf_thread(void *args)
 {
-    MI_SYS_PixelFormat_e *pFmt = (MI_SYS_PixelFormat_e*)args;
-
     MI_PHY phySrcBufAddr = 0;
     MI_PHY phyDstBufAddr = 0;
     MI_DIVP_DirectBuf_t stSrcBuf;
@@ -332,7 +329,7 @@ void* stretch_buf_thread(void *args)
     MI_SYS_BufInfo_t stDstBufInfo;
     MI_SYS_BUF_HANDLE hDstBufHandle = 0;
 
-    stSrcBuf.ePixelFormat = *pFmt;
+    stSrcBuf.ePixelFormat = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
     stSrcBuf.u32Width = DISP_INPUT_WIDTH(g_isRotate);
     stSrcBuf.u32Height = DISP_INPUT_HEIGHT(g_isRotate);
     stSrcCrop.u16X = 0;
@@ -340,7 +337,7 @@ void* stretch_buf_thread(void *args)
     stSrcCrop.u16Width = stSrcBuf.u32Width;
     stSrcCrop.u16Height = stSrcBuf.u32Height;
 
-    stDstBuf.ePixelFormat = *pFmt;
+    stDstBuf.ePixelFormat = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
     stDstBuf.u32Width = SNAP_PIC_WIDTH;
     stDstBuf.u32Height = SNAP_PIC_HEIGHT;
 
@@ -368,7 +365,7 @@ void* stretch_buf_thread(void *args)
     stDstBufConf.stFrameCfg.u16Width = SNAP_PIC_WIDTH;
     stDstBufConf.stFrameCfg.u16Height = SNAP_PIC_HEIGHT;
     stDstBufConf.stFrameCfg.eFrameScanMode = E_MI_SYS_FRAME_SCAN_MODE_PROGRESSIVE;
-    stDstBufConf.stFrameCfg.eFormat = *pFmt;
+    stDstBufConf.stFrameCfg.eFormat = E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420;
 
     printf("stretch_buf_thread.................................\n");
     // rotate_divp output -> venc input 
@@ -397,26 +394,15 @@ void* stretch_buf_thread(void *args)
 
         printf("get venc intput buf ok...\n");
 
-        if (*pFmt == E_MI_SYS_PIXEL_FRAME_YUV422_YUYV)
-        {
-            stSrcBuf.u32Stride[0] = stSrcBufInfo.stFrameData.u32Stride[0];
-            stSrcBuf.phyAddr[0] = stSrcBufInfo.stFrameData.phyAddr[0];
+        stSrcBuf.u32Stride[0] = stSrcBufInfo.stFrameData.u32Stride[0];
+        stSrcBuf.u32Stride[1] = stSrcBufInfo.stFrameData.u32Stride[1];
+        stSrcBuf.phyAddr[0] = stSrcBufInfo.stFrameData.phyAddr[0];
+        stSrcBuf.phyAddr[1] = stSrcBufInfo.stFrameData.phyAddr[1];
 
-            stDstBuf.u32Stride[0] = stDstBufInfo.stFrameData.u32Stride[0];
-            stDstBuf.phyAddr[0] = stDstBufInfo.stFrameData.phyAddr[0];
-        }
-        else if (*pFmt == E_MI_SYS_PIXEL_FRAME_YUV_SEMIPLANAR_420)
-        {
-            stSrcBuf.u32Stride[0] = stSrcBufInfo.stFrameData.u32Stride[0];
-            stSrcBuf.u32Stride[1] = stSrcBufInfo.stFrameData.u32Stride[1];
-            stSrcBuf.phyAddr[0] = stSrcBufInfo.stFrameData.phyAddr[0];
-            stSrcBuf.phyAddr[1] = stSrcBufInfo.stFrameData.phyAddr[1];
-
-            stDstBuf.u32Stride[0] = stDstBufInfo.stFrameData.u32Stride[0];
-            stDstBuf.u32Stride[1] = stDstBufInfo.stFrameData.u32Stride[1];
-            stDstBuf.phyAddr[0] = stDstBufInfo.stFrameData.phyAddr[0];
-            stDstBuf.phyAddr[1] = stDstBufInfo.stFrameData.phyAddr[1];
-        }
+        stDstBuf.u32Stride[0] = stDstBufInfo.stFrameData.u32Stride[0];
+        stDstBuf.u32Stride[1] = stDstBufInfo.stFrameData.u32Stride[1];
+        stDstBuf.phyAddr[0] = stDstBufInfo.stFrameData.phyAddr[0];
+        stDstBuf.phyAddr[1] = stDstBufInfo.stFrameData.phyAddr[1];
 
         printf("stretch buf by divp...\n");
         MI_DIVP_StretchBuf(&stSrcBuf, &stSrcCrop, &stDstBuf);
@@ -503,8 +489,6 @@ int send_yuv_to_display(void *pData, int fmt, int width, int height)
         }
     }
 
-    g_eSnapFixelFmt = stBufInfo.stFrameData.ePixelFormat;
-
     int ret = MI_SYS_ChnInputPortGetBuf(&stInputChnPort, &stBufConf, &stBufInfo, &stBufHandle, 100);
 	
     if (MI_SUCCESS == ret)
@@ -565,14 +549,14 @@ int send_yuv_to_display(void *pData, int fmt, int width, int height)
                 if (!g_stretchBufThread)
                 {
                     printf("create stretch buf\n");
-                    pthread_create(&g_stretchBufThread, NULL, stretch_buf_thread, (void*)&g_eSnapFixelFmt);
+                    pthread_create(&g_stretchBufThread, NULL, stretch_buf_thread, NULL);
                 }
                 else
                 {
                     printf("wait last frame done...\n");
                     pthread_join(g_stretchBufThread, NULL);
                     printf("create stretch buf\n");
-                    pthread_create(&g_stretchBufThread, NULL, stretch_buf_thread, (void*)&g_eSnapFixelFmt);
+                    pthread_create(&g_stretchBufThread, NULL, stretch_buf_thread, NULL);
                 }
 
                 g_snapTryCnt++;
