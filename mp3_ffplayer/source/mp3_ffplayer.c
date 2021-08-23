@@ -372,18 +372,24 @@ void deinit_ao()
 int main(int argc, char **argv)
 {
     int ret = 0;
+    int volume = -10;
     AudioState* is = (AudioState*) av_mallocz(sizeof(AudioState));
 
     signal(SIGINT, signalHandler);
 
-    if (!argv[1])
+    if (argc < 2)
     {
         printf("please input a mp3 file!\n");
-        printf("eg: ./mp3Player file.mp3\n");
+        printf("eg: ./mp3Player [file] [volume] , the default volume is -10\n");
         return -1;
     }
 
-    if (init_ao(2, WAV_SAMPLERATE, -10) != 0)
+    if (argc > 2)
+    {
+        volume = atoi(argv[2]);
+    }
+
+    if (init_ao(2, WAV_SAMPLERATE, volume) != 0)
     {
         printf("init ao error\n");
         return -1;
