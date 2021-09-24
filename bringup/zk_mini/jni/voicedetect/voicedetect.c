@@ -550,8 +550,13 @@ static MI_S32 SSTAR_AudioInStart()
 	
     memset(&stAiChnParam, 0x0, sizeof(MI_AI_ChnParam_t));
 	stAiChnParam.stChnGain.bEnableGainSet = TRUE;
+#if USE_AMIC
 	stAiChnParam.stChnGain.s16FrontGain = 15;
 	stAiChnParam.stChnGain.s16RearGain = 0;
+#else
+	stAiChnParam.stChnGain.s16FrontGain = 3;
+	stAiChnParam.stChnGain.s16RearGain = 0;
+#endif
 	ExecFunc(g_stAudioInAssembly.pfnAiSetChnParam(AiDevId, AiChn, &stAiChnParam), MI_SUCCESS);
     ExecFunc(g_stAudioInAssembly.pfnAiEnableChn(AiDevId, AiChn), MI_SUCCESS);
 
