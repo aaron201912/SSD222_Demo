@@ -23,6 +23,12 @@ public:
 	virtual ~ZKQRCode();
 
 	/**
+	 * @brief 设置前景颜色
+	 * @param color 颜色值为0x ARGB
+	 */
+	void setForegroundColor(uint32_t color);
+
+	/**
 	 * @brief 加载二维码数据
 	 */
 	bool loadQRCode(const char *pStr);
