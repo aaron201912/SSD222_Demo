@@ -107,7 +107,10 @@
     <string name="wifi3_ap_passwd">密码：</string>
     <string name="wifi3_ap_connect">连接</string>
     <string name="usb_open_faild">打开USB摄像头失败，请确认设备连接状态和设置参数是否正常。</string>
+    <string name="mic_type">麦克风类型：</string>
     <string name="record_sample">录音采样率：</string>
+    <string name="play_bgsound">播放背景音：</string>
+    <string name="test_aec">测试AEC:</string>
     <string name="choose_record">选择录音文件：</string>
     <string name="speaker_test">扬声器测试：</string>
     <string name="headphone_test">耳机测试：</string>

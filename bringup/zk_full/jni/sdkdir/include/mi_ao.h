@@ -74,6 +74,8 @@ MI_S32 MI_AO_ClearChnBuf(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn);
 MI_S32 MI_AO_QueryChnStat(MI_AUDIO_DEV AoDevId , MI_AO_CHN AoChn, MI_AO_ChnState_t *pstStatus);
 MI_S32 MI_AO_SetVolume(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_S32 s32VolumeDb, MI_AO_GainFading_e eFading);
 MI_S32 MI_AO_GetVolume(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_S32 *ps32VolumeDb);
+MI_S32 MI_AO_SetLRVolume(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_S32 s32LeftVolumeDb, MI_S32 s32RightVolumeDb, MI_AO_GainFading_e eFading);
+MI_S32 MI_AO_GetLRVolume(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_S32 *ps32LeftVolumeDb, MI_S32 *ps32RightVolumeDb);
 MI_S32 MI_AO_SetMute(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_BOOL bEnable);
 MI_S32 MI_AO_GetMute(MI_AUDIO_DEV AoDevId, MI_AO_CHN AoChn, MI_BOOL *pbEnable);
 MI_S32 MI_AO_ClrPubAttr(MI_AUDIO_DEV AoDevId);

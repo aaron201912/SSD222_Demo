@@ -437,6 +437,14 @@ typedef struct MI_ISP_AWB_CTMWB_PARAM_s
     MI_U32 u32CT;
 } MI_ISP_AWB_CTMWB_PARAM_t;
 
+typedef struct MI_ISP_AWB_STABILIZER_PARAM_s
+{
+    MI_ISP_BOOL_e bEnable;
+    MI_U16 u16GlbGainThd;
+    MI_U16 u16CountThd;
+    MI_U16 u16ForceTriGainThd;
+} MI_ISP_AWB_STABILIZER_PARAM_t;
+
 /************************************* AWB - Define the structure declaration - END   *************************************/
 
 /************************************* AF - Define the structure declaration - START *************************************/

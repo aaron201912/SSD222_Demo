@@ -1,16 +1,18 @@
-/* Copyright (c) 2018-2019 Sigmastar Technology Corp.
- All rights reserved.
+/* SigmaStar trade secret */
+/* Copyright (c) [2019~2020] SigmaStar Technology.
+All rights reserved.
 
-  Unless otherwise stipulated in writing, any and all information contained
- herein regardless in any format shall remain the sole proprietary of
- Sigmastar Technology Corp. and be kept in strict confidence
- (ï¿½ï¿½Sigmastar Confidential Informationï¿½ï¿½) by the recipient.
- Any unauthorized act including without limitation unauthorized disclosure,
- copying, use, reproduction, sale, distribution, modification, disassembling,
- reverse engineering and compiling of the contents of Sigmastar Confidential
- Information is unlawful and strictly prohibited. Sigmastar hereby reserves the
- rights to any and all damages, losses, costs and expenses resulting therefrom.
+Unless otherwise stipulated in writing, any and all information contained
+herein regardless in any format shall remain the sole proprietary of
+SigmaStar and be kept in strict confidence
+(SigmaStar Confidential Information) by the recipient.
+Any unauthorized act including without limitation unauthorized disclosure,
+copying, use, reproduction, sale, distribution, modification, disassembling,
+reverse engineering and compiling of the contents of SigmaStar Confidential
+Information is unlawful and strictly prohibited. SigmaStar hereby reserves the
+rights to any and all damages, losses, costs and expenses resulting therefrom.
 */
+
 
 #ifndef _MI_IVE_H_
 #define _MI_IVE_H_
@@ -417,7 +419,7 @@ MI_S32 MI_IVE_Xor(MI_IVE_HANDLE hHandle, MI_IVE_SrcImage_t *pstSrc1,
 *   Description  : Calculate two gray images' NCC (Normalized Cross Correlation).
 *   Parameters   : MI_IVE_HANDLE            hHandle     Handle ID of a task
 *                  MI_IVE_SrcImage_t       *pstSrc1        Input source1. Only the U8C1 input format is supported.
-*                  MI_IVE_SrcImage_t       *pstSrc2        Input source2. Must be of the same type¡¢size of source1.
+*                  MI_IVE_SrcImage_t       *pstSrc2        Input source2. Must be of the same type??size of source1.
 *                  MI_IVE_DstMemInfo_t    *pstDst         Output result
 *                  MI_BOOL                  bInstant       Reserved
 *   Return Value : MI_SUCCESS: Success;Error codes: Failure.
@@ -541,7 +543,7 @@ MI_S32 MI_IVE_NormGrad(MI_IVE_HANDLE hHandle, MI_IVE_SrcImage_t *pstSrc,
 *   Description  : Calculate LK-Optical Flow in single-layer of the pyramid.
 *   Parameters   : MI_IVE_HANDLE                  hHandle          Handle ID of a task
 *                  MI_IVE_SrcImage_t             *pstSrcPre           Pre-frame input source.Must be U8C1 image
-*                  MI_IVE_SrcImage_t             *pstSrcCur         Cur-frame input source.Same size¡¢type with pstPreSrc.
+*                  MI_IVE_SrcImage_t             *pstSrcCur         Cur-frame input source.Same size??type with pstPreSrc.
 *                  MI_IVE_SrcMemInfo_t          *pstPoint           Intresting points coordinates in the cur-layer
 *                                                                   for LKOpticalFlow tracking.
 *                  MI_IVE_MemInfo_t              *pstMv               Accumlative movements of the interesting points in pre-layers

@@ -4,18 +4,21 @@
 #include "testaioActivity.h"
 
 /*TAG:GlobalVariable全局变量*/
+static ZKRadioGroup* mRadioGroup_mictypePtr;
+static ZKCheckBox* mCheckbox_playbgsoundPtr;
+static ZKTextView* mTextView_mictypePtr;
+static ZKTextView* mTextview_headphonePtr;
+static ZKTextView* mTextview_speakerPtr;
+static ZKTextView* mTextview_recordPtr;
+static ZKTextView* mTextview_sampleratePtr;
 static ZKButton* mButton_headphonePtr;
-static ZKTextView* mTextview4Ptr;
 static ZKButton* mButton_playstereoPtr;
-static ZKTextView* mTextview3Ptr;
 static ZKButton* mButton_playrecordPtr;
 static ZKListView* mListview_recordfilePtr;
 static ZKButton* mButton_recordfilePtr;
-static ZKTextView* mTextview2Ptr;
 static ZKButton* mButton_recordPtr;
 static ZKListView* mListview_sampleratePtr;
 static ZKButton* mButton_sampleratePtr;
-static ZKTextView* mTextview1Ptr;
 static ZKButton* msys_backPtr;
 static testaioActivity* mActivityPtr;
 
@@ -122,6 +125,26 @@ static S_VideoViewCallback SVideoViewCallbackTab[] = {
 };
 
 
+typedef void (*CheckboxCallback)(ZKCheckBox*, bool);
+typedef struct {
+  int id;
+  CheckboxCallback onCheckedChanged;
+}S_CheckboxCallback;
+/*TAG:CheckboxCallbackTab*/
+static S_CheckboxCallback SCheckboxCallbackTab[] = {
+    ID_TESTAIO_Checkbox_playbgsound, onCheckedChanged_Checkbox_playbgsound,
+};
+
+typedef void (*RadioGroupCallback)(ZKRadioGroup*, int);
+typedef struct {
+  int id;
+  RadioGroupCallback onCheckedChanged;
+}S_RadioGroupCallback;
+/*TAG:RadioGroupCallbackTab*/
+static S_RadioGroupCallback SRadioGroupCallbackTab[] = {
+    ID_TESTAIO_RadioGroup_mictype, onCheckedChanged_RadioGroup_mictype,
+};
+
 testaioActivity::testaioActivity() {
 	//todo add init code here
 	mVideoLoopIndex = -1;
@@ -143,18 +166,21 @@ const char* testaioActivity::getAppName() const{
 //TAG:onCreate
 void testaioActivity::onCreate() {
 	Activity::onCreate();
+    mRadioGroup_mictypePtr = (ZKRadioGroup*)findControlByID(ID_TESTAIO_RadioGroup_mictype);if(mRadioGroup_mictypePtr!= NULL){mRadioGroup_mictypePtr->setCheckedChangeListener(this);}
+    mCheckbox_playbgsoundPtr = (ZKCheckBox*)findControlByID(ID_TESTAIO_Checkbox_playbgsound);if(mCheckbox_playbgsoundPtr!= NULL){mCheckbox_playbgsoundPtr->setCheckedChangeListener(this);}
+    mTextView_mictypePtr = (ZKTextView*)findControlByID(ID_TESTAIO_TextView_mictype);
+    mTextview_headphonePtr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview_headphone);
+    mTextview_speakerPtr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview_speaker);
+    mTextview_recordPtr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview_record);
+    mTextview_sampleratePtr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview_samplerate);
     mButton_headphonePtr = (ZKButton*)findControlByID(ID_TESTAIO_Button_headphone);
-    mTextview4Ptr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview4);
     mButton_playstereoPtr = (ZKButton*)findControlByID(ID_TESTAIO_Button_playstereo);
-    mTextview3Ptr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview3);
     mButton_playrecordPtr = (ZKButton*)findControlByID(ID_TESTAIO_Button_playrecord);
     mListview_recordfilePtr = (ZKListView*)findControlByID(ID_TESTAIO_Listview_recordfile);if(mListview_recordfilePtr!= NULL){mListview_recordfilePtr->setListAdapter(this);mListview_recordfilePtr->setItemClickListener(this);}
     mButton_recordfilePtr = (ZKButton*)findControlByID(ID_TESTAIO_Button_recordfile);
-    mTextview2Ptr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview2);
     mButton_recordPtr = (ZKButton*)findControlByID(ID_TESTAIO_Button_record);
     mListview_sampleratePtr = (ZKListView*)findControlByID(ID_TESTAIO_Listview_samplerate);if(mListview_sampleratePtr!= NULL){mListview_sampleratePtr->setListAdapter(this);mListview_sampleratePtr->setItemClickListener(this);}
     mButton_sampleratePtr = (ZKButton*)findControlByID(ID_TESTAIO_Button_samplerate);
-    mTextview1Ptr = (ZKTextView*)findControlByID(ID_TESTAIO_Textview1);
     msys_backPtr = (ZKButton*)findControlByID(ID_TESTAIO_sys_back);
 	mActivityPtr = this;
 	onUI_init();
@@ -425,4 +451,22 @@ void testaioActivity::unregisterUserTimer(int id) {
 
 void testaioActivity::resetUserTimer(int id, int time) {
 	resetTimer(id, time);
+}
+void testaioActivity::onCheckedChanged(ZKCheckBox* pCheckBox, bool isChecked) {
+    int tablen = sizeof(SCheckboxCallbackTab) / sizeof(S_CheckboxCallback);
+    for (int i = 0; i < tablen; ++i) {
+        if (SCheckboxCallbackTab[i].id == pCheckBox->getID()) {
+        	SCheckboxCallbackTab[i].onCheckedChanged(pCheckBox, isChecked);
+            break;
+        }
+    }
+}
+void testaioActivity::onCheckedChanged(ZKRadioGroup* pRadioGroup, int checkedID) {
+    int tablen = sizeof(SRadioGroupCallbackTab) / sizeof(S_RadioGroupCallback);
+    for (int i = 0; i < tablen; ++i) {
+        if (SRadioGroupCallbackTab[i].id == pRadioGroup->getID()) {
+        	SRadioGroupCallbackTab[i].onCheckedChanged(pRadioGroup, checkedID);
+            break;
+        }
+    }
 }

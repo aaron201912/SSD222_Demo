@@ -16,18 +16,37 @@
 #include <pthread.h>
 #include <errno.h>
 #include "audio.h"
+#include "AudioAecProcess.h"
+#include "AudioBfProcess.h"
 
-#define AI_DEV_ID			5		// 0:ADC0/1 chn=2; 4:ADC2 chn=1; 5:ADC0/1/2 chn=4
 #define AO_DEV_ID			0		// 0:DAC0/1 chn=2; 2:DAC0 chn=1; 3:DAC1 chn=1;
 #define AO_DEV_HEADPHONE	4		// 4:HeadPhone chn=2
+#define SAVE_WAV			1
 
 #define AI_MAX_CHN_CNT		4
 #define MI_AUDIO_SAMPLE_PER_FRAME 	256		//1024
+#define CHECK_AI_DEV_ID(devID)	{if ((devID != AMIC_DEV_ID) && (devID != DMIC_DEV_ID)) return -1;}
+#define ALIGN_UP(v, align)	((v+align-1)/ align * align)
 
 #define AUDIO_IN_RECORD_PREFIX	AUDIO_IN_RECORD_DIR"/AudioIn_record_"
 #define AUDIO_IN_RECORD(idx)	AUDIO_IN_RECORD_PREFIX#idx
 #define AUDIO_OUT_MONO_FILE		"/customer/res/8K_16bit_MONO.wav"
 #define AUDIO_OUT_STEREO_FILE	"/customer/res/8K_16bit_STERO_30s.wav"
+
+#define AUDIO_AEC_SAMPLERATE(eSampleRate)	{	\
+	IAA_AEC_SAMPLE_RATE eAecSampleRate = IAA_AEC_SAMPLE_RATE_16000;	\
+\
+	switch (eSampleRate)	\
+	{	\
+		case E_MI_AUDIO_SAMPLE_RATE_8000:	\
+			eAecSampleRate = IAA_AEC_SAMPLE_RATE_8000;	\
+			break;	\
+		case E_MI_AUDIO_SAMPLE_RATE_16000:	\
+			eAecSampleRate = IAA_AEC_SAMPLE_RATE_16000;	\
+			break;	\
+	}	\
+	eAecSampleRate;	\
+}
 
 typedef enum
 {
@@ -65,6 +84,10 @@ typedef struct WAVEFILEHEADER
 typedef struct
 {
 	bool bExit;
+	bool bDoBf;
+	bool bDoAec;
+	unsigned int ptNumPerFrm;
+	int phyChnCnt;
 	pthread_t pt;
 	int devId;
 	int chnId;
@@ -129,7 +152,21 @@ static int addWaveHeader(WaveFileHeader_t *pWaveHeader,
 	return 0;
 }
 
+static IAA_AEC_SAMPLE_RATE _SSTAR_AI_GetAecSampleRate(MI_AUDIO_SampleRate_e eSampleRate)
+{
+	IAA_AEC_SAMPLE_RATE eAecSampleRate = IAA_AEC_SAMPLE_RATE_16000;
 
+	switch (eSampleRate)
+	{
+		case E_MI_AUDIO_SAMPLE_RATE_8000:
+			eAecSampleRate = IAA_AEC_SAMPLE_RATE_8000;
+			break;
+		case E_MI_AUDIO_SAMPLE_RATE_16000:
+			eAecSampleRate = IAA_AEC_SAMPLE_RATE_16000;
+			break;
+	}
+	return eAecSampleRate;
+}
 
 int SSTAR_AI_SetSampleRate(MI_AUDIO_SampleRate_e eSampleRate)
 {
@@ -137,7 +174,86 @@ int SSTAR_AI_SetSampleRate(MI_AUDIO_SampleRate_e eSampleRate)
 	return 0;
 }
 
+static int _SSTAR_AI_InitAec(AEC_HANDLE *pHandle, AudioAecInit *pAecInit, char *pWorkingBuffer, MI_AUDIO_SampleRate_e eSampleRate)
+{
+	AudioAecConfig aec_config;
+	unsigned int supMode_band[6] = {20,40,60,80,100,120};
+	unsigned int supMode[7] = {4,4,4,4,4,4,4};
+	unsigned int workingBufferSize;
+	int ret = 0;
+
+	memset(&aec_config, 0, sizeof(AudioAecConfig));
+	aec_config.delay_sample = 0;
+	aec_config.comfort_noise_enable = IAA_AEC_FALSE;
+	memcpy(&(aec_config.suppression_mode_freq[0]), supMode_band, sizeof(supMode_band));
+	memcpy(&(aec_config.suppression_mode_intensity[0]), supMode, sizeof(supMode));
+
+	workingBufferSize = IaaAec_GetBufferSize();
+	pWorkingBuffer = (char*)malloc(workingBufferSize);
+	if (!pWorkingBuffer)
+	{
+		printf("AEC working buf malloc failed\n");
+		return -1;
+	}
+
+	*pHandle = IaaAec_Init(pWorkingBuffer, pAecInit);
+	if (!(*pHandle))
+	{
+		printf("AEC init failed\n");
+		return -1;
+	}
+
+	ret = IaaAec_Config(*pHandle, &aec_config);
+	if (ret)
+	{
+		printf("AEC config failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int _SSTAR_AI_InitBf(AEC_HANDLE *pHandle, AudioBfInit *pBfInit, char *pWorkingBuffer, MI_AUDIO_SampleRate_e eSampleRate)
+{
+	AudioBfConfig bf_config;
+	unsigned int workingBufferSize;
+	int ret = 0;
+
+	memset(&bf_config, 0, sizeof(AudioBfConfig));
+	bf_config.noise_gate_dbfs = -40;
+	bf_config.temperature = 25;
+	bf_config.noise_supression_mode = 8;
+	bf_config.noise_estimation = 1;
+	bf_config.output_gain = 0.7;
+	bf_config.vad_enable = 0;
+
+	workingBufferSize = IaaBf_GetBufferSize();
+	pWorkingBuffer = (char*)malloc(workingBufferSize);
+	if (!pWorkingBuffer)
+	{
+		printf("BF working buf malloc failed\n");
+		return -1;
+	}
+
+	*pHandle = IaaBf_Init(pWorkingBuffer, pBfInit);
+	if (!(*pHandle))
+	{
+		printf("BF init failed\n");
+		return -1;
+	}
+
+	ret = IaaBf_Config(*pHandle, &bf_config);
+	if (ret)
+	{
+		printf("BF config failed, ret=%d\n", ret);
+		return -1;
+	}
+
+	return 0;
+}
 // audio in thread
+// AMIC：get data(3chn mono) -> do aec(3ch mono) -> save wav(3ch mono)
+// DMIC： get data(1chn stereo) -> do aec(1chn stereo) -> do bf(1chn mono) -> save wav(1ch mono)
 static void *_SSTAR_AudioInGetDataProc_(void *pData)
 {
 	ThreadData_t *pThreadData = (ThreadData_t*)pData;
@@ -156,6 +272,47 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
 	MI_AUDIO_SampleRate_e eSampleRate = g_eSampleRate;
 	//int waitTime = 1000 * (int)g_eSampleRate / (int)E_MI_AUDIO_SAMPLE_RATE_8000 * MI_AUDIO_SAMPLE_PER_FRAME / (int)g_eSampleRate;
 	int waitTime = 1000 / 16;
+
+	// aec
+	AEC_HANDLE handleAec;
+	char *pAecWorkingBuffer = NULL;
+	AudioAecInit aec_init;
+	// bf
+	BF_HANDLE handleBf;
+	AudioBfInit bf_init;
+	char *pBfWorkingBuffer = NULL;
+	int delay_sample = 0;
+
+	if (pThreadData->bDoAec)
+	{
+		memset(&aec_init, 0, sizeof(AudioAecInit));
+		aec_init.point_number= 128;
+		aec_init.nearend_channel = pThreadData->phyChnCnt;
+		aec_init.farend_channel = pThreadData->phyChnCnt;
+		aec_init.sample_rate = _SSTAR_AI_GetAecSampleRate(eSampleRate);
+
+		if (_SSTAR_AI_InitAec(&handleAec, &aec_init, pAecWorkingBuffer, eSampleRate))
+		{
+			printf("AEC alg init error!\n");
+			return NULL;
+		}
+	}
+
+	if (pThreadData->bDoBf)
+	{
+		memset(&bf_init, 0, sizeof(AudioBfInit));
+		bf_init.mic_distance = 12;
+		bf_init.point_number = 128;
+		bf_init.sample_rate = (unsigned int)eSampleRate;
+		bf_init.channel = pThreadData->phyChnCnt;
+
+		if (_SSTAR_AI_InitBf(&handleBf, &bf_init, pBfWorkingBuffer, eSampleRate))
+		{
+			printf("BF alg init error!\n");
+			return NULL;
+		}
+	}
+
 
 	memset(&stAudioFrame, 0, sizeof(MI_AUDIO_Frame_t));
     memset(&stAecFrame, 0, sizeof(MI_AUDIO_AecFrame_t));
@@ -178,8 +335,10 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
     // write waveHeader struct to file
     if (pThreadData->fd > 0)
     {
+#if SAVE_WAV
     	memset(&waveHeader, 0, sizeof(WaveFileHeader_t));
     	write(pThreadData->fd, &waveHeader, sizeof(WaveFileHeader_t));
+#endif
     }
 
     while(!pThreadData->bExit)
@@ -214,10 +373,57 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
                 // save stAudioFrame to file
                 if (pThreadData->fd > 0)
                 {
-                	write(pThreadData->fd, stAudioFrame.apVirAddr[0], stAudioFrame.u32Len[0]);
+                	if (pThreadData->bDoAec)
+                	{
+                		int ret = 0;
+						char *pNearBuf = NULL, *pFarBuf = NULL;
+						int nearBufSize = aec_init.point_number * aec_init.nearend_channel;	// short点数
+						int farBufSize = aec_init.point_number * aec_init.farend_channel;	// short点数
+
+                		for (int i = 0; i < (pThreadData->ptNumPerFrm*pThreadData->phyChnCnt/nearBufSize); i++)
+                		{
+                			pNearBuf = (char*)stAudioFrame.apVirAddr[0] + i*nearBufSize*2;	// 计算buffer字节偏移
+                			pFarBuf = (char*)stAecFrame.stRefFrame.apVirAddr[0] + i*farBufSize*2;
+                			ret = IaaAec_Run(handleAec, (short*)pNearBuf, (short*)pFarBuf);
+							if (ret < 0)
+							{
+								printf("IaaAec run failed\n");
+								break;
+							}
+                		}
+                		//printf("AEC audioFrmLen=%d, aecFrmLen=%d\n", stAudioFrame.u32Len[0], stAecFrame.stRefFrame.u32Len[0]);
+                	}
+
+					if (pThreadData->bDoBf)
+					{
+						int ret = 0;
+						char *pInBuf = NULL;
+						int tempSize = bf_init.point_number * bf_init.channel;	// short点数
+
+						for (int i = 0; i < (pThreadData->ptNumPerFrm*pThreadData->phyChnCnt/tempSize); i++)
+						{
+							pInBuf = (char*)stAudioFrame.apVirAddr[0] + i*tempSize*2;	// 计算buffer字节偏移
+							ret = IaaBf_Run(handleBf, (short*)pInBuf, &delay_sample);
+							if (ret < 0)
+							{
+								printf("IaaBf run failed\n");
+								break;
+							}
+
+							write(pThreadData->fd, pInBuf, tempSize*2/2);	// shorts to bytes, the actual length is half of inputdata length
+						}
+					}
+					else
+					{
+						write(pThreadData->fd, stAudioFrame.apVirAddr[0], stAudioFrame.u32Len[0]);
+					}
                 }
 
-                totalSize += stAudioFrame.u32Len[0];
+                if (pThreadData->bDoBf)
+                	totalSize += stAudioFrame.u32Len[0]/2;
+                else
+                	totalSize += stAudioFrame.u32Len[0];
+
                 g_stAudioInAssembly.pfnAiReleaseFrame(pThreadData->devId,  pThreadData->chnId, &stAudioFrame, &stAecFrame);
             }
         }
@@ -225,24 +431,49 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
 
     if (pThreadData->fd > 0)
     {
+#if SAVE_WAV
     	memset(&waveHeader, 0, sizeof(WaveFileHeader_t));
-    	addWaveHeader(&waveHeader, PCM, E_MI_AUDIO_SOUND_MODE_MONO, eSampleRate, totalSize);
+    	if (pThreadData->devId == DMIC_DEV_ID && !pThreadData->bDoBf)
+    	{
+    		addWaveHeader(&waveHeader, PCM, E_MI_AUDIO_SOUND_MODE_STEREO, eSampleRate, totalSize);
+    		printf("save Dmic stereo file, samplerate=%d, totalSize=%d\n", (int)eSampleRate, totalSize);
+    	}
+    	else
+    	{
+    		addWaveHeader(&waveHeader, PCM, E_MI_AUDIO_SOUND_MODE_MONO, eSampleRate, totalSize);
+    		printf("save %s mono file, samplerate=%d, totalSize=%d\n", (pThreadData->devId == DMIC_DEV_ID)?"Dmic":"Amic", (int)eSampleRate, totalSize);
+    	}
     	lseek(pThreadData->fd, 0, SEEK_SET);
     	write(pThreadData->fd, &waveHeader, sizeof(WaveFileHeader_t));
+#endif
     	close(pThreadData->fd);
+    }
+
+    if (pThreadData->bDoBf)
+    {
+    	IaaBf_Free(handleBf);
+    	free(pBfWorkingBuffer);
+    }
+
+    if (pThreadData->bDoAec)
+    {
+    	IaaAec_Free(handleAec);
+    	free(pAecWorkingBuffer);
     }
 
     return NULL;
 }
 
-int SSTAR_AI_StartRecord()
+int SSTAR_AI_StartRecord(MI_AUDIO_DEV AiDevId, bool bEnableAec)
 {
-	MI_AUDIO_DEV AiDevId = AI_DEV_ID;
 	MI_AI_CHN AiChn = 0;
 	MI_AUDIO_Attr_t stAiSetAttr;
 	MI_SYS_ChnPort_t stAiChn0OutputPort0;
 	MI_AI_ChnParam_t stAiChnParam;
 	int i = 0;
+	char micTypePrefixe[8] = {0};
+
+	CHECK_AI_DEV_ID(AiDevId);
 
 	if (SSTAR_AI_OpenLibrary(&g_stAudioInAssembly))
 	{
@@ -256,10 +487,20 @@ int SSTAR_AI_StartRecord()
 	memset(&stAiSetAttr, 0, sizeof(MI_AUDIO_Attr_t));
 	stAiSetAttr.eBitwidth = E_MI_AUDIO_BIT_WIDTH_16;
 	stAiSetAttr.eSamplerate = g_eSampleRate;
-	stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
+	if (AiDevId == AMIC_DEV_ID)
+	{
+		stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
+		stAiSetAttr.u32ChnCnt = 4;
+		strcpy(micTypePrefixe, "AMIC_");
+	}
+	else
+	{
+		stAiSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_STEREO;
+		stAiSetAttr.u32ChnCnt = 1;
+		strcpy(micTypePrefixe, "DMIC_");
+	}
 	stAiSetAttr.eWorkmode = E_MI_AUDIO_MODE_I2S_MASTER;
-	stAiSetAttr.u32ChnCnt = 4;
-	stAiSetAttr.u32PtNumPerFrm = (int)g_eSampleRate / 16;
+	stAiSetAttr.u32PtNumPerFrm = ALIGN_UP(((int)g_eSampleRate / 64), 128);
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eFmt = E_MI_AUDIO_I2S_FMT_I2S_MSB;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.eMclk = E_MI_AUDIO_I2S_MCLK_0;
 	stAiSetAttr.WorkModeSetting.stI2sConfig.bSyncClock = 1;
@@ -280,7 +521,14 @@ int SSTAR_AI_StartRecord()
 
         memset(&stAiChnParam, 0x0, sizeof(MI_AI_ChnParam_t));
 		stAiChnParam.stChnGain.bEnableGainSet = TRUE;
-		stAiChnParam.stChnGain.s16FrontGain = 15;
+		if (AiDevId == AMIC_DEV_ID)
+		{
+			stAiChnParam.stChnGain.s16FrontGain = 15;
+		}
+		else
+		{
+			stAiChnParam.stChnGain.s16FrontGain = 4;
+		}
 		stAiChnParam.stChnGain.s16RearGain = 0;
 		g_stAudioInAssembly.pfnAiSetChnParam(AiDevId, i, &stAiChnParam);
 		g_stAudioInAssembly.pfnAiEnableChn(AiDevId, i);
@@ -288,10 +536,22 @@ int SSTAR_AI_StartRecord()
 		g_stAudioInThreadData[i].bExit = false;
 		g_stAudioInThreadData[i].devId = AiDevId;
 		g_stAudioInThreadData[i].chnId = i;
+		g_stAudioInThreadData[i].bDoAec = bEnableAec;
+		g_stAudioInThreadData[i].ptNumPerFrm = stAiSetAttr.u32PtNumPerFrm;
+		if (stAiSetAttr.eSoundmode == E_MI_AUDIO_SOUND_MODE_MONO)
+			g_stAudioInThreadData[i].phyChnCnt = 1;
+		else
+			g_stAudioInThreadData[i].phyChnCnt = 2;
+
+		if ((AiDevId == DMIC_DEV_ID) && ((stAiSetAttr.eSamplerate == E_MI_AUDIO_SAMPLE_RATE_8000)
+				|| (stAiSetAttr.eSamplerate == E_MI_AUDIO_SAMPLE_RATE_16000)))
+			g_stAudioInThreadData[i].bDoBf = true;
+		else
+			g_stAudioInThreadData[i].bDoBf = false;
 
 		// create record files
 		char recordPath[256] = {0};
-		sprintf(recordPath, "%s%d", AUDIO_IN_RECORD_PREFIX, i);
+		sprintf(recordPath, "%s%s%d", AUDIO_IN_RECORD_PREFIX, micTypePrefixe, i);
 		g_stAudioInThreadData[i].fd = open(recordPath, O_RDWR | O_CREAT | O_TRUNC, 0777);
 
 		printf("thread %d, fd=%d\n", i, g_stAudioInThreadData[i].fd);
@@ -301,10 +561,8 @@ int SSTAR_AI_StartRecord()
 	return 0;
 }
 
-int SSTAR_AI_StopRecord()
+int SSTAR_AI_StopRecord(MI_AUDIO_DEV AiDevId, bool bEnableAec)
 {
-	MI_AUDIO_DEV AiDevId = AI_DEV_ID;
-
 	if (!g_stAudioInAssembly.pHandle)
 		return 0;
 
@@ -435,6 +693,9 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 		stAoSetAttr.eSoundmode = E_MI_AUDIO_SOUND_MODE_MONO;
 	}
 
+	printf("%s: samplerate=%d, u32PtNumPerFrm=%d, setChnCnt=%d, phyChnCnt=%d\n", pPcmFile, (int)stAoSetAttr.eSamplerate, stAoSetAttr.u32PtNumPerFrm,
+			stAoSetAttr.u32ChnCnt, g_stWavHeaderInput.wave.wChannels);
+
 	g_stAudioOutAssembly.pfnAoSetPubAttr(aoDevId, &stAoSetAttr);
 	g_stAudioOutAssembly.pfnAoGetPubAttr(aoDevId, &stAoGetAttr);
 	g_stAudioOutAssembly.pfnAoEnable(aoDevId);
@@ -485,7 +746,18 @@ static int SSTAR_AO_StopPlayFile(MI_AUDIO_DEV aoDevId)
 int SSTRR_AO_StartPlayRecord(int adcIdx)
 {
 	char recordPath[256] = {0};
-	sprintf(recordPath, "%s%d", AUDIO_IN_RECORD_PREFIX, adcIdx);
+	char micTypePrefixe[8] = {0};
+
+	if (adcIdx < 3)
+	{
+		strcpy(micTypePrefixe, "AMIC_");
+		sprintf(recordPath, "%s%s%d", AUDIO_IN_RECORD_PREFIX, micTypePrefixe, adcIdx);
+	}
+	else
+	{
+		strcpy(micTypePrefixe, "DMIC_");
+		sprintf(recordPath, "%s%s%d", AUDIO_IN_RECORD_PREFIX, micTypePrefixe, (adcIdx-3));
+	}
 
 	return SSTAR_AO_StartPlayFile(AO_DEV_ID, recordPath, -5);
 }

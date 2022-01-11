@@ -208,6 +208,7 @@ extern "C"
 #define ID_API_ISP_AWB_CTMWB                        ( ID_API_ISP_AWB_BASE +  6 ) //  5. 6150
 #define ID_API_ISP_AWB_DAYNIGHT_DETECTION           ( ID_API_ISP_AWB_BASE +  7 ) //  6. 6151
 #define ID_API_ISP_AWB_QUERY_DAYNIGHT_INFO          ( ID_API_ISP_AWB_BASE +  8 ) //  7. 6152
+#define ID_API_ISP_AWB_STABILIZER                   ( ID_API_ISP_AWB_BASE +  9 ) //  9. 6153
 
 #define ID_API_ISP_AF_HW_ROI_MODE                   ( ID_API_ISP_AF_BASE  +  1 ) //  1. 7169
 #define ID_API_ISP_AF_HW_WIN                        ( ID_API_ISP_AF_BASE  +  2 ) //  2. 7170

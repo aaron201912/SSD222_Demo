@@ -200,7 +200,8 @@ extern "C"
     MI_S32 MI_ISP_AWB_GetHWStats(MI_U32 Channel, MI_ISP_AWB_HW_STATISTICS_TYPE_t *data);//Not works now, please use MI_ISP_AWB_GetAwbHwAvgStats in mi_isp.h
     MI_S32 MI_ISP_AWB_SetCTMwbAttr(MI_U32 Channel, MI_ISP_AWB_CTMWB_PARAM_t *data);
     MI_S32 MI_ISP_AWB_GetCTMwbAttr(MI_U32 Channel, MI_ISP_AWB_CTMWB_PARAM_t *data);
-
+    MI_S32 MI_ISP_AWB_SetStabilizer(MI_U32 Channel, MI_ISP_AWB_STABILIZER_PARAM_t *data);
+    MI_S32 MI_ISP_AWB_GetStabilizer(MI_U32 Channel, MI_ISP_AWB_STABILIZER_PARAM_t *data);
     /************************************* AF  API START *************************************/
     MI_S32 MI_ISP_AF_SetHWRoiMode(MI_U32 Channel, MI_ISP_AF_HW_ROI_MODE_TYPE_t *data);
     MI_S32 MI_ISP_AF_GetHWRoiMode(MI_U32 Channel, MI_ISP_AF_HW_ROI_MODE_TYPE_t *data);

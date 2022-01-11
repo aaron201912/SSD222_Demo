@@ -240,6 +240,8 @@ typedef struct MI_VIF_DevAttr_s
     MI_VIF_BitOrder_e       eBitOrder;//adjust bit order layout BT656
     MI_VIF_SyncAttr_t       stSyncAttr;//parallel, BT656
     MI_U32                  u32DevStitchMask; //multi vif dev bitmask by MI_VIF_DevId_e
+
+    MI_SYS_FieldType_e     eField;
 } MI_VIF_DevAttr_t;
 
 typedef struct MI_VIF_ChnPortAttr_s
@@ -344,7 +346,7 @@ typedef struct MI_VIF_CallBackParam_s
 
 typedef struct MI_VIF_ChnCustInfo_s
 {
-    MI_U32  u32IrBrightness; 
+    MI_U32  u32IrBrightness;
 }MI_VIF_ChnCustInfo_t;
 
 typedef struct MI_VIF_VIFDevStatus_s

@@ -9,7 +9,7 @@
 #define JNI_APPCONFIG_H_
 
 #define USE_PANEL_1024_600		1
-#define USE_AMIC				1
+#define USE_AMIC				0
 #define ENABLE_BF				0
 #define ENABLE_ROTATE			0
 

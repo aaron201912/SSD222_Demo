@@ -107,7 +107,10 @@
     <string name="wifi3_ap_passwd">Password:</string>
     <string name="wifi3_ap_connect">Connect</string>
     <string name="usb_open_faild">Failed to open the USB camera, please confirm whether the device connection status and setting parameters are normal.</string>
+    <string name="mic_type">Mic Type:</string>
     <string name="record_sample">Record Sample:</string>
+    <string name="play_bgsound">Play Background Sound:</string>
+    <string name="test_aec">Test AEC:</string>
     <string name="choose_record">Choose the record file:</string>
     <string name="speaker_test">Speaker Test:</string>
     <string name="headphone_test">Headphone Test:</string>

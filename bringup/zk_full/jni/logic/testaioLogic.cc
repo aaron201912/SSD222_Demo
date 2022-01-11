@@ -59,9 +59,10 @@ static AiSampleRateInfo_t g_stSampleRateInfo[] = {
 };
 
 static AiRecordInfo_t g_stRecordInfo[] = {
-	{0, "AUDIO_IN_0"},
-	{0, "AUDIO_IN_1"},
-	{0, "AUDIO_IN_2"},
+	{0, "AMIC_IN_0"},
+	{1, "AMIC_IN_1"},
+	{2, "AMIC_IN_2"},
+	{3, "DMIC_IN_0"},
 };
 
 static bool g_bRecord = false;
@@ -69,6 +70,8 @@ static bool g_bPlayRecord = false;
 static bool g_bTestSpeaker = false;
 static bool g_bTestHeadPhone = false;
 
+static bool g_bTestAec = false;
+static bool g_bUseDmic = false;
 /**
  * 注册定时器
  * 填充数组用于注册定时器
@@ -132,7 +135,10 @@ static void onUI_quit() {
 	if (g_bRecord)
 	{
 		g_bRecord = false;
-		SSTAR_AI_StopRecord();
+		if (g_bUseDmic)
+			SSTAR_AI_StopRecord(DMIC_DEV_ID, g_bTestAec);
+		else
+			SSTAR_AI_StopRecord(AMIC_DEV_ID, g_bTestAec);
 	}
 
 	if (g_bPlayRecord)
@@ -236,8 +242,22 @@ static void obtainListItemData_Listview_samplerate(ZKListView *pListView,ZKListV
 static void onListItemClick_Listview_samplerate(ZKListView *pListView, int index, int id) {
     //LOGD(" onListItemClick_ Listview_samplerate  !!!\n");
 	g_curSampleRateIdx = index;
+	SSTAR_AI_SetSampleRate(g_stSampleRateInfo[g_curSampleRateIdx].eSampleRate);
+	printf("select samplerate %d\n", (int)g_stSampleRateInfo[g_curSampleRateIdx].eSampleRate);
 	pListView->setVisible(false);
 	mButton_sampleratePtr->setText(g_stSampleRateInfo[index].name);
+
+	// AEC only support 8K/16K samplerate
+	if (g_curSampleRateIdx > 1)
+	{
+		mCheckbox_playbgsoundPtr->setChecked(false);
+		mCheckbox_playbgsoundPtr->setTouchable(false);
+		g_bTestAec = false;
+	}
+	else
+	{
+		mCheckbox_playbgsoundPtr->setTouchable(true);
+	}
 }
 
 static bool onButtonClick_Button_record(ZKButton *pButton) {
@@ -249,15 +269,41 @@ static bool onButtonClick_Button_record(ZKButton *pButton) {
 
 	if (!bSelected)
 	{
+		if (g_bTestAec)
+			SSTAR_AO_StartTestStereo();
+
 		g_bRecord = true;
-		SSTAR_AI_StartRecord();
+		if (g_bUseDmic)
+			SSTAR_AI_StartRecord(DMIC_DEV_ID, g_bTestAec);
+		else
+			SSTAR_AI_StartRecord(AMIC_DEV_ID, g_bTestAec);
 		pButton->setText("停止录音");
+
+		mRadioGroup_mictypePtr->setTouchable(false);
+		mCheckbox_playbgsoundPtr->setTouchable(false);
+		mButton_sampleratePtr->setTouchable(false);
+
+		if (mListview_sampleratePtr->isVisible())
+			mListview_sampleratePtr->setVisible(false);
 	}
 	else
 	{
 		g_bRecord = false;
-		SSTAR_AI_StopRecord();
+		if (g_bUseDmic)
+			SSTAR_AI_StopRecord(DMIC_DEV_ID, g_bTestAec);
+		else
+			SSTAR_AI_StopRecord(AMIC_DEV_ID, g_bTestAec);
 		pButton->setText("开始录音");
+
+		if (g_bTestAec)
+			SSTAR_AO_StopTestStereo();
+
+		mRadioGroup_mictypePtr->setTouchable(true);
+		mButton_sampleratePtr->setTouchable(true);
+		if (g_curSampleRateIdx > 1)
+			mCheckbox_playbgsoundPtr->setTouchable(false);
+		else
+			mCheckbox_playbgsoundPtr->setTouchable(true);
 	}
 
 	pButton->setSelected(!bSelected);
@@ -308,12 +354,17 @@ static bool onButtonClick_Button_playrecord(ZKButton *pButton) {
 		g_bPlayRecord = true;
 		SSTRR_AO_StartPlayRecord(g_curRecordIdx);
 		pButton->setText("停止播放");
+		mButton_recordfilePtr->setTouchable(false);
+
+		if (mListview_recordfilePtr->isVisible())
+			mListview_recordfilePtr->setVisible(false);
 	}
 	else
 	{
 		g_bPlayRecord = false;
 		SSTRR_AO_StopPlayRecord();
 		pButton->setText("开始播放");
+		mButton_recordfilePtr->setTouchable(true);
 	}
 
 	pButton->setSelected(!bSelected);
@@ -365,4 +416,24 @@ static bool onButtonClick_Button_headphone(ZKButton *pButton) {
 
 	pButton->setSelected(!bSelected);
     return false;
+}
+
+static void onCheckedChanged_Checkbox_playbgsound(ZKCheckBox* pCheckBox, bool isChecked) {
+    //LOGD(" Checkbox Checkbox_playbgsound checked %d", isChecked);
+		g_bTestAec = isChecked;
+}
+static void onCheckedChanged_RadioGroup_mictype(ZKRadioGroup* pRadioGroup, int checkedID) {
+    //LOGD(" RadioGroup RadioGroup_mictype checked %d", checkedID);
+    switch (checkedID)
+    {
+    case ID_TESTAIO_RadioButton_Amic:
+    	g_bUseDmic = false;
+    	break;
+    case ID_TESTAIO_RadioButton_Dmic:
+    	g_bUseDmic = true;
+    	break;
+    default:
+    	g_bUseDmic = false;
+    	break;
+    }
 }

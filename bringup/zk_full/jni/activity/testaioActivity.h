@@ -23,21 +23,28 @@
 #include "control/ZKSeekBar.h"
 #include "control/ZKEditText.h"
 #include "control/ZKVideoView.h"
+#include "control/ZKCheckbox.h"
+#include "control/ZKRadioGroup.h"
 #include "window/ZKSlideWindow.h"
 
 /*TAG:Macro宏ID*/
+#define ID_TESTAIO_RadioButton_Dmic    22002
+#define ID_TESTAIO_RadioButton_Amic    22001
+#define ID_TESTAIO_RadioGroup_mictype    94001
+#define ID_TESTAIO_Checkbox_playbgsound    21001
+#define ID_TESTAIO_TextView_mictype    50005
+#define ID_TESTAIO_Textview_headphone    50004
+#define ID_TESTAIO_Textview_speaker    50003
+#define ID_TESTAIO_Textview_record    50002
+#define ID_TESTAIO_Textview_samplerate    50001
 #define ID_TESTAIO_Button_headphone    20006
-#define ID_TESTAIO_Textview4    50004
 #define ID_TESTAIO_Button_playstereo    20005
-#define ID_TESTAIO_Textview3    50003
 #define ID_TESTAIO_Button_playrecord    20004
 #define ID_TESTAIO_Listview_recordfile    80002
 #define ID_TESTAIO_Button_recordfile    20003
-#define ID_TESTAIO_Textview2    50002
 #define ID_TESTAIO_Button_record    20002
 #define ID_TESTAIO_Listview_samplerate    80001
 #define ID_TESTAIO_Button_samplerate    20001
-#define ID_TESTAIO_Textview1    50001
 #define ID_TESTAIO_sys_back   100
 /*TAG:Macro宏ID END*/
 
@@ -47,6 +54,8 @@ class testaioActivity : public Activity,
                      public ZKListView::AbsListAdapter,
                      public ZKSlideWindow::ISlideItemClickListener,
                      public EasyUIContext::ITouchListener,
+                     public ZKRadioGroup::ICheckedChangeListener,
+                     public ZKCheckBox::ICheckedChangeListener,
                      public ZKEditText::ITextChangeListener,
                      public ZKVideoView::IVideoPlayerMessageListener
 {
@@ -86,6 +95,8 @@ protected:
     virtual void onSlideItemClick(ZKSlideWindow *pSlideWindow, int index);
 
     virtual bool onTouchEvent(const MotionEvent &ev);
+    virtual void onCheckedChanged(ZKRadioGroup* pRadioGroup, int checkedID);
+    virtual void onCheckedChanged(ZKCheckBox* pCheckBox, bool isChecked);
 
     virtual void onTextChanged(ZKTextView *pTextView, const string &text);
 
