@@ -72,6 +72,10 @@ static bool g_bTestHeadPhone = false;
 
 static bool g_bTestAec = false;
 static bool g_bUseDmic = false;
+static int g_curDmicGain = 4;
+static int g_curAmicGain = 15;
+static int g_maxDmicGain = 4;
+static int g_maxAmicGain = 21;
 /**
  * 注册定时器
  * 填充数组用于注册定时器
@@ -112,6 +116,32 @@ static void onUI_intent(const Intent *intentPtr) {
 
     mButton_sampleratePtr->setText(g_stSampleRateInfo[g_curSampleRateIdx].name);
     mButton_recordfilePtr->setText(g_stRecordInfo[g_curRecordIdx].name);
+    mCheckbox_playbgsoundPtr->setChecked(g_bTestAec);
+    if (g_bUseDmic)
+    	mRadioGroup_mictypePtr->setCheckedID(ID_TESTAIO_RadioButton_Dmic);
+    else
+    	mRadioGroup_mictypePtr->setCheckedID(ID_TESTAIO_RadioButton_Amic);
+
+    char maxGainStr[8] = {0};
+    char curGainStr[8] = {0};
+    if (g_bUseDmic)
+	{
+		mSeekBar_micGainPtr->setMax(g_maxDmicGain);
+		mSeekBar_micGainPtr->setProgress(g_curDmicGain);
+		sprintf(maxGainStr, "%d", g_maxDmicGain);
+		sprintf(curGainStr, "%d", g_curDmicGain);
+		mTextView_maxGainPtr->setText(maxGainStr);
+		mTextView_curGainPtr->setText(curGainStr);
+	}
+	else
+	{
+		mSeekBar_micGainPtr->setMax(g_maxAmicGain);
+		mSeekBar_micGainPtr->setProgress(g_curAmicGain);
+		sprintf(maxGainStr, "%d", g_maxAmicGain);
+		sprintf(curGainStr, "%d", g_curAmicGain);
+		mTextView_maxGainPtr->setText(maxGainStr);
+		mTextView_curGainPtr->setText(curGainStr);
+	}
 }
 
 /*
@@ -140,6 +170,9 @@ static void onUI_quit() {
 		else
 			SSTAR_AI_StopRecord(AMIC_DEV_ID, g_bTestAec);
 	}
+
+	if (g_bTestAec)
+		SSTAR_AO_StopTestStereo();
 
 	if (g_bPlayRecord)
 	{
@@ -274,14 +307,15 @@ static bool onButtonClick_Button_record(ZKButton *pButton) {
 
 		g_bRecord = true;
 		if (g_bUseDmic)
-			SSTAR_AI_StartRecord(DMIC_DEV_ID, g_bTestAec);
+			SSTAR_AI_StartRecord(DMIC_DEV_ID, g_curDmicGain, g_bTestAec);
 		else
-			SSTAR_AI_StartRecord(AMIC_DEV_ID, g_bTestAec);
+			SSTAR_AI_StartRecord(AMIC_DEV_ID, g_curAmicGain, g_bTestAec);
 		pButton->setText("停止录音");
 
 		mRadioGroup_mictypePtr->setTouchable(false);
 		mCheckbox_playbgsoundPtr->setTouchable(false);
 		mButton_sampleratePtr->setTouchable(false);
+		mSeekBar_micGainPtr->setTouchable(false);
 
 		if (mListview_sampleratePtr->isVisible())
 			mListview_sampleratePtr->setVisible(false);
@@ -300,6 +334,8 @@ static bool onButtonClick_Button_record(ZKButton *pButton) {
 
 		mRadioGroup_mictypePtr->setTouchable(true);
 		mButton_sampleratePtr->setTouchable(true);
+		mSeekBar_micGainPtr->setTouchable(true);
+
 		if (g_curSampleRateIdx > 1)
 			mCheckbox_playbgsoundPtr->setTouchable(false);
 		else
@@ -424,16 +460,52 @@ static void onCheckedChanged_Checkbox_playbgsound(ZKCheckBox* pCheckBox, bool is
 }
 static void onCheckedChanged_RadioGroup_mictype(ZKRadioGroup* pRadioGroup, int checkedID) {
     //LOGD(" RadioGroup RadioGroup_mictype checked %d", checkedID);
+	char maxGainStr[8] = {0};
+	char curGainStr[8] = {0};
+
     switch (checkedID)
     {
     case ID_TESTAIO_RadioButton_Amic:
     	g_bUseDmic = false;
+    	mSeekBar_micGainPtr->setMax(g_maxAmicGain);
+		mSeekBar_micGainPtr->setProgress(g_curAmicGain);
+		sprintf(maxGainStr, "%d", g_maxAmicGain);
+		sprintf(curGainStr, "%d", g_curAmicGain);
+		mTextView_maxGainPtr->setText(maxGainStr);
+		mTextView_curGainPtr->setText(curGainStr);
     	break;
     case ID_TESTAIO_RadioButton_Dmic:
     	g_bUseDmic = true;
+    	mSeekBar_micGainPtr->setMax(g_maxDmicGain);
+		mSeekBar_micGainPtr->setProgress(g_curDmicGain);
+		sprintf(maxGainStr, "%d", g_maxDmicGain);
+		sprintf(curGainStr, "%d", g_curDmicGain);
+		mTextView_maxGainPtr->setText(maxGainStr);
+		mTextView_curGainPtr->setText(curGainStr);
     	break;
     default:
     	g_bUseDmic = false;
+    	mSeekBar_micGainPtr->setMax(g_maxAmicGain);
+		mSeekBar_micGainPtr->setProgress(g_curAmicGain);
+		sprintf(maxGainStr, "%d", g_maxAmicGain);
+		sprintf(curGainStr, "%d", g_curAmicGain);
+		mTextView_maxGainPtr->setText(maxGainStr);
+		mTextView_curGainPtr->setText(curGainStr);
     	break;
     }
+}
+static void onProgressChanged_SeekBar_micGain(ZKSeekBar *pSeekBar, int progress) {
+    //LOGD(" ProgressChanged SeekBar_micGain %d !!!\n", progress);
+	char curGainStr[8] = {0};
+	if (g_bUseDmic)
+	{
+		g_curDmicGain = progress;
+	}
+	else
+	{
+		g_curAmicGain = progress;
+	}
+
+	sprintf(curGainStr, "%d", progress);
+	mTextView_curGainPtr->setText(curGainStr);
 }

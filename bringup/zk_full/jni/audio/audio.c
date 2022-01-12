@@ -464,7 +464,7 @@ static void *_SSTAR_AudioInGetDataProc_(void *pData)
     return NULL;
 }
 
-int SSTAR_AI_StartRecord(MI_AUDIO_DEV AiDevId, bool bEnableAec)
+int SSTAR_AI_StartRecord(MI_AUDIO_DEV AiDevId, int gain, bool bEnableAec)
 {
 	MI_AI_CHN AiChn = 0;
 	MI_AUDIO_Attr_t stAiSetAttr;
@@ -521,14 +521,8 @@ int SSTAR_AI_StartRecord(MI_AUDIO_DEV AiDevId, bool bEnableAec)
 
         memset(&stAiChnParam, 0x0, sizeof(MI_AI_ChnParam_t));
 		stAiChnParam.stChnGain.bEnableGainSet = TRUE;
-		if (AiDevId == AMIC_DEV_ID)
-		{
-			stAiChnParam.stChnGain.s16FrontGain = 15;
-		}
-		else
-		{
-			stAiChnParam.stChnGain.s16FrontGain = 4;
-		}
+
+		stAiChnParam.stChnGain.s16FrontGain = gain;
 		stAiChnParam.stChnGain.s16RearGain = 0;
 		g_stAudioInAssembly.pfnAiSetChnParam(AiDevId, i, &stAiChnParam);
 		g_stAudioInAssembly.pfnAiEnableChn(AiDevId, i);
@@ -717,28 +711,31 @@ static int SSTAR_AO_StartPlayFile(MI_AUDIO_DEV aoDevId, char *pPcmFile, int volu
 
 static int SSTAR_AO_StopPlayFile(MI_AUDIO_DEV aoDevId)
 {
-	g_stAudioOutPlayFile.bExit = TRUE;
-
-	if (!g_stAudioOutAssembly.pHandle)
-		return 0;
-
-	if (g_stAudioOutPlayFile.pt)
+	if (!g_stAudioOutPlayFile.bExit)
 	{
-		pthread_join(g_stAudioOutPlayFile.pt, NULL);
-		g_stAudioOutPlayFile.pt = 0;
+		g_stAudioOutPlayFile.bExit = TRUE;
+
+		if (!g_stAudioOutAssembly.pHandle)
+			return 0;
+
+		if (g_stAudioOutPlayFile.pt)
+		{
+			pthread_join(g_stAudioOutPlayFile.pt, NULL);
+			g_stAudioOutPlayFile.pt = 0;
+		}
+
+		 if (g_AoReadFd > 0)
+		{
+			close(g_AoReadFd);
+			g_AoReadFd = -1;
+		}
+
+		g_stAudioOutAssembly.pfnAoDisableChn(aoDevId, 0);
+		g_stAudioOutAssembly.pfnAoDisable(aoDevId);
+		g_stAudioOutAssembly.pfnAoDeInitDev();
+
+		SSTAR_AO_CloseLibrary(&g_stAudioOutAssembly);
 	}
-
-	 if (g_AoReadFd > 0)
-	{
-		close(g_AoReadFd);
-		g_AoReadFd = -1;
-	}
-
-	g_stAudioOutAssembly.pfnAoDisableChn(aoDevId, 0);
-	g_stAudioOutAssembly.pfnAoDisable(aoDevId);
-	g_stAudioOutAssembly.pfnAoDeInitDev();
-
-	SSTAR_AO_CloseLibrary(&g_stAudioOutAssembly);
 
 	return 0;
 }

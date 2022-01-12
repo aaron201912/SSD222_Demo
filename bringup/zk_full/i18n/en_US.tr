@@ -117,6 +117,7 @@
     <string name="start_record">Start Record</string>
     <string name="start_play">Start Play</string>
     <string name="start_test">Start Test</string>
+    <string name="mic_gain">Microphone Gain:</string>
     <string name="language_setting">Language Setting(Chinese/English):</string>
     <string name="language_cn">Chinese</string>
     <string name="language_en">English</string>

@@ -28,6 +28,11 @@
 #include "window/ZKSlideWindow.h"
 
 /*TAG:Macro宏ID*/
+#define ID_TESTAIO_TextView_curGain    50009
+#define ID_TESTAIO_TextView_maxGain    50008
+#define ID_TESTAIO_TextView_minGain    50007
+#define ID_TESTAIO_SeekBar_micGain    91001
+#define ID_TESTAIO_TextView_micGaun    50006
 #define ID_TESTAIO_RadioButton_Dmic    22002
 #define ID_TESTAIO_RadioButton_Amic    22001
 #define ID_TESTAIO_RadioGroup_mictype    94001

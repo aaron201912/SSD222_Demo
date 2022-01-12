@@ -21,7 +21,7 @@ extern "C"
 
 int SSTAR_AI_SetSampleRate(MI_AUDIO_SampleRate_e eSampleRate);
 
-int SSTAR_AI_StartRecord(MI_AUDIO_DEV AiDevId, bool bEnableAec);	// 录制音频
+int SSTAR_AI_StartRecord(MI_AUDIO_DEV AiDevId, int gain, bool bEnableAec);	// 录制音频
 int SSTAR_AI_StopRecord(MI_AUDIO_DEV AiDevId, bool bEnableAec);
 int SSTRR_AO_StartPlayRecord(int adcIdx);
 int SSTRR_AO_StopPlayRecord();

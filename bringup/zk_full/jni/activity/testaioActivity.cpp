@@ -4,6 +4,11 @@
 #include "testaioActivity.h"
 
 /*TAG:GlobalVariable全局变量*/
+static ZKTextView* mTextView_curGainPtr;
+static ZKTextView* mTextView_maxGainPtr;
+static ZKTextView* mTextView_minGainPtr;
+static ZKSeekBar* mSeekBar_micGainPtr;
+static ZKTextView* mTextView_micGaunPtr;
 static ZKRadioGroup* mRadioGroup_mictypePtr;
 static ZKCheckBox* mCheckbox_playbgsoundPtr;
 static ZKTextView* mTextView_mictypePtr;
@@ -75,6 +80,7 @@ typedef struct {
 }S_ZKSeekBarCallback;
 /*TAG:SeekBarCallbackTab*/
 static S_ZKSeekBarCallback SZKSeekBarCallbackTab[] = {
+    ID_TESTAIO_SeekBar_micGain, onProgressChanged_SeekBar_micGain,
 };
 
 
@@ -166,6 +172,11 @@ const char* testaioActivity::getAppName() const{
 //TAG:onCreate
 void testaioActivity::onCreate() {
 	Activity::onCreate();
+    mTextView_curGainPtr = (ZKTextView*)findControlByID(ID_TESTAIO_TextView_curGain);
+    mTextView_maxGainPtr = (ZKTextView*)findControlByID(ID_TESTAIO_TextView_maxGain);
+    mTextView_minGainPtr = (ZKTextView*)findControlByID(ID_TESTAIO_TextView_minGain);
+    mSeekBar_micGainPtr = (ZKSeekBar*)findControlByID(ID_TESTAIO_SeekBar_micGain);if(mSeekBar_micGainPtr!= NULL){mSeekBar_micGainPtr->setSeekBarChangeListener(this);}
+    mTextView_micGaunPtr = (ZKTextView*)findControlByID(ID_TESTAIO_TextView_micGaun);
     mRadioGroup_mictypePtr = (ZKRadioGroup*)findControlByID(ID_TESTAIO_RadioGroup_mictype);if(mRadioGroup_mictypePtr!= NULL){mRadioGroup_mictypePtr->setCheckedChangeListener(this);}
     mCheckbox_playbgsoundPtr = (ZKCheckBox*)findControlByID(ID_TESTAIO_Checkbox_playbgsound);if(mCheckbox_playbgsoundPtr!= NULL){mCheckbox_playbgsoundPtr->setCheckedChangeListener(this);}
     mTextView_mictypePtr = (ZKTextView*)findControlByID(ID_TESTAIO_TextView_mictype);
