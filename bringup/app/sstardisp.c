@@ -28,7 +28,7 @@ int sstar_disp_init()
     MI_DISP_RotateConfig_t stRotateConfig;
     MI_DISP_InputPortAttr_t stInputPortAttr;
     MI_DISP_VidWinRect_t stWinRect;
-    MI_PANEL_IntfType_e eIntfType;
+    MI_PANEL_InitParam_t stInitParam;
     MI_PANEL_ParamConfig_t pstParamCfg;
 
     MI_SYS_Init();
@@ -68,19 +68,21 @@ int sstar_disp_init()
     MI_DISP_EnableInputPort(0, 0);
 
     //init panel
-    eIntfType = E_MI_PNL_INTF_TTL;
-    MI_PANEL_Init(eIntfType);
-	MI_PANEL_GetPanelParam(eIntfType, &pstParamCfg);
+    memset(&stInitParam, 0, sizeof(MI_PANEL_InitParam_t));
+    memset(&pstParamCfg, 0, sizeof(MI_PANEL_ParamConfig_t));
+
+    stInitParam.eIntfType = E_MI_PNL_INTF_TTL;
+    MI_PANEL_InitDev(&stInitParam);
+    MI_PANEL_GetPanelParam(stInitParam.eIntfType, &pstParamCfg);
 
     return 0;
 }
 
 int sstar_disp_Deinit()
 {
-    MI_PANEL_IntfType_e eIntfType = E_MI_PNL_INTF_TTL;
-    MI_PANEL_BackLightConfig_t stBackLightCfg;
-    memset(&stBackLightCfg, 0, sizeof(MI_PANEL_BackLightConfig_t));
-
+    //MI_PANEL_IntfType_e eIntfType = E_MI_PNL_INTF_TTL;
+    //MI_PANEL_BackLightConfig_t stBackLightCfg;
+    //memset(&stBackLightCfg, 0, sizeof(MI_PANEL_BackLightConfig_t));
     MI_DISP_DisableInputPort(0, 0);
     MI_DISP_DisableVideoLayer(0);
     MI_DISP_UnBindVideoLayer(0, 0);
@@ -90,7 +92,7 @@ int sstar_disp_Deinit()
 //           (int)stBackLightCfg.bEn, (int)stBackLightCfg.u8PwmNum, stBackLightCfg.u32Duty, stBackLightCfg.u32Period);
 //    stBackLightCfg.u32Duty = 0;
 //    MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
-    MI_PANEL_DeInit();
+
 	MI_DISP_DeInitDev();
 	MI_PANEL_DeInitDev();
     MI_SYS_Exit();

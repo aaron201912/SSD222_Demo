@@ -304,16 +304,20 @@ static void Enter_STR_SuspendMode()
 	setOutputGpio(BACKLIGHT_GPIO, 0);
 	setOutputGpio(POWERCTRL_GPIO, 0);
 #else
-	MI_PANEL_IntfType_e eIntfType = E_MI_PNL_INTF_TTL;
+	MI_PANEL_InitParam_t stInitParam;
 	MI_PANEL_BackLightConfig_t stBackLightCfg;
+
+	memset(&stInitParam, 0, sizeof(MI_PANEL_InitParam_t));
 	memset(&stBackLightCfg, 0, sizeof(MI_PANEL_BackLightConfig_t));
 
-	MI_PANEL_GetBackLight(eIntfType, &stBackLightCfg);
+	stInitParam.eIntfType = E_MI_PNL_INTF_TTL;
+	MI_PANEL_InitDev(&stInitParam);
+	MI_PANEL_GetBackLight(stInitParam.eIntfType, &stBackLightCfg);
 	printf("Get BL cfg: bEn=%d, u8PwmNum=%d, u32Duty=%d, u32Period=%d\n",
 			(int)stBackLightCfg.bEn, (int)stBackLightCfg.u8PwmNum, stBackLightCfg.u32Duty,
 			stBackLightCfg.u32Period);
 	stBackLightCfg.u32Duty = 0;
-	MI_PANEL_SetBackLight(eIntfType, &stBackLightCfg);
+	MI_PANEL_SetBackLight(stInitParam.eIntfType, &stBackLightCfg);
 	MI_PANEL_DeInitDev();
 
 	MI_DISP_DeInitDev();
