@@ -362,6 +362,8 @@ void deinit_ao()
 
         if (stChnState.u32ChnBusyNum <= MI_AUDIO_SAMPLE_PER_FRAME)
             break;
+	    
+	usleep(10000);
     }
     while (1);
 
