@@ -215,7 +215,7 @@ void *mp3DecodeProc(void *pParam)
 	if (is->swr_ctx != NULL)
 		swr_free(&is->swr_ctx);
     av_free_packet(packet);
-    av_free(frame);
+    av_frame_free(&frame);
     g_bDecodeDone = true;
 
     return NULL;
