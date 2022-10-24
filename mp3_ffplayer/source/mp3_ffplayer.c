@@ -148,15 +148,24 @@ void *mp3DecodeProc(void *pParam)
             break;
 
         if(packet->stream_index != is->sndindex)
+		{
+			av_packet_unref(packet);
             continue;
+		}
+
         if(avcodec_decode_audio4(is->sndCodecCtx, frame, &got_frame, packet) < 0) //1.3 解码数据帧
         {
             printf("file eof");
+			av_packet_unref(packet);
             break;
         }
 
         if(got_frame <= 0) /* No data yet, get more frames */
+		{
+			av_packet_unref(packet);
             continue;
+		}
+		
         data_size = av_samples_get_buffer_size(NULL, is->sndCodecCtx->channels, frame->nb_samples, is->sndCodecCtx->sample_fmt, 1);
         //1.4下面将ffmpeg解码后的数据帧转为我们需要的数据(关于"需要的数据"下面有解释)
         if(NULL==is->swr_ctx)
@@ -202,6 +211,8 @@ void *mp3DecodeProc(void *pParam)
 		if (fp)
 			fwrite((short *)is->audio_buf, sizeof(short), (size_t) wavDataLen * 2, fp);
 #endif
+
+		av_packet_unref(packet);
     }
 
 #ifdef DUMP_FILE
@@ -297,6 +308,7 @@ void deinit_ffplayer(AudioState* is)
     
     avcodec_close(is->sndCodecCtx);
     avformat_close_input(&is->pFormatCtx);
+	avformat_free_context(is->pFormatCtx);
 }
 
 void signalHandler(int signo)
