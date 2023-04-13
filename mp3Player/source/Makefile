@@ -4,17 +4,19 @@ CC  = $(CROSS_COMPILE)gcc
 CPP = $(CROSS_COMPILE)g++
 AR  = $(CROSS_COMPILE)ar
 
+GCC_VERSION ?=6.4.0
+
 # config hdmi or panel display
-CONFIG_SUPPORT_HDMI = 
+CONFIG_SUPPORT_HDMI =
 
 COM_FLAGS = -Wall -O2 -fPIC -mcpu=cortex-a9 -mfpu=neon-fp16 -mfloat-abi=hard -mthumb-interwork -marm -g -funwind-tables -ffunction-sections -rdynamic
 C_FLAGS   = $(COM_FLAGS) -std=c11
 CPP_FLAGS = $(COM_FLAGS) -std=c++11
 
 INCLUDES  = -I. -I$(CURRENT_PATH)/libmad/include -I$(CURRENT_PATH)/sstar/include
-LIB_PATH  = -L. -L$(CURRENT_PATH)/libmad/lib -L$(CURRENT_PATH)/sstar/lib
+LIB_PATH  = -L. -L$(CURRENT_PATH)/libmad/lib/${GCC_VERSION} -L$(CURRENT_PATH)/sstar/lib/${GCC_VERSION}
 
-TARGET_NAME  = Mp3Player
+TARGET_NAME  ?= Mp3Player
 
 CPP_SRCS  =  $(wildcard $(CURRENT_PATH)/*.cpp)
 C_SRCS    =  $(wildcard $(CURRENT_PATH)/*.c)
@@ -40,7 +42,7 @@ clean:
 	@rm -f $(C_OBJS)
 	@rm -Rf $(TARGET_NAME)
 
-finish:
+finish: $(TARGET_NAME)
 	@echo "make done"
 	@echo "<<<<========================================================"
 	@echo

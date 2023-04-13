@@ -1,7 +1,7 @@
 #!/bin/sh
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib:/config/lib:./
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib:/config/lib:./lib/6.4.0
 
-chmod 777 Mp3Player
+chmod 777 ./bin/6.4.0/Mp3Player
 
-./Mp3Player test_ld.mp3
+./bin/6.4.0/Mp3Player test_ld.mp3
