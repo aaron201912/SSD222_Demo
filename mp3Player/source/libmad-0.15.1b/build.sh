@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#GCC_VERSION=9.1.0
-GCC_VERSION=6.4.0
+GCC_VERSION=9.1.0
+#GCC_VERSION=6.4.0
 
 if [ "${GCC_VERSION}" = "9.1.0"  ];then
 PATH=/tools/toolchain/gcc-sigmastar-9.1.0-2020.07-x86_64_arm-linux-gnueabihf/bin:$PATH
@@ -36,9 +36,12 @@ chmod 755 configure
 make clean -j32
 make -j32
 make install
-chmod 755 ${OUTPUT_DIR}/lib/*.so*
+#chmod 755 ${OUTPUT_DIR}/lib/*.so*
 ${CROSS_COMPILE}strip --strip-unneeded ${OUTPUT_DIR}/lib/*.so*
+${CROSS_COMPILE}strip --strip-unneeded ${OUTPUT_DIR}/lib/*.a
 
 cp ${OUTPUT_DIR}/include ./../libmad -r
-mkdir -p ./../libmad/lib/${GCC_VERSION}
-cp ${OUTPUT_DIR}/lib/* ./../libmad/lib/${GCC_VERSION} -rfd
+mkdir -p ./../libmad/lib/${GCC_VERSION}/dynamic
+mkdir -p ./../libmad/lib/${GCC_VERSION}/static
+cp ${OUTPUT_DIR}/lib/*.so* ./../libmad/lib/${GCC_VERSION}/dynamic -rfd
+cp ${OUTPUT_DIR}/lib/*.a ./../libmad/lib/${GCC_VERSION}/static -rfd

@@ -6,17 +6,32 @@ AR  = $(CROSS_COMPILE)ar
 
 GCC_VERSION ?=6.4.0
 
+ENABLE_STATIC ?=0
+
 # config hdmi or panel display
 CONFIG_SUPPORT_HDMI =
-
-COM_FLAGS = -Wall -O2 -fPIC -mcpu=cortex-a9 -mfpu=neon-fp16 -mfloat-abi=hard -mthumb-interwork -marm -g -funwind-tables -ffunction-sections -rdynamic
+-march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -marm
+#COM_FLAGS = -Wall -O2 -fPIC -mcpu=cortex-a9 -mfpu=neon-fp16 -mfloat-abi=hard -mthumb-interwork -marm -g -funwind-tables -ffunction-sections -rdynamic
+COM_FLAGS = -Wall -O2 -fPIC -marm -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -mthumb-interwork -g -funwind-tables -ffunction-sections -rdynamic
 C_FLAGS   = $(COM_FLAGS) -std=c11
 CPP_FLAGS = $(COM_FLAGS) -std=c++11
 
 INCLUDES  = -I. -I$(CURRENT_PATH)/libmad/include -I$(CURRENT_PATH)/sstar/include
-LIB_PATH  = -L. -L$(CURRENT_PATH)/libmad/lib/${GCC_VERSION} -L$(CURRENT_PATH)/sstar/lib/${GCC_VERSION}
+LIB_PATH  = -L.
 
-TARGET_NAME  ?= Mp3Player
+TARGET_NAME ?= Mp3Player
+
+ifeq (${ENABLE_STATIC}, 1)
+C_FLAGS += -static
+CPP_FLAGS += -static
+LIB_PATH += -L$(CURRENT_PATH)/libmad/lib/${GCC_VERSION}/static
+LIB_PATH += -L$(CURRENT_PATH)/sstar/lib/${GCC_VERSION}/static
+else
+LIB_PATH += -L$(CURRENT_PATH)/libmad/lib/${GCC_VERSION}/dynamic
+LIB_PATH += -L$(CURRENT_PATH)/sstar/lib/${GCC_VERSION}/dynamic
+endif
+
+
 
 CPP_SRCS  =  $(wildcard $(CURRENT_PATH)/*.cpp)
 C_SRCS    =  $(wildcard $(CURRENT_PATH)/*.c)
@@ -25,7 +40,7 @@ CPP_OBJS  = $(patsubst %.cpp, %.cpp.o, $(CPP_SRCS))
 C_OBJS    = $(patsubst %.c, %.c.o, $(C_SRCS))
 
 LIB_NAME  = -lmad
-LIB_NAME += -lpthread -lm -lmi_sys -lmi_ao -ldl -lmi_common -lcam_os_wrapper
+LIB_NAME += -lpthread -lm -ldl -lmi_ao -lmi_sys -lmi_common -lcam_os_wrapper
 
 .PHONY: all prepare clean
 
@@ -40,7 +55,7 @@ prepare:
 clean:
 	@rm -Rf $(CPP_OBJS)
 	@rm -f $(C_OBJS)
-	@rm -Rf $(TARGET_NAME)
+	@rm -Rf $(TARGET_NAME)*
 
 finish: $(TARGET_NAME)
 	@echo "make done"
