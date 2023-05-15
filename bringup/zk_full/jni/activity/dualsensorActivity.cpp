@@ -116,6 +116,8 @@ dualsensorActivity::~dualsensorActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mVideoview1Ptr = NULL;
 }
 
 const char* dualsensorActivity::getAppName() const{

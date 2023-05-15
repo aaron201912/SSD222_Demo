@@ -124,6 +124,16 @@ networkSetting2Activity::~networkSetting2Activity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mButton_connected_disconnPtr = NULL;
+    mTextview_connected_encryptionPtr = NULL;
+    mTextview_connected_encryption_titlePtr = NULL;
+    mTextview_connected_macPtr = NULL;
+    mTextview_connected_mac_titlePtr = NULL;
+    mTextview_connected_ip_titlePtr = NULL;
+    mTextview_connected_ipPtr = NULL;
+    mTextview_connected_ssidPtr = NULL;
+    mTextview_connected_ssid_titlePtr = NULL;
+    msys_backPtr = NULL;
 }
 
 const char* networkSetting2Activity::getAppName() const{

@@ -118,6 +118,9 @@ tesListActivity::~tesListActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mListview3Ptr = NULL;
+    mListview1Ptr = NULL;
 }
 
 const char* tesListActivity::getAppName() const{

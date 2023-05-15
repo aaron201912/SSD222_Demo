@@ -132,6 +132,9 @@ mainActivity::~mainActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mListView_indicator2Ptr = NULL;
+    mListview_indicatorPtr = NULL;
+    mSlidewindow1Ptr = NULL;
 }
 
 const char* mainActivity::getAppName() const{
@@ -246,11 +249,13 @@ void mainActivity::onItemClick(ZKListView *pListView, int index, int id){
 void mainActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
     int tablen = sizeof(SSlideWindowItemClickCallbackTab) / sizeof(S_SlideWindowItemClickCallback);
 
+    int iStrIconIndex = GetStrIconIndex();
+
     for (int i = 0; i < tablen; ++i)
     {
         if (SSlideWindowItemClickCallbackTab[i].id == pSlideWindow->getID())
         {
-        	if (index == STR_ICON_INDEX)
+        	if ((iStrIconIndex != -1) && (index == iStrIconIndex))
         	{
         		//str suspend in
 				printf("suspend in\n");

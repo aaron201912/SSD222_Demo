@@ -1,25 +1,27 @@
 /***********************************************
 /gen auto by zuitools
 ***********************************************/
-#include "helpAnimationActivity.h"
+#include "alsaActivity.h"
 
 /*TAG:GlobalVariable全局变量*/
-static ZKTextView* mTextviewMorePtr;
 static ZKButton* msys_backPtr;
-static ZKTextView* mTextview3Ptr;
-static ZKTextView* mTextview2Ptr;
-static ZKTextView* mTextview1Ptr;
-static helpAnimationActivity* mActivityPtr;
+static ZKTextView* mTextview_recordPtr;
+static ZKTextView* mTextview_sampleratePtr;
+static ZKButton* mButton_recordfilePtr;
+static ZKButton* mButton_sampleratePtr;
+static ZKButton* mButton_playrecordPtr;
+static ZKButton* mButton_recordPtr;
+static alsaActivity* mActivityPtr;
 
 /*register activity*/
-REGISTER_ACTIVITY(helpAnimationActivity);
+REGISTER_ACTIVITY(alsaActivity);
 
 typedef struct {
 	int id; // 定时器ID ， 不能重复
 	int time; // 定时器  时间间隔  单位 毫秒
 }S_ACTIVITY_TIMEER;
 
-#include "logic/helpAnimationLogic.cc"
+#include "logic/alsaLogic.cc"
 
 /***********/
 typedef struct {
@@ -46,7 +48,11 @@ typedef struct {
 
 /*TAG:ButtonCallbackTab按键映射表*/
 static S_ButtonCallback sButtonCallbackTab[] = {
-    ID_HELPANIMATION_sys_back, onButtonClick_sys_back,
+    ID_ALSA_sys_back, onButtonClick_sys_back,
+    ID_ALSA_Button_recordfile, onButtonClick_Button_recordfile,
+    ID_ALSA_Button_samplerate, onButtonClick_Button_samplerate,
+    ID_ALSA_Button_playrecord, onButtonClick_Button_playrecord,
+    ID_ALSA_Button_record, onButtonClick_Button_record,
 };
 /***************/
 
@@ -106,44 +112,49 @@ static S_VideoViewCallback SVideoViewCallbackTab[] = {
 };
 
 
-helpAnimationActivity::helpAnimationActivity() {
+alsaActivity::alsaActivity() {
 	//todo add init code here
-	mVideoLoopIndex = 0;
+	mVideoLoopIndex = -1;
 	mVideoLoopErrorCount = 0;
 }
 
-helpAnimationActivity::~helpAnimationActivity() {
-	//todo add init file here
-    // 退出应用时需要反注册
+alsaActivity::~alsaActivity() {
+  //todo add init file here
+  // 退出应用时需要反注册
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
-    onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
-    mTextviewMorePtr = NULL;
+    onUI_quit();
+    mActivityPtr = NULL;
     msys_backPtr = NULL;
-    mTextview3Ptr = NULL;
-    mTextview2Ptr = NULL;
-    mTextview1Ptr = NULL;
+    mTextview_recordPtr = NULL;
+    mTextview_sampleratePtr = NULL;
+    mButton_recordfilePtr = NULL;
+    mButton_sampleratePtr = NULL;
+    mButton_playrecordPtr = NULL;
+    mButton_recordPtr = NULL;
 }
 
-const char* helpAnimationActivity::getAppName() const{
-	return "helpAnimation.ftu";
+const char* alsaActivity::getAppName() const{
+	return "alsa.ftu";
 }
 
 //TAG:onCreate
-void helpAnimationActivity::onCreate() {
+void alsaActivity::onCreate() {
 	Activity::onCreate();
-    mTextviewMorePtr = (ZKTextView*)findControlByID(ID_HELPANIMATION_TextviewMore);
-    msys_backPtr = (ZKButton*)findControlByID(ID_HELPANIMATION_sys_back);
-    mTextview3Ptr = (ZKTextView*)findControlByID(ID_HELPANIMATION_Textview3);
-    mTextview2Ptr = (ZKTextView*)findControlByID(ID_HELPANIMATION_Textview2);
-    mTextview1Ptr = (ZKTextView*)findControlByID(ID_HELPANIMATION_Textview1);
+    msys_backPtr = (ZKButton*)findControlByID(ID_ALSA_sys_back);
+    mTextview_recordPtr = (ZKTextView*)findControlByID(ID_ALSA_Textview_record);
+    mTextview_sampleratePtr = (ZKTextView*)findControlByID(ID_ALSA_Textview_samplerate);
+    mButton_recordfilePtr = (ZKButton*)findControlByID(ID_ALSA_Button_recordfile);
+    mButton_sampleratePtr = (ZKButton*)findControlByID(ID_ALSA_Button_samplerate);
+    mButton_playrecordPtr = (ZKButton*)findControlByID(ID_ALSA_Button_playrecord);
+    mButton_recordPtr = (ZKButton*)findControlByID(ID_ALSA_Button_record);
 	mActivityPtr = this;
 	onUI_init();
-    registerProtocolDataUpdateListener(onProtocolDataUpdate); 
-    rigesterActivityTimer();
+  registerProtocolDataUpdateListener(onProtocolDataUpdate);
+  rigesterActivityTimer();
 }
 
-void helpAnimationActivity::onClick(ZKBase *pBase) {
+void alsaActivity::onClick(ZKBase *pBase) {
 	//TODO: add widget onClik code 
     int buttonTablen = sizeof(sButtonCallbackTab) / sizeof(S_ButtonCallback);
     for (int i = 0; i < buttonTablen; ++i) {
@@ -167,30 +178,30 @@ void helpAnimationActivity::onClick(ZKBase *pBase) {
 	Activity::onClick(pBase);
 }
 
-void helpAnimationActivity::onResume() {
+void alsaActivity::onResume() {
 	Activity::onResume();
 	EASYUICONTEXT->registerGlobalTouchListener(this);
 	startVideoLoopPlayback();
 	onUI_show();
 }
 
-void helpAnimationActivity::onPause() {
+void alsaActivity::onPause() {
 	Activity::onPause();
 	EASYUICONTEXT->unregisterGlobalTouchListener(this);
 	stopVideoLoopPlayback();
 	onUI_hide();
 }
 
-void helpAnimationActivity::onIntent(const Intent *intentPtr) {
+void alsaActivity::onIntent(const Intent *intentPtr) {
 	Activity::onIntent(intentPtr);
 	onUI_intent(intentPtr);
 }
 
-bool helpAnimationActivity::onTimer(int id) {
+bool alsaActivity::onTimer(int id) {
 	return onUI_Timer(id);
 }
 
-void helpAnimationActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
+void alsaActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress){
 
     int seekBarTablen = sizeof(SZKSeekBarCallbackTab) / sizeof(S_ZKSeekBarCallback);
     for (int i = 0; i < seekBarTablen; ++i) {
@@ -201,7 +212,7 @@ void helpAnimationActivity::onProgressChanged(ZKSeekBar *pSeekBar, int progress)
     }
 }
 
-int helpAnimationActivity::getListItemCount(const ZKListView *pListView) const{
+int alsaActivity::getListItemCount(const ZKListView *pListView) const{
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -212,7 +223,7 @@ int helpAnimationActivity::getListItemCount(const ZKListView *pListView) const{
     return 0;
 }
 
-void helpAnimationActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
+void alsaActivity::obtainListItemData(ZKListView *pListView,ZKListView::ZKListItem *pListItem, int index){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -222,7 +233,7 @@ void helpAnimationActivity::obtainListItemData(ZKListView *pListView,ZKListView:
     }
 }
 
-void helpAnimationActivity::onItemClick(ZKListView *pListView, int index, int id){
+void alsaActivity::onItemClick(ZKListView *pListView, int index, int id){
     int tablen = sizeof(SListViewFunctionsCallbackTab) / sizeof(S_ListViewFunctionsCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SListViewFunctionsCallbackTab[i].id == pListView->getID()) {
@@ -232,7 +243,7 @@ void helpAnimationActivity::onItemClick(ZKListView *pListView, int index, int id
     }
 }
 
-void helpAnimationActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
+void alsaActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int index) {
     int tablen = sizeof(SSlideWindowItemClickCallbackTab) / sizeof(S_SlideWindowItemClickCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SSlideWindowItemClickCallbackTab[i].id == pSlideWindow->getID()) {
@@ -242,11 +253,11 @@ void helpAnimationActivity::onSlideItemClick(ZKSlideWindow *pSlideWindow, int in
     }
 }
 
-bool helpAnimationActivity::onTouchEvent(const MotionEvent &ev) {
-    return onhelpAnimationActivityTouchEvent(ev);
+bool alsaActivity::onTouchEvent(const MotionEvent &ev) {
+    return onalsaActivityTouchEvent(ev);
 }
 
-void helpAnimationActivity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
+void alsaActivity::onTextChanged(ZKTextView *pTextView, const std::string &text) {
     int tablen = sizeof(SEditTextInputCallbackTab) / sizeof(S_EditTextInputCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SEditTextInputCallbackTab[i].id == pTextView->getID()) {
@@ -256,7 +267,7 @@ void helpAnimationActivity::onTextChanged(ZKTextView *pTextView, const std::stri
     }
 }
 
-void helpAnimationActivity::rigesterActivityTimer() {
+void alsaActivity::rigesterActivityTimer() {
     int tablen = sizeof(REGISTER_ACTIVITY_TIMER_TAB) / sizeof(S_ACTIVITY_TIMEER);
     for (int i = 0; i < tablen; ++i) {
         S_ACTIVITY_TIMEER temp = REGISTER_ACTIVITY_TIMER_TAB[i];
@@ -265,7 +276,7 @@ void helpAnimationActivity::rigesterActivityTimer() {
 }
 
 
-void helpAnimationActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
+void alsaActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int msg) {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
         if (SVideoViewCallbackTab[i].id == pVideoView->getID()) {
@@ -280,11 +291,14 @@ void helpAnimationActivity::onVideoPlayerMessage(ZKVideoView *pVideoView, int ms
     }
 }
 
-void helpAnimationActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, int callbackTabIndex) {
+void alsaActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, size_t callbackTabIndex) {
 
 	switch (msg) {
 	case ZKVideoView::E_MSGTYPE_VIDEO_PLAY_STARTED:
 		LOGD("ZKVideoView::E_MSGTYPE_VIDEO_PLAY_STARTED\n");
+    if (callbackTabIndex >= (sizeof(SVideoViewCallbackTab)/sizeof(S_VideoViewCallback))) {
+      break;
+    }
 		pVideoView->setVolume(SVideoViewCallbackTab[callbackTabIndex].defaultvolume / 10.0);
 		mVideoLoopErrorCount = 0;
 		break;
@@ -317,7 +331,7 @@ void helpAnimationActivity::videoLoopPlayback(ZKVideoView *pVideoView, int msg, 
 	}
 }
 
-void helpAnimationActivity::startVideoLoopPlayback() {
+void alsaActivity::startVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -332,7 +346,7 @@ void helpAnimationActivity::startVideoLoopPlayback() {
     }
 }
 
-void helpAnimationActivity::stopVideoLoopPlayback() {
+void alsaActivity::stopVideoLoopPlayback() {
     int tablen = sizeof(SVideoViewCallbackTab) / sizeof(S_VideoViewCallback);
     for (int i = 0; i < tablen; ++i) {
     	if (SVideoViewCallbackTab[i].loop) {
@@ -348,7 +362,7 @@ void helpAnimationActivity::stopVideoLoopPlayback() {
     }
 }
 
-bool helpAnimationActivity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
+bool alsaActivity::parseVideoFileList(const char *pFileListPath, std::vector<string>& mediaFileList) {
 	mediaFileList.clear();
 	if (NULL == pFileListPath || 0 == strlen(pFileListPath)) {
         LOGD("video file list is null!");
@@ -370,17 +384,17 @@ bool helpAnimationActivity::parseVideoFileList(const char *pFileListPath, std::v
      		mediaFileList.push_back(str.c_str());
 		}
 	}
-	LOGD("(f:%s, l:%d) parse fileList[%s], get [%d]files\n", __FUNCTION__,
-			__LINE__, pFileListPath, mediaFileList.size());
-	for (size_t i = 0; i < mediaFileList.size(); i++) {
-		LOGD("file[%d]:[%s]\n", i, mediaFileList[i].c_str());
-	}
+  LOGD("(f:%s, l:%d) parse fileList[%s], get [%d]files", __FUNCTION__,
+      __LINE__, pFileListPath, int(mediaFileList.size()));
+  for (std::vector<string>::size_type i = 0; i < mediaFileList.size(); i++) {
+    LOGD("file[%u]:[%s]", ::size_t(i), mediaFileList[i].c_str());
+  }
 	is.close();
 
 	return true;
 }
 
-int helpAnimationActivity::removeCharFromString(string& nString, char c) {
+int alsaActivity::removeCharFromString(string& nString, char c) {
     string::size_type   pos;
     while(1) {
         pos = nString.find(c);
@@ -393,14 +407,14 @@ int helpAnimationActivity::removeCharFromString(string& nString, char c) {
     return (int)nString.size();
 }
 
-void helpAnimationActivity::registerUserTimer(int id, int time) {
+void alsaActivity::registerUserTimer(int id, int time) {
 	registerTimer(id, time);
 }
 
-void helpAnimationActivity::unregisterUserTimer(int id) {
+void alsaActivity::unregisterUserTimer(int id) {
 	unregisterTimer(id);
 }
 
-void helpAnimationActivity::resetUserTimer(int id, int time) {
+void alsaActivity::resetUserTimer(int id, int time) {
 	resetTimer(id, time);
 }

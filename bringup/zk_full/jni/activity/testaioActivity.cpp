@@ -163,6 +163,27 @@ testaioActivity::~testaioActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mTextView_curGainPtr = NULL;
+    mTextView_maxGainPtr = NULL;
+    mTextView_minGainPtr = NULL;
+    mSeekBar_micGainPtr = NULL;
+    mTextView_micGaunPtr = NULL;
+    mCheckbox_playbgsoundPtr = NULL;
+    mRadioGroup_mictypePtr = NULL;
+    mTextView_mictypePtr = NULL;
+    mButton_headphonePtr = NULL;
+    mTextview_headphonePtr = NULL;
+    mButton_playstereoPtr = NULL;
+    mTextview_speakerPtr = NULL;
+    mButton_playrecordPtr = NULL;
+    mListview_recordfilePtr = NULL;
+    mButton_recordfilePtr = NULL;
+    mTextview_recordPtr = NULL;
+    mButton_recordPtr = NULL;
+    mListview_sampleratePtr = NULL;
+    mButton_sampleratePtr = NULL;
+    mTextview_sampleratePtr = NULL;
+    msys_backPtr = NULL;
 }
 
 const char* testaioActivity::getAppName() const{

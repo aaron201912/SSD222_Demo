@@ -116,6 +116,8 @@ testmoduleActivity::~testmoduleActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mSlidewindow1Ptr = NULL;
+    msys_backPtr = NULL;
 }
 
 const char* testmoduleActivity::getAppName() const{

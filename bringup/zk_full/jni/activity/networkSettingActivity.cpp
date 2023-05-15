@@ -122,6 +122,13 @@ networkSettingActivity::~networkSettingActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mTextview_loadingPtr = NULL;
+    mTextviewNotSupportPtr = NULL;
+    msys_backPtr = NULL;
+    mListviewNetworkPtr = NULL;
+    mTextviewWifiListPtr = NULL;
+    mTextviewWifiPtr = NULL;
+    mButtonWifiswPtr = NULL;
 }
 
 const char* networkSettingActivity::getAppName() const{

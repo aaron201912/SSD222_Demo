@@ -117,6 +117,9 @@ usbCameraActivity::~usbCameraActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mTextView_open_failPtr = NULL;
+    msys_backPtr = NULL;
+    mVideoview1Ptr = NULL;
 }
 
 const char* usbCameraActivity::getAppName() const{

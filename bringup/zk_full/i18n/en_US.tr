@@ -20,6 +20,7 @@
     <string name="icon_facedetect">Face Detect</string>
     <string name="icon_scanner">QRCode Scanner</string>
     <string name="icon_str">STR</string>
+    <string name="icon_alsa">Alsa Test</string>
     <string name="text_implement">How to implement?</string>
     <string name="text_content">We focus on human-computer interaction solutions for embedded device terminals. Provide customers in various industries with hardware, systems, and HMI development kits to help reduce the investment cost and development time of embedded human-computer interaction in various industries. It is our goal that we have been working hard so that our customers' products can be quickly and steadily introduced to the market.</string>
     <string name="text_company">SigmaStar</string>
@@ -121,4 +122,6 @@
     <string name="language_setting">Language Setting(Chinese/English):</string>
     <string name="language_cn">Chinese</string>
     <string name="language_en">English</string>
+    <string name="recording">Recording</string>
+    <string name="playing">Playing</string>
 </resources>

@@ -119,6 +119,12 @@ helpTextActivity::~helpTextActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mTextviewMorePtr = NULL;
+    msys_backPtr = NULL;
+    mTextview4Ptr = NULL;
+    mTextview3Ptr = NULL;
+    mTextview2Ptr = NULL;
+    mTextview1Ptr = NULL;
 }
 
 const char* helpTextActivity::getAppName() const{

@@ -121,6 +121,13 @@ testTextActivity::~testTextActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mButton1Ptr = NULL;
+    mTextview4Ptr = NULL;
+    mTextview3Ptr = NULL;
+    mTextview1Ptr = NULL;
+    mTextTimePtr = NULL;
+    mTextnormalPtr = NULL;
 }
 
 const char* testTextActivity::getAppName() const{

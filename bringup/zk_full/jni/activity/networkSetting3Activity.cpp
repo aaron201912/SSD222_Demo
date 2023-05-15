@@ -127,6 +127,16 @@ networkSetting3Activity::~networkSetting3Activity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mButton_confirmPtr = NULL;
+    mTextView1Ptr = NULL;
+    mWindow_passwdErrorPtr = NULL;
+    mButton_connect_connPtr = NULL;
+    mButton_show_passwdPtr = NULL;
+    mTextview_connect_password_titlePtr = NULL;
+    mEdittextAllInfoPtr = NULL;
+    mTextview_connect_ssid_titlePtr = NULL;
+    mTextview_connect_ssidPtr = NULL;
+    msys_backPtr = NULL;
 }
 
 const char* networkSetting3Activity::getAppName() const{

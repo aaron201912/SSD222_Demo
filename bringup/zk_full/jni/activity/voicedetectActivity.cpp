@@ -121,6 +121,12 @@ voicedetectActivity::~voicedetectActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mButtonswPtr = NULL;
+    mTextView_statusPtr = NULL;
+    mTextView_tipsPtr = NULL;
+    mTextView_commonPtr = NULL;
+    mListView_commonPtr = NULL;
 }
 
 const char* voicedetectActivity::getAppName() const{

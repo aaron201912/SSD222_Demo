@@ -117,6 +117,9 @@ animationActivity::~animationActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mButton1Ptr = NULL;
+    mTextviewanimationPtr = NULL;
 }
 
 const char* animationActivity::getAppName() const{

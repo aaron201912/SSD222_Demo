@@ -121,6 +121,13 @@ waveViewActivity::~waveViewActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mDiagram2Ptr = NULL;
+    mDigitalclock1Ptr = NULL;
+    mText1Ptr = NULL;
+    mButtonOnOffPtr = NULL;
+    mDiagram3Ptr = NULL;
+    mTextview1Ptr = NULL;
 }
 
 const char* waveViewActivity::getAppName() const{

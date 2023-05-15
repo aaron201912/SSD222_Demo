@@ -120,6 +120,11 @@ qrcodeActivity::~qrcodeActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mButton4Ptr = NULL;
+    mTextview1Ptr = NULL;
+    mEdittext1Ptr = NULL;
+    mQrcode1Ptr = NULL;
 }
 
 const char* qrcodeActivity::getAppName() const{

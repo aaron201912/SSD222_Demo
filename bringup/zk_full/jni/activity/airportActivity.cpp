@@ -125,6 +125,15 @@ airportActivity::~airportActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mButton_savePtr = NULL;
+    mTextView_inputPasswdPtr = NULL;
+    mTextView_passwdPtr = NULL;
+    mTextView_inputNamePtr = NULL;
+    mListview_devInfoPtr = NULL;
+    mTextview_customerListPtr = NULL;
+    mButton_airportswPtr = NULL;
+    mTextview_airportPtr = NULL;
+    msys_backPtr = NULL;
 }
 
 const char* airportActivity::getAppName() const{

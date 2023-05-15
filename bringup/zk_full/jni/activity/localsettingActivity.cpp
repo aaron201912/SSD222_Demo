@@ -118,6 +118,10 @@ localsettingActivity::~localsettingActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mButton1Ptr = NULL;
+    msys_backPtr = NULL;
+    mTextview1Ptr = NULL;
+    mTextView_statusPtr = NULL;
 }
 
 const char* localsettingActivity::getAppName() const{

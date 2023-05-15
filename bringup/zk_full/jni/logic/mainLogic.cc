@@ -47,7 +47,7 @@
 #define BACKLIGHT_GPIO	62	// 7
 #define POWERCTRL_GPIO	63	// 8
 
-#define STR_ICON_INDEX	14
+//#define STR_ICON_INDEX	14
 
 static int g_curPageIdx = 0;
 /**
@@ -520,6 +520,7 @@ const char* IconTab[]={
 	"playPcmFileActivity",
 	"facedetectActivity",
 	"dualsensorActivity",
+	"alsaActivity",
 	"str",
 	"usbCameraActivity",
 	"localsettingActivity"
@@ -636,4 +637,18 @@ static void onListItemClick_ListView_indicator2(ZKListView *pListView, int index
 		mSlidewindow1Ptr->turnToPrevPage();
 		curPageIdx--;
 	}
+}
+
+static int GetStrIconIndex()
+{
+	int i = 0;
+
+
+	for (i = 0; i < sizeof(IconTab)/sizeof(char*); i++)
+	{
+		if (!strcmp(IconTab[i], "str"))
+			return i;
+	}
+
+	return -1;
 }

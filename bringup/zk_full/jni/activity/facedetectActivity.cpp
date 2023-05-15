@@ -116,6 +116,8 @@ facedetectActivity::~facedetectActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mVideoview1Ptr = NULL;
 }
 
 const char* facedetectActivity::getAppName() const{

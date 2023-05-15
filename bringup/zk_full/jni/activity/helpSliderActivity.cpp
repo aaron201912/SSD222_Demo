@@ -123,6 +123,16 @@ helpSliderActivity::~helpSliderActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mTextviewMorePtr = NULL;
+    msys_backPtr = NULL;
+    mTextview8Ptr = NULL;
+    mTextview7Ptr = NULL;
+    mTextview6Ptr = NULL;
+    mTextview5Ptr = NULL;
+    mTextview4Ptr = NULL;
+    mTextview3Ptr = NULL;
+    mTextview2Ptr = NULL;
+    mTextview1Ptr = NULL;
 }
 
 const char* helpSliderActivity::getAppName() const{

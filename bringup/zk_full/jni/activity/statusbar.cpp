@@ -114,6 +114,12 @@ statusbar::~statusbar() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mTextView_usbStatusPtr = NULL;
+    mTextView_wifiStatusPtr = NULL;
+    mTextView_wiredNetStatusPtr = NULL;
+    msys_homePtr = NULL;
+    mDigitalclock1Ptr = NULL;
+    msys_backPtr = NULL;
 
 }
 

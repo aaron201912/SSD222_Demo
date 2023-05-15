@@ -128,6 +128,16 @@ inputtextActivity::~inputtextActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mButton1Ptr = NULL;
+    mEdittextpass2Ptr = NULL;
+    mEdittextpass1Ptr = NULL;
+    mEdittextnuPtr = NULL;
+    mTextview4Ptr = NULL;
+    mEdittextAllInfoPtr = NULL;
+    mTextview3Ptr = NULL;
+    mTextview2Ptr = NULL;
+    mTextview1Ptr = NULL;
 }
 
 const char* inputtextActivity::getAppName() const{

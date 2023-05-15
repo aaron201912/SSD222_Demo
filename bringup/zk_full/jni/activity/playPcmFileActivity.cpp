@@ -136,6 +136,20 @@ playPcmFileActivity::~playPcmFileActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    mButton4Ptr = NULL;
+    mTitleTextviewPtr = NULL;
+    mSoundSeekbarPtr = NULL;
+    mSoundWindowPtr = NULL;
+    mDurationTextViewPtr = NULL;
+    mCurPosTextViewPtr = NULL;
+    msys_backPtr = NULL;
+    mVoiceButtonPtr = NULL;
+    mButtonZoomPtr = NULL;
+    mPrevButtonPtr = NULL;
+    mNextButtonPtr = NULL;
+    mPlayButtonPtr = NULL;
+    mPlayProgressSeekbarPtr = NULL;
+    mVideoviewTTPtr = NULL;
 }
 
 const char* playPcmFileActivity::getAppName() const{

@@ -135,6 +135,20 @@ testButtonActivity::~testButtonActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mButton4Ptr = NULL;
+    mTextview5Ptr = NULL;
+    mButton_open_developerPtr = NULL;
+    mButton1Ptr = NULL;
+    mTextview4Ptr = NULL;
+    mTextview3Ptr = NULL;
+    mTextview2Ptr = NULL;
+    mTextview1Ptr = NULL;
+    mButton2Ptr = NULL;
+    mButtonspecialPtr = NULL;
+    mButtoncheckPtr = NULL;
+    mButtonswPtr = NULL;
+    mButtonbgPtr = NULL;
 }
 
 const char* testButtonActivity::getAppName() const{

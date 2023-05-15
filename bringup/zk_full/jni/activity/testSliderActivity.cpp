@@ -139,6 +139,20 @@ testSliderActivity::~testSliderActivity() {
     EASYUICONTEXT->unregisterGlobalTouchListener(this);
     onUI_quit();
     unregisterProtocolDataUpdateListener(onProtocolDataUpdate);
+    msys_backPtr = NULL;
+    mButton1Ptr = NULL;
+    mTextview8Ptr = NULL;
+    mTextview7Ptr = NULL;
+    mTextview6Ptr = NULL;
+    mTextview5Ptr = NULL;
+    mTextview4Ptr = NULL;
+    mTextview3Ptr = NULL;
+    mTextview2Ptr = NULL;
+    mSeekBar1Ptr = NULL;
+    mTextview1Ptr = NULL;
+    mCirclebar1Ptr = NULL;
+    mTextValuePtr = NULL;
+    mSeekBar2Ptr = NULL;
 }
 
 const char* testSliderActivity::getAppName() const{
