@@ -45,6 +45,10 @@
 # include "huffman.h"
 # include "layer3.h"
 
+#ifdef printf
+#undef printf
+#include "stdio.h"
+#endif
 /* --- Layer III ----------------------------------------------------------- */
 
 enum {
@@ -2525,6 +2529,8 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
   int result = 0;
 
   /* allocate Layer III dynamic structures */
+    printf("debug: allocate Layer III dynamic structures ...\n");
+
 
   if (stream->main_data == 0) {
     stream->main_data = malloc(MAD_BUFFER_MDLEN);
@@ -2547,6 +2553,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
     (nch == 1 ? 9 : 17) : (nch == 1 ? 17 : 32);
 
   /* check frame sanity */
+    printf("debug: check frame sanity ...\n");
 
   if (stream->next_frame - mad_bit_nextbyte(&stream->ptr) <
       (signed int) si_len) {
@@ -2556,6 +2563,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
   }
 
   /* check CRC word */
+    printf("debug: check CRC word ...\n");
 
   if (header->flags & MAD_FLAG_PROTECTION) {
     header->crc_check =
@@ -2569,6 +2577,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
   }
 
   /* decode frame side information */
+    printf("debug: decode frame side information ...\n");
 
   error = III_sideinfo(&stream->ptr, nch, header->flags & MAD_FLAG_LSF_EXT,
 		       &si, &data_bitlen, &priv_bitlen);
@@ -2581,6 +2590,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
   header->private_bits |= si.private_bits;
 
   /* find main_data of next frame */
+    printf("debug: find main_data of next frame ...\n");
 
   {
     struct mad_bitptr peek;
@@ -2601,6 +2611,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
   }
 
   /* find main_data of this frame */
+    printf("debug: find main_data of this frame ...\n");
 
   frame_space = stream->next_frame - mad_bit_nextbyte(&stream->ptr);
 
@@ -2643,6 +2654,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
   frame_free = frame_space - frame_used;
 
   /* decode main_data */
+    printf("debug: decode main_data ...\n");
 
   if (result == 0) {
     error = III_decode(&ptr, frame, &si, nch);
@@ -2652,6 +2664,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
     }
 
     /* designate ancillary bits */
+    printf("debug: designate ancillary bits ...\n");
 
     stream->anc_ptr    = ptr;
     stream->anc_bitlen = md_len * CHAR_BIT - data_bitlen;
@@ -2666,6 +2679,7 @@ int mad_layer_III(struct mad_stream *stream, struct mad_frame *frame)
 # endif
 
   /* preload main_data buffer with up to 511 bytes for next frame(s) */
+    printf("debug: preload main_data buffer with up to 511 bytes for next frame(s) ...\n");
 
   if (frame_free >= next_md_begin) {
     memcpy(*stream->main_data,

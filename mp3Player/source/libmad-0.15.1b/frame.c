@@ -34,6 +34,11 @@
 # include "layer12.h"
 # include "layer3.h"
 
+#ifdef printf
+#undef printf
+#include "stdio.h"
+#endif
+
 static
 unsigned long const bitrate_table[5][15] = {
   /* MPEG-1 */
@@ -449,6 +454,9 @@ int mad_frame_decode(struct mad_frame *frame, struct mad_stream *stream)
   /* audio_data() */
 
   frame->header.flags &= ~MAD_FLAG_INCOMPLETE;
+
+    printf("debug: mad_frame_decode call decoder_table[%d] ...\n", frame->header.layer - 1);
+    fflush(stdout);
 
   if (decoder_table[frame->header.layer - 1](stream, frame) == -1) {
     if (!MAD_RECOVERABLE(stream->error))

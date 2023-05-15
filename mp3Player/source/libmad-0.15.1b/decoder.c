@@ -52,6 +52,10 @@
 # include "synth.h"
 # include "decoder.h"
 
+#ifdef printf
+#undef printf
+#include "stdio.h"
+#endif
 /*
  * NAME:	decoder->init()
  * DESCRIPTION:	initialize a decoder object with callback routines
@@ -323,6 +327,8 @@ int run_sync(struct mad_decoder *decoder)
   struct mad_synth *synth;
   int result = 0;
 
+  printf("debug: run_sync enter ...\n");
+
   if (decoder->input_func == 0)
     return 0;
 
@@ -469,6 +475,8 @@ int run_async(struct mad_decoder *decoder)
   pid_t pid;
   int ptoc[2], ctop[2], flags;
 
+    printf("debug: run_async enter ...\n");
+
   if (pipe(ptoc) == -1)
     return -1;
 
@@ -535,13 +543,17 @@ int mad_decoder_run(struct mad_decoder *decoder, enum mad_decoder_mode mode)
   int result;
   int (*run)(struct mad_decoder *) = 0;
 
+    printf("debug: mad_decoder_run enter ...\n");
+
   switch (decoder->mode = mode) {
   case MAD_DECODER_MODE_SYNC:
+      printf("debug: run_sync ...\n");
     run = run_sync;
     break;
 
   case MAD_DECODER_MODE_ASYNC:
 # if defined(USE_ASYNC)
+    printf("debug: run_async ...\n");
     run = run_async;
 # endif
     break;

@@ -1,16 +1,21 @@
 #!/bin/sh
 
-GCC_VERSION=9.1.0
+#GCC_VERSION=9.1.0
 #GCC_VERSION=6.4.0
+GCC_VERSION=8.2.1
 
-if [ "${GCC_VERSION}" = "9.1.0"  ];then
-PATH=/tools/toolchain/gcc-sigmastar-9.1.0-2020.07-x86_64_arm-linux-gnueabihf/bin:$PATH
-CROSS_COMPILE=arm-linux-gnueabihf-
-ARCH=arm
+if [ "${GCC_VERSION}" = "6.4.0" ];then
+export PATH=/home/koda.xu/tmp/cus_xiaomi/sourcecode/project/cus_toolchain/gcc-linaro-6.4.0-2022.05-x86_64_arm-linux-gnueabihf/bin:$PATH
+export CROSS_COMPILE=arm-linux-gnueabihf-
+export ARCH=arm
+elif [ "${GCC_VERSION}" = "8.2.1"  ];then
+export PATH=/tools/toolchain/gcc-arm-8.2-2018.08-x86_64-arm-linux-gnueabihf/bin/:$PATH
+export CROSS_COMPILE=arm-linux-gnueabihf-
+export ARCH=arm
 else
-PATH=/home/koda.xu/tmp/cus_xiaomi/sourcecode/project/cus_toolchain/gcc-linaro-6.4.0-2022.05-x86_64_arm-linux-gnueabihf/bin:$PATH
-CROSS_COMPILE=arm-linux-gnueabihf-
-ARCH=arm
+export PATH=/tools/toolchain/gcc-sigmastar-9.1.0-2020.07-x86_64_arm-linux-gnueabihf/bin:$PATH
+export CROSS_COMPILE=arm-linux-gnueabihf-
+export ARCH=arm
 fi
 
 CURRENT_PATH=$(pwd)
@@ -31,14 +36,17 @@ chmod 755 configure
     --host=arm-linux  \
     CC=${CROSS_COMPILE}gcc  \
     --prefix=${OUTPUT_DIR}                \
-    --enable-speed
+    --enable-speed          \
+    --enable-debugging     \
+    --enable-fpm=arm        \
+    --enable-experimental
 
 make clean -j32
 make -j32
 make install
 #chmod 755 ${OUTPUT_DIR}/lib/*.so*
-${CROSS_COMPILE}strip --strip-unneeded ${OUTPUT_DIR}/lib/*.so*
-${CROSS_COMPILE}strip --strip-unneeded ${OUTPUT_DIR}/lib/*.a
+#${CROSS_COMPILE}strip --strip-unneeded ${OUTPUT_DIR}/lib/*.so*
+#${CROSS_COMPILE}strip --strip-unneeded ${OUTPUT_DIR}/lib/*.a
 
 cp ${OUTPUT_DIR}/include ./../libmad -r
 mkdir -p ./../libmad/lib/${GCC_VERSION}/dynamic

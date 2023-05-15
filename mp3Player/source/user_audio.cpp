@@ -16,6 +16,7 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include <pthread.h>
+#include <dlfcn.h>
 
 #define BUFSIZE 8192
 
@@ -349,12 +350,14 @@ static int decode(mp3_file *mp3fp)
     struct mad_decoder decoder;
     int result;
 
+    printf("debug: start init decoder ...\n");
     /* configure input, output, and error functions */
     mad_decoder_init(&decoder, mp3fp,
                      input, 0 /* header */, 0 /* filter */, output,
                      error, 0 /* message */);
 
     /* start decoding */
+    printf("debug: start decoding ...\n");
     result = mad_decoder_run(&decoder, MAD_DECODER_MODE_SYNC);
 
     /* release the decoder */
